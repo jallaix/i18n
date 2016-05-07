@@ -1,0 +1,29 @@
+﻿{
+  code : "I18N",
+  defaultLanguage : "eng",
+  languages : [
+  {
+    code : "eng",
+    messages : [
+    {
+      code : "home.title",
+      content : "Window title"
+    },
+    {
+      code : "home.domain.label",
+      content : "Domain"
+    }]
+  },
+  {
+    code : "fra",
+    messages : [
+    {
+      code : "home.title",
+      content : "Titre fenêtre"
+    },
+    {
+      code : "home.domain.label",
+      content : "Domaine"
+    }]
+  }]
+}
