@@ -1,32 +1,44 @@
 package info.jallaix.common.ws.rest;
 
+import info.jallaix.common.dao.LanguageDao;
 import info.jallaix.common.dto.Language;
+import org.easymock.EasyMockRule;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.easymock.TestSubject;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
 /**
- * Created by Julien on 08/05/2016.
- *
- * The language REST service must verify the following tests :
+ * The <b>Language</b> REST web service must verify the following tests related to language creation :
  * <ul>
- *     <li>Creating a language entry returns the inserted language if it doesn't already exist</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is not language argument</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label</li>
- *     <li>Creating a language entry returns a 409 HTTP error (CONFLICT) code if it already exists</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is no language argument.</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code.</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label.</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label.</li>
+ *     <li>Creating a language entry returns no error if the entry doesn't already exist and the language argument is valid.</li>
+ *     <li>Creating a language entry returns a 409 HTTP error (CONFLICT) code if it already exists.</li>
  * </ul>
  */
-public class LanguageRestServiceTest {
+public class LanguageRestServiceTest extends EasyMockSupport {
+
+    @Rule
+    public EasyMockRule rule = new EasyMockRule(this);
+    @TestSubject
+    private final LanguageRestService service = new LanguageRestService();
+    @Mock
+    private LanguageDao languageDao;
+
 
     @Before
     public void setUp() throws Exception {
-
     }
 
     @After
@@ -35,25 +47,10 @@ public class LanguageRestServiceTest {
     }
 
     /**
-     * Creating a language entry returns the inserted language if it doesn't already exist
-     */
-    @Test
-    public void createNotExistingLanguage() {
-
-        LanguageRestService service = new LanguageRestService();
-        Language language = new Language("esp", "Español", "Spanish");
-        Language createdLanguage = service.create(language);
-
-        assertEquals(createdLanguage, language);
-    }
-
-    /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is not language argument
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is not language argument.
      */
     @Test
     public void createLanguageNull() {
-
-        LanguageRestService service = new LanguageRestService();
 
         try {
             service.create(null);
@@ -65,12 +62,10 @@ public class LanguageRestServiceTest {
     }
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code.
      */
     @Test
     public void createLanguageWithEmptyCode() {
-
-        LanguageRestService service = new LanguageRestService();
 
         // Test language with null code
         try {
@@ -101,12 +96,10 @@ public class LanguageRestServiceTest {
     }
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label.
      */
     @Test
     public void createLanguageWithEmptyLabel() {
-
-        LanguageRestService service = new LanguageRestService();
 
         // Test language with null label
         try {
@@ -138,12 +131,10 @@ public class LanguageRestServiceTest {
 
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label.
      */
     @Test
     public void createLanguageWithEmptyEnglishLabel() {
-
-        LanguageRestService service = new LanguageRestService();
 
         // Test language with null english label
         try {
@@ -177,6 +168,43 @@ public class LanguageRestServiceTest {
     }
 
     /**
+     * Creating a language entry returns no error if the entry doesn't already exist and the language argument is valid.
+     */
+    @Test
+    public void createValidAndNewLanguage() {
+
+        Language language = new Language("esp", "Español", "Spanish");
+
+        expect(languageDao.get("esp")).andReturn(null);
+        languageDao.create(language);
+        replayAll();
+
+        service.create(language);
+        verifyAll();
+    }
+
+    /**
+     * Creating a language entry returns a 409 HTTP error (CONFLICT) code if it already exists.
+     */
+    @Test
+    public void createDuplicateLanguage() {
+
+        Language language = new Language("esp", "Español", "Spanish");
+
+        expect(languageDao.get("esp")).andReturn(language);
+        replayAll();
+
+        try {
+            service.create(language);
+            fail("duplicate language didn't throw an exception");
+        }
+        catch (DuplicateLanguageException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.CONFLICT);
+        }
+        verifyAll();
+    }
+
+    /**
      * Validate that an exception is associated with an HTTP error code
      * @param e Exception to validate
      * @param status The HTTP status code
@@ -186,7 +214,7 @@ public class LanguageRestServiceTest {
         ResponseStatus annotation = e.getClass().getAnnotation(ResponseStatus.class);
         if (annotation == null ||
                 annotation.value() == null ||
-                !annotation.value().equals(HttpStatus.BAD_REQUEST))
-            fail("LanguageInvalidArgumentException must send an HTTP 400 BAD_REQUEST status code");
+                !annotation.value().equals(status))
+            fail("LanguageInvalidArgumentException must send an HTTP " + status.toString() + " status code");
     }
 }

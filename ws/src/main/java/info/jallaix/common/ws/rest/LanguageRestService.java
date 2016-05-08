@@ -1,27 +1,34 @@
 package info.jallaix.common.ws.rest;
 
+import info.jallaix.common.dao.LanguageDao;
 import info.jallaix.common.dto.Language;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Created by Julien on 08/05/2016.
+ * Implementation of the <b>Language</b> REST web service.<br/>
+ *     It provides CRUD operations for anything related to the Language entity.
  */
 @RestController("/language")
 public class LanguageRestService {
 
-	@RequestMapping("/")
-	public String home() {
-		return "Hello Docker World";
-	}
+    private LanguageDao languageDao;
 
+    /**
+     * Create a new language entity in the datasource
+     * @param language The language to add in the datasource
+     */
 	@RequestMapping(method = RequestMethod.POST)
-	public Language create(Language language) {
+	public void create(Language language) {
 
         validateLanguageToCreate(language);
 
-		return language;
+        Language result = languageDao.get(language.getCode());
+        if (result == null)
+            languageDao.create(language);
+        else
+            throw new DuplicateLanguageException(language.getCode());
 	}
 
 
