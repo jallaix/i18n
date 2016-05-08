@@ -19,27 +19,27 @@ public class LanguageRestService {
 	@RequestMapping(method = RequestMethod.POST)
 	public Language create(Language language) {
 
-		if (language == null)
-			throw new LanguageInvalidArgumentException(null, "null language");
-
-		if (language.getCode() == null)
-			throw new LanguageInvalidArgumentException(language, "null code");
-
-        if ("".equals(language.getCode()))
-            throw new LanguageInvalidArgumentException(language, "empty code");
-
-        if (language.getLabel() == null)
-			throw new LanguageInvalidArgumentException(language, "null label");
-
-        if ("".equals(language.getLabel()))
-            throw new LanguageInvalidArgumentException(language, "empty label");
-
-        if (language.getEnglishLabel() == null)
-			throw new LanguageInvalidArgumentException(language, "null english label");
-
-        if ("".equals(language.getEnglishLabel()))
-            throw new LanguageInvalidArgumentException(language, "empty english label");
+        validateLanguageToCreate(language);
 
 		return language;
 	}
+
+
+    private void validateLanguageToCreate(Language language) {
+
+        if (language == null)
+            throw new LanguageInvalidArgumentException(null, "null language");
+        else if (language.getCode() == null)
+            throw new LanguageInvalidArgumentException(language, "null code");
+        else if ("".equals(language.getCode().trim()))
+            throw new LanguageInvalidArgumentException(language, "empty code");
+        else if (language.getLabel() == null)
+            throw new LanguageInvalidArgumentException(language, "null label");
+        else if ("".equals(language.getLabel().trim()))
+            throw new LanguageInvalidArgumentException(language, "empty label");
+        else if (language.getEnglishLabel() == null)
+            throw new LanguageInvalidArgumentException(language, "null english label");
+        else if ("".equals(language.getEnglishLabel().trim()))
+            throw new LanguageInvalidArgumentException(language, "empty english label");
+    }
 }

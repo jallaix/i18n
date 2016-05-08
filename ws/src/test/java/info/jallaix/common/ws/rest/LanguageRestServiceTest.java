@@ -15,7 +15,10 @@ import static org.junit.Assert.*;
  * The language REST service must verify the following tests :
  * <ul>
  *     <li>Creating a language entry returns the inserted language if it doesn't already exist</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there are missing arguments</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is not language argument</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label</li>
+ *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label</li>
  *     <li>Creating a language entry returns a 409 HTTP error (CONFLICT) code if it already exists</li>
  * </ul>
  */
@@ -45,14 +48,13 @@ public class LanguageRestServiceTest {
     }
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there are missing arguments
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is not language argument
      */
     @Test
-    public void createLanguageWithoutData() {
+    public void createLanguageNull() {
 
         LanguageRestService service = new LanguageRestService();
 
-        // Test with null language
         try {
             service.create(null);
             fail("null language didn't throw an exception");
@@ -60,14 +62,22 @@ public class LanguageRestServiceTest {
         catch (LanguageInvalidArgumentException e) {
             validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code
+     */
+    @Test
+    public void createLanguageWithEmptyCode() {
+
+        LanguageRestService service = new LanguageRestService();
 
         // Test language with null code
         try {
             Language language = new Language(null, "Español", "Spanish");
             service.create(language);
             fail("null language code didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
+        } catch (LanguageInvalidArgumentException e) {
             validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
         }
 
@@ -76,18 +86,34 @@ public class LanguageRestServiceTest {
             Language language = new Language("", "Español", "Spanish");
             service.create(language);
             fail("empty language code didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
+        } catch (LanguageInvalidArgumentException e) {
             validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
         }
+
+        // Test language with code that contains spaces
+        try {
+            Language language = new Language("  ", "Español", "Spanish");
+            service.create(language);
+            fail("language code with spaces didn't throw an exception");
+        } catch (LanguageInvalidArgumentException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label
+     */
+    @Test
+    public void createLanguageWithEmptyLabel() {
+
+        LanguageRestService service = new LanguageRestService();
 
         // Test language with null label
         try {
             Language language = new Language("esp", null, "Spanish");
             service.create(language);
             fail("null language label didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
+        } catch (LanguageInvalidArgumentException e) {
             validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
         }
 
@@ -96,10 +122,28 @@ public class LanguageRestServiceTest {
             Language language = new Language("esp", "", "Spanish");
             service.create(language);
             fail("empty language label didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
+        } catch (LanguageInvalidArgumentException e) {
             validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
         }
+
+        // Test language with label that contains spaces
+        try {
+            Language language = new Language("esp", "  ", "Spanish");
+            service.create(language);
+            fail("language label with spaces didn't throw an exception");
+        } catch (LanguageInvalidArgumentException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
+    /**
+     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label
+     */
+    @Test
+    public void createLanguageWithEmptyEnglishLabel() {
+
+        LanguageRestService service = new LanguageRestService();
 
         // Test language with null english label
         try {
@@ -114,6 +158,16 @@ public class LanguageRestServiceTest {
         // Test language with empty english label
         try {
             Language language = new Language("esp", "Español", "");
+            service.create(language);
+            fail("empty english language label didn't throw an exception");
+        }
+        catch (LanguageInvalidArgumentException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
+        }
+
+        // Test language with english language that contains spaces
+        try {
+            Language language = new Language("esp", "Español", "  ");
             service.create(language);
             fail("empty english language label didn't throw an exception");
         }
