@@ -6,18 +6,29 @@ import org.easymock.EasyMockRule;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.TestSubject;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
+
+import java.lang.reflect.Method;
+import java.util.Optional;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
 /**
  * The <b>Language</b> REST web service must verify the following tests related to language creation :
+ * <ul>
+ *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
+ *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.</li>
+ *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty label.</li>
+ *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty english label.</li>
+ *     <li>Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.</li>
+ *     <li>Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.</li>
+ * </ul>
+ * <br/>
+ * The <b>Language</b> REST web service must verify the following tests related to language update :
  * <ul>
  *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is no language argument.</li>
  *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code.</li>
@@ -37,165 +48,103 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     private LanguageDao languageDao;
 
 
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-
-    }
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                    Tests related to language creation                                          */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is not language argument.
+     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is not language argument.
      */
     @Test
     public void createLanguageNull() {
 
-        try {
-            service.create(null);
-            fail("null language didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
+        validateLanguageToCreate(null, "null language didn't throw an exception");
     }
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code.
+     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.
      */
     @Test
     public void createLanguageWithEmptyCode() {
 
-        // Test language with null code
-        try {
-            Language language = new Language(null, "Español", "Spanish");
-            service.create(language);
-            fail("null language code didn't throw an exception");
-        } catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
-
-        // Test language with empty code
-        try {
-            Language language = new Language("", "Español", "Spanish");
-            service.create(language);
-            fail("empty language code didn't throw an exception");
-        } catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
-
-        // Test language with code that contains spaces
-        try {
-            Language language = new Language("  ", "Español", "Spanish");
-            service.create(language);
-            fail("language code with spaces didn't throw an exception");
-        } catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
+        validateLanguageToCreate(
+                new Language(null, "Español", "Spanish"),
+                "null language code didn't throw an exception");    // Null code
+        validateLanguageToCreate(
+                new Language("", "Español", "Spanish"),
+                "empty language code didn't throw an exception");   // Empty code
+        validateLanguageToCreate(
+                new Language("  ", "Español", "Spanish"),
+                "language code with spaces didn't throw an exception"); // Code that contains spaces
     }
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label.
+     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty label.
      */
     @Test
     public void createLanguageWithEmptyLabel() {
 
-        // Test language with null label
-        try {
-            Language language = new Language("esp", null, "Spanish");
-            service.create(language);
-            fail("null language label didn't throw an exception");
-        } catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
-
-        // Test language with empty label
-        try {
-            Language language = new Language("esp", "", "Spanish");
-            service.create(language);
-            fail("empty language label didn't throw an exception");
-        } catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
-
-        // Test language with label that contains spaces
-        try {
-            Language language = new Language("esp", "  ", "Spanish");
-            service.create(language);
-            fail("language label with spaces didn't throw an exception");
-        } catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
+        validateLanguageToCreate(
+                new Language("esp", null, "Spanish"),
+                "null language label didn't throw an exception");   // Null label
+        validateLanguageToCreate(
+                new Language("esp", "", "Spanish"),
+                "empty language label didn't throw an exception");  // Empty label
+        validateLanguageToCreate(
+                new Language("esp", "  ", "Spanish"),
+                "language label with spaces didn't throw an exception");    // Label that contains spaces
     }
 
 
     /**
-     * Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label.
+     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty english label.
      */
     @Test
     public void createLanguageWithEmptyEnglishLabel() {
 
-        // Test language with null english label
-        try {
-            Language language = new Language("esp", "Español", null);
-            service.create(language);
-            fail("null english language label didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
-
-        // Test language with empty english label
-        try {
-            Language language = new Language("esp", "Español", "");
-            service.create(language);
-            fail("empty english language label didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
-
-        // Test language with english language that contains spaces
-        try {
-            Language language = new Language("esp", "Español", "  ");
-            service.create(language);
-            fail("empty english language label didn't throw an exception");
-        }
-        catch (LanguageInvalidArgumentException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
-        }
+        validateLanguageToCreate(
+                new Language("esp", "Español", null),
+                "null english language label didn't throw an exception");   // Null english label
+        validateLanguageToCreate(
+                new Language("esp", "Español", ""),
+                "empty english language label didn't throw an exception");  // Empty english label
+        validateLanguageToCreate(
+                new Language("esp", "Español", "  "),
+                "english language label with spaces didn't throw an exception");    // English language that contains spaces
     }
 
     /**
-     * Creating a language entry returns no error if the entry doesn't already exist and the language argument is valid.
+     * Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.
      */
     @Test
-    public void createValidAndNewLanguage() {
+    public void createValidAndNewLanguage() throws NoSuchMethodException {
 
         Language language = new Language("esp", "Español", "Spanish");
 
-        expect(languageDao.get("esp")).andReturn(null);
+        // Mocking "languageDao"
+        expect(languageDao.get("esp")).andReturn(Optional.<Language>empty());
         languageDao.create(language);
         replayAll();
 
+        // Execute test with mock
         service.create(language);
         verifyAll();
+
+        // Validate status code
+        validateReturnedStatusCode(service.getClass().getDeclaredMethod("create", Language.class), HttpStatus.CREATED);
     }
 
     /**
-     * Creating a language entry returns a 409 HTTP error (CONFLICT) code if it already exists.
+     * Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
      */
     @Test
     public void createDuplicateLanguage() {
 
-        Language language = new Language("esp", "Español", "Spanish");
-
-        expect(languageDao.get("esp")).andReturn(language);
+        expect(languageDao.get("esp")).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
         replayAll();
 
         try {
-            service.create(language);
+            service.create(new Language("esp", "Español", "Spanish"));
             fail("duplicate language didn't throw an exception");
         }
         catch (DuplicateLanguageException e) {
@@ -204,8 +153,28 @@ public class LanguageRestServiceTest extends EasyMockSupport {
         verifyAll();
     }
 
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                              Private methods                                                   */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
     /**
-     * Validate that an exception is associated with an HTTP error code
+     * Validate language properties for creation
+     * @param language The language to test
+     * @param failMessage Message in case of failure
+     */
+    private void validateLanguageToCreate(Language language, String failMessage) {
+
+        try {
+            service.create(language);
+            fail(failMessage);
+        } catch (LanguageInvalidArgumentException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Validate that an exception returns an HTTP status code
      * @param e Exception to validate
      * @param status The HTTP status code
      */
@@ -215,6 +184,18 @@ public class LanguageRestServiceTest extends EasyMockSupport {
         if (annotation == null ||
                 annotation.value() == null ||
                 !annotation.value().equals(status))
-            fail("LanguageInvalidArgumentException must send an HTTP " + status.toString() + " status code");
+            fail("LanguageInvalidArgumentException must send an HTTP " + status + " status code");
+    }
+
+    /**
+     * Validate that a method returns an HTTP status code
+     * @param method Method to validate
+     * @param status The HTTP status code
+     */
+    private void validateReturnedStatusCode(Method method, HttpStatus status) {
+
+        ResponseStatus responseStatus = method.getDeclaredAnnotation(ResponseStatus.class);
+        if (responseStatus == null || !responseStatus.value().equals(status))
+            fail(method + " method must send an HTTP " +  status + " status code");
     }
 }

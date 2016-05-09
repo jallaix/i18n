@@ -2,8 +2,10 @@ package info.jallaix.common.ws.rest;
 
 import info.jallaix.common.dao.LanguageDao;
 import info.jallaix.common.dto.Language;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -20,12 +22,12 @@ public class LanguageRestService {
      * @param language The language to add in the datasource
      */
 	@RequestMapping(method = RequestMethod.POST)
+    @ResponseStatus(HttpStatus.CREATED)
 	public void create(Language language) {
 
         validateLanguageToCreate(language);
 
-        Language result = languageDao.get(language.getCode());
-        if (result == null)
+        if (!languageDao.get(language.getCode()).isPresent())
             languageDao.create(language);
         else
             throw new DuplicateLanguageException(language.getCode());
