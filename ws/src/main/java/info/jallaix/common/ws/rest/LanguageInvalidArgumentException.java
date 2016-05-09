@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
- * Created by Julien on 08/05/2016.
+ * This exception manages invalid arguments error when adding or updating a language
  */
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class LanguageInvalidArgumentException extends RuntimeException {

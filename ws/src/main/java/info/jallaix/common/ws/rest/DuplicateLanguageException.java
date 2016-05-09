@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
- * Created by Julien on 09/05/2016.
+ * This exception manages duplication error when adding a new language
  */
 @ResponseStatus(HttpStatus.CONFLICT)
 public class DuplicateLanguageException extends RuntimeException {

@@ -2,10 +2,7 @@ package info.jallaix.common.ws.rest;
 
 import info.jallaix.common.dao.LanguageDao;
 import info.jallaix.common.dto.Language;
-import org.easymock.EasyMockRule;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.easymock.TestSubject;
+import org.easymock.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
@@ -40,11 +37,12 @@ import static org.junit.Assert.*;
  * The <b>Language REST web service</b> must verify the following tests related to <b>language update</b> :
  * <ul>
  *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
- *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument empty code.</li>
+ *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.</li>
  *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label.</li>
  *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label.</li>
  *     <li>Updating a language entry returns an HTTP 404 status code (NOT FOUND) if there is no existing language to update.</li>
  *     <li>Updating a language entry returns an HTTP 204 status code (NO CONTENT) if the entry already exists and the language argument is valid.</li>
+ *     <li>Updating a language entry with null properties (except code) only updates the properties set.</li>
  * </ul>
  */
 public class LanguageRestServiceTest extends EasyMockSupport {
@@ -264,7 +262,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     }
 
     /**
-     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument empty code.
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.
      */
     @Test
     public void updateLanguageWithEmptyCode() {
@@ -349,6 +347,29 @@ public class LanguageRestServiceTest extends EasyMockSupport {
         validateReturnedStatusCode(service.getClass().getDeclaredMethod("update", Language.class), HttpStatus.OK);
     }
 
+    /**
+     * Updating a language entry with null properties (except code) only updates the properties set.
+     */
+    @Test
+    public void updateLanguageWithNullProperties() {
+
+        Language language = new Language("esp", null, null);
+
+        // Mocking "languageDao"
+        Language languageGet = new Language("esp", "Español", "Spanish");
+        expect(languageDao.get(language.getCode())).andReturn(Optional.of(languageGet));
+
+        Capture<Language> captureLanguage = Capture.newInstance(CaptureType.FIRST);
+        languageDao.update(capture(captureLanguage));
+        replayAll();
+
+        // Execute test with mock
+        service.update(language);
+        verifyAll();
+
+        assertEquals("Español", captureLanguage.getValue().getLabel());
+        assertEquals("Spanish", captureLanguage.getValue().getEnglishLabel());
+    }
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                              Private methods                                                   */

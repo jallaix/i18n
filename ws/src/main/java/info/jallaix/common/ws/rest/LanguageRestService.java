@@ -70,8 +70,15 @@ public class LanguageRestService {
 
         validateLanguageToUpdate(language);
 
-        if (languageDao.get(language.getCode()).isPresent())
+        Optional<Language> languageOrigin = languageDao.get(language.getCode());
+        if (languageOrigin.isPresent()) {
+
+            if (language.getLabel() == null)
+                language.setLabel(languageOrigin.get().getLabel());
+            if (language.getEnglishLabel() == null)
+                language.setEnglishLabel(languageOrigin.get().getEnglishLabel());
             languageDao.update(language);
+        }
         else
             throw new LanguageNotFoundException(language.getCode());
     }
@@ -110,9 +117,9 @@ public class LanguageRestService {
             throw new LanguageInvalidArgumentException(language, "null code");
         else if ("".equals(language.getCode().trim()))
             throw new LanguageInvalidArgumentException(language, "empty code");
-        else if ("".equals(language.getLabel().trim()))
+        else if (language.getLabel() != null && "".equals(language.getLabel().trim()))
             throw new LanguageInvalidArgumentException(language, "empty label");
-        else if ("".equals(language.getEnglishLabel().trim()))
+        else if (language.getEnglishLabel() != null && "".equals(language.getEnglishLabel().trim()))
             throw new LanguageInvalidArgumentException(language, "empty english label");
     }
 }
