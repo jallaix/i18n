@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.easymock.EasyMock.*;
@@ -28,14 +30,11 @@ import static org.junit.Assert.*;
  *     <li>Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.</li>
  * </ul>
  * <br/>
- * The <b>Language</b> REST web service must verify the following tests related to language update :
+ * The <b>Language</b> REST web service must verify the following tests related to language search :
  * <ul>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is no language argument.</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty code.</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty label.</li>
- *     <li>Creating a language entry returns a 400 HTTP error (BAD REQUEST) code if there is a language argument with null or empty english label.</li>
- *     <li>Creating a language entry returns no error if the entry doesn't already exist and the language argument is valid.</li>
- *     <li>Creating a language entry returns a 409 HTTP error (CONFLICT) code if it already exists.</li>
+ *     <li>Getting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
+ *     <li>Getting a language entry returns this entry and an HTTP 200 status code (OK) if a language is found.</li>
+ *     <li>Getting all language entries returns these entries and an HTTP 200 status code (OK).</li>
  * </ul>
  */
 public class LanguageRestServiceTest extends EasyMockSupport {
@@ -115,6 +114,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
     /**
      * Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.
+     * @throws NoSuchMethodException
      */
     @Test
     public void createValidAndNewLanguage() throws NoSuchMethodException {
@@ -140,17 +140,103 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     @Test
     public void createDuplicateLanguage() {
 
+        // Mocking "languageDao"
         expect(languageDao.get("esp")).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
         replayAll();
 
+        // Execute test with mock
         try {
             service.create(new Language("esp", "Español", "Spanish"));
             fail("duplicate language didn't throw an exception");
         }
         catch (DuplicateLanguageException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.CONFLICT);
+            validateExceptionHttpStatusCode(e, HttpStatus.CONFLICT);    // Validate status code
         }
         verifyAll();
+    }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                     Tests related to language search                                           */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Getting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.
+     * @throws NoSuchMethodException
+     */
+    @Test
+    public void searchLanguageNotFound() throws NoSuchMethodException {
+
+        String languageCode = "esp";
+
+        // Mocking "languageDao"
+        expect(languageDao.get(languageCode)).andReturn(Optional.<Language>empty());
+        replayAll();
+
+        // Execute test with mock
+        try {
+            service.get(languageCode);
+            fail("empty search with key didn't throw an exception");
+        }
+        catch (NotFoundLanguageException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.NOT_FOUND);
+        }
+        verifyAll();
+    }
+
+    /**
+     * Getting a language entry returns an HTTP 200 status code (OK) if a language is found.
+     * @throws NoSuchMethodException
+     */
+    @Test
+    public void searchLanguageFound() throws NoSuchMethodException {
+
+        String languageCode = "esp";
+
+        // Mocking "languageDao"
+        expect(languageDao.get(languageCode)).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
+        replayAll();
+
+        // Execute test with mock
+        assertNotNull(service.get(languageCode));
+        verifyAll();
+
+        // Validate status code
+        validateReturnedStatusCode(service.getClass().getDeclaredMethod("get", String.class), HttpStatus.OK);
+    }
+
+    /**
+     * Getting all language entries returns an HTTP 200 status code (OK).
+     * @throws NoSuchMethodException
+     */
+    @Test
+    public void searchLanguages() throws NoSuchMethodException {
+
+        // Mocking "languageDao"
+        expect(languageDao.get()).andReturn(Collections.<Language>emptyList());
+        replayAll();
+
+        // Execute test with mock
+        assertArrayEquals(Collections.<Language>emptyList().toArray(), service.get().toArray());
+        verifyAll();
+
+        // Mocking "languageDao"
+        resetAll();
+        expect(languageDao.get()).andReturn(Arrays.asList(
+                new Language("esp", "Español", "Spanish"),
+                new Language("fra", "Français", "French")
+        ));
+        replayAll();
+
+        // Execute test with mock
+        assertArrayEquals(Arrays.asList(
+                new Language("esp", "Español", "Spanish"),
+                new Language("fra", "Français", "French")
+        ).toArray(), service.get().toArray());
+        verifyAll();
+
+        // Validate status code
+        validateReturnedStatusCode(service.getClass().getDeclaredMethod("get"), HttpStatus.OK);
     }
 
 

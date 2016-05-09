@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class DuplicateLanguageException extends RuntimeException {
 
     public DuplicateLanguageException(String languageCode) {
-        super(" language code = " + languageCode);
+        super("language code = " + languageCode);
     }
 }
