@@ -20,21 +20,31 @@ import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
 /**
- * The <b>Language</b> REST web service must verify the following tests related to language creation :
+ * The <b>Language REST web service</b> must verify the following tests related to <b>language creation</b> :
  * <ul>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.</li>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty label.</li>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty english label.</li>
- *     <li>Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.</li>
  *     <li>Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.</li>
+ *     <li>Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.</li>
  * </ul>
  * <br/>
- * The <b>Language</b> REST web service must verify the following tests related to language search :
+ * The <b>Language REST web service</b> must verify the following tests related to <b>language search</b> :
  * <ul>
  *     <li>Getting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
  *     <li>Getting a language entry returns this entry and an HTTP 200 status code (OK) if a language is found.</li>
  *     <li>Getting all language entries returns these entries and an HTTP 200 status code (OK).</li>
+ * </ul>
+ * <br/>
+ * The <b>Language REST web service</b> must verify the following tests related to <b>language update</b> :
+ * <ul>
+ *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
+ *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument empty code.</li>
+ *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label.</li>
+ *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label.</li>
+ *     <li>Updating a language entry returns an HTTP 404 status code (NOT FOUND) if there is no existing language to update.</li>
+ *     <li>Updating a language entry returns an HTTP 204 status code (NO CONTENT) if the entry already exists and the language argument is valid.</li>
  * </ul>
  */
 public class LanguageRestServiceTest extends EasyMockSupport {
@@ -113,6 +123,27 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     }
 
     /**
+     * Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
+     */
+    @Test
+    public void createDuplicateLanguage() {
+
+        // Mocking "languageDao"
+        expect(languageDao.get("esp")).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
+        replayAll();
+
+        // Execute test with mock
+        try {
+            service.create(new Language("esp", "Español", "Spanish"));
+            fail("duplicate language didn't throw an exception");
+        }
+        catch (DuplicateLanguageException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.CONFLICT);    // Validate status code
+        }
+        verifyAll();
+    }
+
+    /**
      * Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.
      * @throws NoSuchMethodException
      */
@@ -132,27 +163,6 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
         // Validate status code
         validateReturnedStatusCode(service.getClass().getDeclaredMethod("create", Language.class), HttpStatus.CREATED);
-    }
-
-    /**
-     * Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
-     */
-    @Test
-    public void createDuplicateLanguage() {
-
-        // Mocking "languageDao"
-        expect(languageDao.get("esp")).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
-        replayAll();
-
-        // Execute test with mock
-        try {
-            service.create(new Language("esp", "Español", "Spanish"));
-            fail("duplicate language didn't throw an exception");
-        }
-        catch (DuplicateLanguageException e) {
-            validateExceptionHttpStatusCode(e, HttpStatus.CONFLICT);    // Validate status code
-        }
-        verifyAll();
     }
 
 
@@ -178,7 +188,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
             service.get(languageCode);
             fail("empty search with key didn't throw an exception");
         }
-        catch (NotFoundLanguageException e) {
+        catch (LanguageNotFoundException e) {
             validateExceptionHttpStatusCode(e, HttpStatus.NOT_FOUND);
         }
         verifyAll();
@@ -241,6 +251,106 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                     Tests related to language update                                           */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.
+     */
+    @Test
+    public void updateLanguageNull() {
+
+        validateLanguageToUpdate(null, "null language didn't throw an exception");
+    }
+
+    /**
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument empty code.
+     */
+    @Test
+    public void updateLanguageWithEmptyCode() {
+
+        validateLanguageToUpdate(
+                new Language("", "Español", "Spanish"),
+                "empty language code didn't throw an exception");   // Empty code
+        validateLanguageToUpdate(
+                new Language("  ", "Español", "Spanish"),
+                "language code with spaces didn't throw an exception"); // Code that contains spaces
+    }
+
+    /**
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label.
+     */
+    @Test
+    public void updateLanguageWithEmptyLabel() {
+
+        validateLanguageToUpdate(
+                new Language("esp", "", "Spanish"),
+                "empty language code didn't throw an exception");   // Empty label
+        validateLanguageToUpdate(
+                new Language("esp", "  ", "Spanish"),
+                "language code with spaces didn't throw an exception"); // Label that contains spaces
+    }
+
+    /**
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label.
+     */
+    @Test
+    public void updateLanguageWithEmptyEnglishLabel() {
+
+        validateLanguageToUpdate(
+                new Language("esp", "Español", ""),
+                "empty language code didn't throw an exception");   // Empty english label
+        validateLanguageToUpdate(
+                new Language("esp", "Español", "  "),
+                "language code with spaces didn't throw an exception"); // English label that contains spaces
+    }
+
+    /**
+     * Updating a language entry returns an HTTP 404 status code (NOT FOUND) if there is no existing language to update.
+     */
+    @Test
+    public void updateLanguageNotFound() {
+
+        Language language = new Language("esp", "Español", "Spanish");
+
+        // Mocking "languageDao"
+        expect(languageDao.get(language.getCode())).andReturn(Optional.<Language>empty());
+        replayAll();
+
+        // Execute test with mock
+        try {
+            service.update(language);
+            fail("update on non existing language didn't throw an exception");
+        }
+        catch (LanguageNotFoundException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.NOT_FOUND);
+        }
+        verifyAll();
+    }
+
+    /**
+     * Updating a language entry returns an HTTP 204 status code (NO CONTENT) if the entry already exists and the language argument is valid.
+     */
+    @Test
+    public void updateLanguageFound() throws NoSuchMethodException {
+
+        Language language = new Language("esp", "Español", "Spanish");
+
+        // Mocking "languageDao"
+        expect(languageDao.get(language.getCode())).andReturn(Optional.of(new Language("esp", "Espanol", "Spanich")));
+        languageDao.update(language);
+        replayAll();
+
+        // Execute test with mock
+        service.update(language);
+        verifyAll();
+
+        // Validate status code
+        validateReturnedStatusCode(service.getClass().getDeclaredMethod("update", Language.class), HttpStatus.OK);
+    }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
     /*                                              Private methods                                                   */
     /*----------------------------------------------------------------------------------------------------------------*/
 
@@ -253,6 +363,21 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
         try {
             service.create(language);
+            fail(failMessage);
+        } catch (LanguageInvalidArgumentException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Validate language properties for update
+     * @param language The language to test
+     * @param failMessage Message in case of failure
+     */
+    private void validateLanguageToUpdate(Language language, String failMessage) {
+
+        try {
+            service.update(language);
             fail(failMessage);
         } catch (LanguageInvalidArgumentException e) {
             validateExceptionHttpStatusCode(e, HttpStatus.BAD_REQUEST);

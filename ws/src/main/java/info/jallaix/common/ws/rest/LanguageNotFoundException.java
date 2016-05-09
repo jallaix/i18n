@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * Created by Julien on 09/05/2016.
  */
 @ResponseStatus(HttpStatus.NOT_FOUND)
-public class NotFoundLanguageException extends RuntimeException {
+public class LanguageNotFoundException extends RuntimeException {
 
-    public NotFoundLanguageException(String languageCode) {
+    public LanguageNotFoundException(String languageCode) {
         super("code not found = " + languageCode);
     }
 }

@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Optional;
 
 /**
@@ -47,7 +46,7 @@ public class LanguageRestService {
         if (language.isPresent())
             return language.get();
         else
-            throw new NotFoundLanguageException(code);
+            throw new LanguageNotFoundException(code);
     }
 
     /**
@@ -59,6 +58,22 @@ public class LanguageRestService {
     public Collection<Language> get() {
 
         return languageDao.get();
+    }
+
+    /**
+     * Update an existing language
+     * @param language The language to update
+     */
+    @RequestMapping(method = RequestMethod.PUT)
+    @ResponseStatus(HttpStatus.OK)
+    public void update(Language language) {
+
+        validateLanguageToUpdate(language);
+
+        if (languageDao.get(language.getCode()).isPresent())
+            languageDao.update(language);
+        else
+            throw new LanguageNotFoundException(language.getCode());
     }
 
     /**
@@ -83,4 +98,21 @@ public class LanguageRestService {
             throw new LanguageInvalidArgumentException(language, "empty english label");
     }
 
+    /**
+     * Validation tests for a language bean to update
+     * @param language The language bean to upate
+     */
+    private void validateLanguageToUpdate(Language language) {
+
+        if (language == null)
+            throw new LanguageInvalidArgumentException(null, "null language");
+        else if (language.getCode() == null)
+            throw new LanguageInvalidArgumentException(language, "null code");
+        else if ("".equals(language.getCode().trim()))
+            throw new LanguageInvalidArgumentException(language, "empty code");
+        else if ("".equals(language.getLabel().trim()))
+            throw new LanguageInvalidArgumentException(language, "empty label");
+        else if ("".equals(language.getEnglishLabel().trim()))
+            throw new LanguageInvalidArgumentException(language, "empty english label");
+    }
 }
