@@ -1,7 +1,7 @@
-package info.jallaix.common.ws.rest;
+package info.jallaix.common.language.service;
 
-import info.jallaix.common.dao.LanguageDao;
-import info.jallaix.common.dto.Language;
+import info.jallaix.common.language.dao.LanguageDao;
+import info.jallaix.common.language.dto.Language;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +25,13 @@ public class LanguageRestService {
     @ResponseStatus(HttpStatus.CREATED)
 	public void create(Language language) {
 
-        validateLanguageToCreate(language);
+        language = trimLanguageValues(language);                        // Trim strings
+        validateLanguageToCreate(language);                             // Validate mandatory properties
 
-        if (!languageDao.get(language.getCode()).isPresent())
-            languageDao.create(language);
+        if (!languageDao.exist(language.getCode()))
+            languageDao.create(language);                               // Create language if it doesn't exist
         else
-            throw new DuplicateLanguageException(language.getCode());
+            throw new DuplicateLanguageException(language.getCode());   // Else throw an exception
 	}
 
     /**
@@ -42,11 +43,13 @@ public class LanguageRestService {
     @ResponseStatus(HttpStatus.OK)
     public Language get(@RequestParam("code") String code) {
 
+        code = code.trim();                                             // Trim string
+
         Optional<Language> language = languageDao.get(code);
         if (language.isPresent())
-            return language.get();
+            return language.get();                                      // Return language if found
         else
-            throw new LanguageNotFoundException(code);
+            throw new LanguageNotFoundException(code);                  // Else throw an exception
     }
 
     /**
@@ -57,7 +60,7 @@ public class LanguageRestService {
     @ResponseStatus(HttpStatus.OK)
     public Collection<Language> get() {
 
-        return languageDao.get();
+        return languageDao.get();                                       // Get all languages
     }
 
     /**
@@ -68,26 +71,37 @@ public class LanguageRestService {
     @ResponseStatus(HttpStatus.OK)
     public void update(Language language) {
 
-        validateLanguageToUpdate(language);
+        language = trimLanguageValues(language);                        // Trim strings
+        validateLanguageToUpdate(language);                             // Validate mandatory properties
 
-        Optional<Language> languageOrigin = languageDao.get(language.getCode());
-        if (languageOrigin.isPresent()) {
-
-            if (language.getLabel() == null)
-                language.setLabel(languageOrigin.get().getLabel());
-            if (language.getEnglishLabel() == null)
-                language.setEnglishLabel(languageOrigin.get().getEnglishLabel());
-            languageDao.update(language);
-        }
+        if (languageDao.exist(language.getCode()))
+            languageDao.update(language);                               // Update language if it exists
         else
-            throw new LanguageNotFoundException(language.getCode());
+            throw new LanguageNotFoundException(language.getCode());    // Else throw an exception
     }
+
+    /**
+     * Delete an existing language
+     * @param code The code of the language to delete
+     */
+    @RequestMapping(method = RequestMethod.PUT)
+    @ResponseStatus(HttpStatus.OK)
+    public void delete(@RequestParam("code") String code) {
+
+        code = code.trim();                                             // Trim string
+
+        if (languageDao.exist(code))
+            languageDao.delete(code);                                   // Delete language if it exists
+        else
+            throw new LanguageNotFoundException(code);                  // Else throw an exception
+    }
+
 
     /**
      * Validation tests for a language bean to create
      * @param language The language bean to test
      */
-    private void validateLanguageToCreate(Language language) {
+    private static void validateLanguageToCreate(Language language) {
 
         if (language == null)
             throw new LanguageInvalidArgumentException(null, "null language");
@@ -109,7 +123,7 @@ public class LanguageRestService {
      * Validation tests for a language bean to update
      * @param language The language bean to upate
      */
-    private void validateLanguageToUpdate(Language language) {
+    private static void validateLanguageToUpdate(Language language) {
 
         if (language == null)
             throw new LanguageInvalidArgumentException(null, "null language");
@@ -121,5 +135,20 @@ public class LanguageRestService {
             throw new LanguageInvalidArgumentException(language, "empty label");
         else if (language.getEnglishLabel() != null && "".equals(language.getEnglishLabel().trim()))
             throw new LanguageInvalidArgumentException(language, "empty english label");
+    }
+
+    /**
+     * Trim all property strings on a language
+     * @param language The language on which strings must be trimmed
+     * @return The updated language
+     */
+    private static Language trimLanguageValues(Language language) {
+
+        if (language == null) return null;
+        if (language.getCode() != null) language.setCode(language.getCode().trim());
+        if (language.getLabel() != null) language.setLabel(language.getLabel().trim());
+        if (language.getEnglishLabel() != null) language.setEnglishLabel(language.getEnglishLabel().trim());
+
+        return language;
     }
 }

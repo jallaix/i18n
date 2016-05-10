@@ -1,4 +1,4 @@
-package info.jallaix.common.ws.rest;
+package info.jallaix.common.language.service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

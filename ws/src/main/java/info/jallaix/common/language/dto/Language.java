@@ -1,4 +1,4 @@
-package info.jallaix.common.dto;
+package info.jallaix.common.language.dto;
 
 /**
  * This bean contains data related to a language.

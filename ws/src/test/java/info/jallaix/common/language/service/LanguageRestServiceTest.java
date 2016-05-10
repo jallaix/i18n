@@ -1,7 +1,7 @@
-package info.jallaix.common.ws.rest;
+package info.jallaix.common.language.service;
 
-import info.jallaix.common.dao.LanguageDao;
-import info.jallaix.common.dto.Language;
+import info.jallaix.common.language.dao.LanguageDao;
+import info.jallaix.common.language.dto.Language;
 import org.easymock.*;
 import org.junit.Rule;
 import org.junit.Test;
@@ -17,32 +17,50 @@ import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
 /**
- * The <b>Language REST web service</b> must verify the following tests related to <b>language creation</b> :
+ * The Language REST web service must verify the following tests related to <b>language creation</b> :
  * <ul>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.</li>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty label.</li>
  *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty english label.</li>
- *     <li>Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.</li>
- *     <li>Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.</li>
+ *     <li>
+ *         Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
+ *         The code value must be trimmed when tested for existence.
+ *     </li>
+ *     <li>
+ *         Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.
+ *         The code value must be trimmed when tested for existence. All property values must be trimmed when created.
+ *     </li>
  * </ul>
  * <br/>
- * The <b>Language REST web service</b> must verify the following tests related to <b>language search</b> :
+ * The Language REST web service must verify the following tests related to <b>language search</b> :
  * <ul>
  *     <li>Getting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
  *     <li>Getting a language entry returns this entry and an HTTP 200 status code (OK) if a language is found.</li>
  *     <li>Getting all language entries returns these entries and an HTTP 200 status code (OK).</li>
  * </ul>
  * <br/>
- * The <b>Language REST web service</b> must verify the following tests related to <b>language update</b> :
+ * The Language REST web service must verify the following tests related to <b>language update</b> :
  * <ul>
  *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
  *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.</li>
- *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label.</li>
- *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label.</li>
- *     <li>Updating a language entry returns an HTTP 404 status code (NOT FOUND) if there is no existing language to update.</li>
- *     <li>Updating a language entry returns an HTTP 204 status code (NO CONTENT) if the entry already exists and the language argument is valid.</li>
+ *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label (null is accepted).</li>
+ *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label (null is accepted).</li>
+ *     <li>
+ *         Updating a language entry returns an HTTP 404 status code (NOT FOUND) if there is no existing language to update.
+ *         The code value must be trimmed when tested for existence.
+ *     </li>
+ *     <li>
+ *         Updating a language entry returns an HTTP 204 status code (NO CONTENT) if the entry already exists and the language argument is valid.
+ *         The code value must be trimmed when tested for existence. All property values must be trimmed when updated.
+ *     </li>
  *     <li>Updating a language entry with null properties (except code) only updates the properties set.</li>
+ * </ul>
+ * <br/>
+ * The Language REST web service must verify the following tests related to <b>language deletion</b> :
+ * <ul>
+ *     <li>Deleting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
+ *     <li>Deleting a language entry returns an HTTP 200 status code (OK) if a language is found.</li>
  * </ul>
  */
 public class LanguageRestServiceTest extends EasyMockSupport {
@@ -122,17 +140,18 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
     /**
      * Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
+     * The code value must be trimmed when tested for existence.
      */
     @Test
     public void createDuplicateLanguage() {
 
         // Mocking "languageDao"
-        expect(languageDao.get("esp")).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
+        expect(languageDao.exist("esp")).andReturn(true);
         replayAll();
 
         // Execute test with mock
         try {
-            service.create(new Language("esp", "Español", "Spanish"));
+            service.create(new Language(" esp ", "Español", "Spanish"));
             fail("duplicate language didn't throw an exception");
         }
         catch (DuplicateLanguageException e) {
@@ -143,20 +162,19 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
     /**
      * Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.
+     * The code value must be trimmed when tested for existence. All property values must be trimmed when created.
      * @throws NoSuchMethodException
      */
     @Test
     public void createValidAndNewLanguage() throws NoSuchMethodException {
 
-        Language language = new Language("esp", "Español", "Spanish");
-
         // Mocking "languageDao"
-        expect(languageDao.get("esp")).andReturn(Optional.<Language>empty());
-        languageDao.create(language);
+        expect(languageDao.exist("esp")).andReturn(false);
+        languageDao.create(new Language("esp", "Español", "Spanish"));
         replayAll();
 
         // Execute test with mock
-        service.create(language);
+        service.create(new Language(" esp ", " Español ", " Spanish "));
         verifyAll();
 
         // Validate status code
@@ -175,15 +193,13 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     @Test
     public void searchLanguageNotFound() throws NoSuchMethodException {
 
-        String languageCode = "esp";
-
         // Mocking "languageDao"
-        expect(languageDao.get(languageCode)).andReturn(Optional.<Language>empty());
+        expect(languageDao.get("esp")).andReturn(Optional.<Language>empty());
         replayAll();
 
         // Execute test with mock
         try {
-            service.get(languageCode);
+            service.get(" esp ");
             fail("empty search with key didn't throw an exception");
         }
         catch (LanguageNotFoundException e) {
@@ -199,14 +215,12 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     @Test
     public void searchLanguageFound() throws NoSuchMethodException {
 
-        String languageCode = "esp";
-
         // Mocking "languageDao"
-        expect(languageDao.get(languageCode)).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
+        expect(languageDao.get("esp")).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
         replayAll();
 
         // Execute test with mock
-        assertNotNull(service.get(languageCode));
+        assertNotNull(service.get(" esp "));
         verifyAll();
 
         // Validate status code
@@ -276,7 +290,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     }
 
     /**
-     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label.
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label (null is accepted).
      */
     @Test
     public void updateLanguageWithEmptyLabel() {
@@ -290,7 +304,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     }
 
     /**
-     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label.
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label (null is accepted).
      */
     @Test
     public void updateLanguageWithEmptyEnglishLabel() {
@@ -305,19 +319,18 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
     /**
      * Updating a language entry returns an HTTP 404 status code (NOT FOUND) if there is no existing language to update.
+     * The code value must be trimmed when tested for existence.
      */
     @Test
     public void updateLanguageNotFound() {
 
-        Language language = new Language("esp", "Español", "Spanish");
-
         // Mocking "languageDao"
-        expect(languageDao.get(language.getCode())).andReturn(Optional.<Language>empty());
+        expect(languageDao.exist("esp")).andReturn(false);
         replayAll();
 
         // Execute test with mock
         try {
-            service.update(language);
+            service.update(new Language(" esp ", "Español", "Spanish"));
             fail("update on non existing language didn't throw an exception");
         }
         catch (LanguageNotFoundException e) {
@@ -328,48 +341,72 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
     /**
      * Updating a language entry returns an HTTP 204 status code (NO CONTENT) if the entry already exists and the language argument is valid.
+     * The code value must be trimmed when tested for existence. All property values must be trimmed when updated.
+     * @throws NoSuchMethodException
      */
     @Test
     public void updateLanguageFound() throws NoSuchMethodException {
 
-        Language language = new Language("esp", "Español", "Spanish");
-
         // Mocking "languageDao"
-        expect(languageDao.get(language.getCode())).andReturn(Optional.of(new Language("esp", "Espanol", "Spanich")));
-        languageDao.update(language);
+        expect(languageDao.exist("esp")).andReturn(true);
+
+        languageDao.update(new Language("esp", "Español", "Spanish"));
         replayAll();
 
         // Execute test with mock
-        service.update(language);
+        service.update(new Language(" esp ", " Español ", " Spanish "));
         verifyAll();
 
         // Validate status code
         validateReturnedStatusCode(service.getClass().getDeclaredMethod("update", Language.class), HttpStatus.OK);
     }
 
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                    Tests related to language deletion                                          */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
     /**
-     * Updating a language entry with null properties (except code) only updates the properties set.
+     * Deleting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.
      */
     @Test
-    public void updateLanguageWithNullProperties() {
-
-        Language language = new Language("esp", null, null);
+    public void deleteLanguageNotFound() {
 
         // Mocking "languageDao"
-        Language languageGet = new Language("esp", "Español", "Spanish");
-        expect(languageDao.get(language.getCode())).andReturn(Optional.of(languageGet));
-
-        Capture<Language> captureLanguage = Capture.newInstance(CaptureType.FIRST);
-        languageDao.update(capture(captureLanguage));
+        expect(languageDao.exist("esp")).andReturn(false);
         replayAll();
 
         // Execute test with mock
-        service.update(language);
+        try {
+            service.delete(" esp ");
+            fail("delete on non existing language didn't throw an exception");
+        }
+        catch (LanguageNotFoundException e) {
+            validateExceptionHttpStatusCode(e, HttpStatus.NOT_FOUND);
+        }
+        verifyAll();
+    }
+
+    /**
+     * Deleting a language entry returns an HTTP 200 status code (OK) if a language is found.
+     * @throws NoSuchMethodException
+     */
+    @Test
+    public void deleteLanguageFound() throws NoSuchMethodException {
+
+        // Mocking "languageDao"
+        expect(languageDao.exist("esp")).andReturn(true);
+        languageDao.delete("esp");
+        replayAll();
+
+        // Execute test with mock
+        service.delete(" esp ");
         verifyAll();
 
-        assertEquals("Español", captureLanguage.getValue().getLabel());
-        assertEquals("Spanish", captureLanguage.getValue().getEnglishLabel());
+        // Validate status code
+        validateReturnedStatusCode(service.getClass().getDeclaredMethod("delete", String.class), HttpStatus.OK);
     }
+
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                              Private methods                                                   */
