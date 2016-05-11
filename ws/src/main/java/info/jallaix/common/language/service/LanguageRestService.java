@@ -39,9 +39,9 @@ public class LanguageRestService {
      * @param code The code of the language to get
      * @return The language found
      */
-    @RequestMapping(method = RequestMethod.GET)
+    @RequestMapping(value = "/{code}", method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
-    public Language get(@RequestParam("code") String code) {
+    public Language get(@PathVariable("code") String code) {
 
         code = code.trim();                                             // Trim string
 
@@ -84,9 +84,9 @@ public class LanguageRestService {
      * Delete an existing language
      * @param code The code of the language to delete
      */
-    @RequestMapping(method = RequestMethod.PUT)
+    @RequestMapping(value = "{code}", method = RequestMethod.PUT)
     @ResponseStatus(HttpStatus.OK)
-    public void delete(@RequestParam("code") String code) {
+    public void delete(@PathVariable("code") String code) {
 
         code = code.trim();                                             // Trim string
 

@@ -19,10 +19,15 @@ import static org.junit.Assert.*;
 /**
  * The Language REST web service must verify the following tests related to <b>language creation</b> :
  * <ul>
- *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
- *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.</li>
- *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty label.</li>
- *     <li>Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty english label.</li>
+ *     <li>
+ *         Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is an invalid argument:
+ *         <ol>
+ *             <li>no language</li>
+ *             <li>language with null or empty code</li>
+ *             <li>language with null or empty label</li>
+ *             <li>language with null or empty english label</li>
+ *         </ol>
+ *     </li>
  *     <li>
  *         Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
  *         The code value must be trimmed when tested for existence.
@@ -42,10 +47,15 @@ import static org.junit.Assert.*;
  * <br/>
  * The Language REST web service must verify the following tests related to <b>language update</b> :
  * <ul>
- *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.</li>
- *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.</li>
- *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label (null is accepted).</li>
- *     <li>Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label (null is accepted).</li>
+ *     <li>
+ *         Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is an invalid argument:
+ *         <ol>
+ *             <li>no language</li>
+ *             <li>language with null or empty code</li>
+ *             <li>language with empty label (null is accepted)</li>
+ *             <li>language with empty english label (null is accepted)</li>
+ *         </ol>
+ *     </li>
  *     <li>
  *         Updating a language entry returns an HTTP 404 status code (NOT FOUND) if there is no existing language to update.
  *         The code value must be trimmed when tested for existence.
@@ -78,61 +88,45 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is not language argument.
+     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is an invalid argument:
+     * <ol>
+     *     <li>no language</li>
+     *     <li>language with null or empty code</li>
+     *     <li>language with null or empty label</li>
+     *     <li>language with null or empty english label</li>
+     * </ol>
      */
     @Test
-    public void createLanguageNull() {
+    public void createInvalidLanguage() {
 
-        validateLanguageToCreate(null, "null language didn't throw an exception");
-    }
-
-    /**
-     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.
-     */
-    @Test
-    public void createLanguageWithEmptyCode() {
+        validateLanguageToCreate(null, "null language didn't throw an exception");  // Null language
 
         validateLanguageToCreate(
                 new Language(null, "Español", "Spanish"),
-                "null language code didn't throw an exception");    // Null code
+                "null language code didn't throw an exception");                    // Null code
         validateLanguageToCreate(
                 new Language("", "Español", "Spanish"),
-                "empty language code didn't throw an exception");   // Empty code
+                "empty language code didn't throw an exception");                   // Empty code
         validateLanguageToCreate(
                 new Language("  ", "Español", "Spanish"),
-                "language code with spaces didn't throw an exception"); // Code that contains spaces
-    }
-
-    /**
-     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty label.
-     */
-    @Test
-    public void createLanguageWithEmptyLabel() {
+                "language code with spaces didn't throw an exception");             // Code that contains spaces
 
         validateLanguageToCreate(
                 new Language("esp", null, "Spanish"),
-                "null language label didn't throw an exception");   // Null label
+                "null language label didn't throw an exception");                   // Null label
         validateLanguageToCreate(
                 new Language("esp", "", "Spanish"),
-                "empty language label didn't throw an exception");  // Empty label
+                "empty language label didn't throw an exception");                  // Empty label
         validateLanguageToCreate(
                 new Language("esp", "  ", "Spanish"),
-                "language label with spaces didn't throw an exception");    // Label that contains spaces
-    }
-
-
-    /**
-     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty english label.
-     */
-    @Test
-    public void createLanguageWithEmptyEnglishLabel() {
+                "language label with spaces didn't throw an exception");            // Label that contains spaces
 
         validateLanguageToCreate(
                 new Language("esp", "Español", null),
-                "null english language label didn't throw an exception");   // Null english label
+                "null english language label didn't throw an exception");           // Null english label
         validateLanguageToCreate(
                 new Language("esp", "Español", ""),
-                "empty english language label didn't throw an exception");  // Empty english label
+                "empty english language label didn't throw an exception");          // Empty english label
         validateLanguageToCreate(
                 new Language("esp", "Español", "  "),
                 "english language label with spaces didn't throw an exception");    // English language that contains spaces
@@ -267,19 +261,18 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is no language argument.
+     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is an invalid argument:
+     * <ol>
+     *     <li>no language</li>
+     *     <li>language with null or empty code</li>
+     *     <li>language with empty label (null is accepted)</li>
+     *     <li>language with empty english label (null is accepted)</li>
+     * </ol>
      */
     @Test
-    public void updateLanguageNull() {
+    public void updateInvalidLanguage() {
 
         validateLanguageToUpdate(null, "null language didn't throw an exception");
-    }
-
-    /**
-     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with null or empty code.
-     */
-    @Test
-    public void updateLanguageWithEmptyCode() {
 
         validateLanguageToUpdate(
                 new Language("", "Español", "Spanish"),
@@ -287,13 +280,6 @@ public class LanguageRestServiceTest extends EasyMockSupport {
         validateLanguageToUpdate(
                 new Language("  ", "Español", "Spanish"),
                 "language code with spaces didn't throw an exception"); // Code that contains spaces
-    }
-
-    /**
-     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty label (null is accepted).
-     */
-    @Test
-    public void updateLanguageWithEmptyLabel() {
 
         validateLanguageToUpdate(
                 new Language("esp", "", "Spanish"),
@@ -301,13 +287,6 @@ public class LanguageRestServiceTest extends EasyMockSupport {
         validateLanguageToUpdate(
                 new Language("esp", "  ", "Spanish"),
                 "language code with spaces didn't throw an exception"); // Label that contains spaces
-    }
-
-    /**
-     * Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is a language argument with empty english label (null is accepted).
-     */
-    @Test
-    public void updateLanguageWithEmptyEnglishLabel() {
 
         validateLanguageToUpdate(
                 new Language("esp", "Español", ""),
