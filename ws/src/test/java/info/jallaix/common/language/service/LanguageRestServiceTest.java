@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Optional;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
@@ -140,7 +139,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void createDuplicateLanguage() {
 
         // Mocking "languageDao"
-        expect(languageDao.exist("esp")).andReturn(true);
+        expect(languageDao.exists("esp")).andReturn(true);
         replayAll();
 
         // Execute test with mock
@@ -163,8 +162,8 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void createValidAndNewLanguage() throws NoSuchMethodException {
 
         // Mocking "languageDao"
-        expect(languageDao.exist("esp")).andReturn(false);
-        languageDao.create(new Language("esp", "Español", "Spanish"));
+        expect(languageDao.exists("esp")).andReturn(false);
+        expect(languageDao.index(new Language("esp", "Español", "Spanish"))).andReturn(new Language("esp", "Español", "Spanish"));
         replayAll();
 
         // Execute test with mock
@@ -188,7 +187,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void searchLanguageNotFound() throws NoSuchMethodException {
 
         // Mocking "languageDao"
-        expect(languageDao.get("esp")).andReturn(Optional.<Language>empty());
+        expect(languageDao.findOne("esp")).andReturn(null);
         replayAll();
 
         // Execute test with mock
@@ -210,7 +209,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void searchLanguageFound() throws NoSuchMethodException {
 
         // Mocking "languageDao"
-        expect(languageDao.get("esp")).andReturn(Optional.of(new Language("esp", "Español", "Spanish")));
+        expect(languageDao.findOne("esp")).andReturn(new Language("esp", "Español", "Spanish"));
         replayAll();
 
         // Execute test with mock
@@ -229,7 +228,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void searchLanguages() throws NoSuchMethodException {
 
         // Mocking "languageDao"
-        expect(languageDao.get()).andReturn(Collections.<Language>emptyList());
+        expect(languageDao.findAll()).andReturn(Collections.<Language>emptyList());
         replayAll();
 
         // Execute test with mock
@@ -238,7 +237,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
 
         // Mocking "languageDao"
         resetAll();
-        expect(languageDao.get()).andReturn(Arrays.asList(
+        expect(languageDao.findAll()).andReturn(Arrays.<Language>asList(
                 new Language("esp", "Español", "Spanish"),
                 new Language("fra", "Français", "French")
         ));
@@ -304,7 +303,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void updateLanguageNotFound() {
 
         // Mocking "languageDao"
-        expect(languageDao.exist("esp")).andReturn(false);
+        expect(languageDao.exists("esp")).andReturn(false);
         replayAll();
 
         // Execute test with mock
@@ -327,9 +326,8 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void updateLanguageFound() throws NoSuchMethodException {
 
         // Mocking "languageDao"
-        expect(languageDao.exist("esp")).andReturn(true);
-
-        languageDao.update(new Language("esp", "Español", "Spanish"));
+        expect(languageDao.exists("esp")).andReturn(true);
+        expect(languageDao.save(new Language("esp", "Español", "Spanish"))).andReturn(new Language("esp", "Español", "Spanish"));
         replayAll();
 
         // Execute test with mock
@@ -352,7 +350,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void deleteLanguageNotFound() {
 
         // Mocking "languageDao"
-        expect(languageDao.exist("esp")).andReturn(false);
+        expect(languageDao.exists("esp")).andReturn(false);
         replayAll();
 
         // Execute test with mock
@@ -374,7 +372,7 @@ public class LanguageRestServiceTest extends EasyMockSupport {
     public void deleteLanguageFound() throws NoSuchMethodException {
 
         // Mocking "languageDao"
-        expect(languageDao.exist("esp")).andReturn(true);
+        expect(languageDao.exists("esp")).andReturn(true);
         languageDao.delete("esp");
         replayAll();
 

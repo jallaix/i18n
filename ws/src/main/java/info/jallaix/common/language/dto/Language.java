@@ -1,10 +1,15 @@
 package info.jallaix.common.language.dto;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+
 /**
  * This bean contains data related to a language.
  */
+@Document(indexName = "message", type = "language", shards = 1, replicas = 0)
 public class Language {
 
+    @Id
     private String code;            // Language code
     private String label;           // Language Label
     private String englishLabel;    // Language english label

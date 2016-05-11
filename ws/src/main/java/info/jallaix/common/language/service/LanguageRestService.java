@@ -2,11 +2,12 @@ package info.jallaix.common.language.service;
 
 import info.jallaix.common.language.dao.LanguageDao;
 import info.jallaix.common.language.dto.Language;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Implementation of the <b>Language</b> REST web service.<br/>
@@ -15,6 +16,7 @@ import java.util.Optional;
 @RestController("/language")
 public class LanguageRestService {
 
+    @Autowired
     private LanguageDao languageDao;
 
     /**
@@ -28,8 +30,8 @@ public class LanguageRestService {
         language = trimLanguageValues(language);                        // Trim strings
         validateLanguageToCreate(language);                             // Validate mandatory properties
 
-        if (!languageDao.exist(language.getCode()))
-            languageDao.create(language);                               // Create language if it doesn't exist
+        if (!languageDao.exists(language.getCode()))
+            languageDao.index(language);                               // Create language if it doesn't exist
         else
             throw new DuplicateLanguageException(language.getCode());   // Else throw an exception
 	}
@@ -45,9 +47,9 @@ public class LanguageRestService {
 
         code = code.trim();                                             // Trim string
 
-        Optional<Language> language = languageDao.get(code);
-        if (language.isPresent())
-            return language.get();                                      // Return language if found
+        Language language = languageDao.findOne(code);
+        if (language != null)
+            return language;                                            // Return language if found
         else
             throw new LanguageNotFoundException(code);                  // Else throw an exception
     }
@@ -58,9 +60,12 @@ public class LanguageRestService {
      */
     @RequestMapping(method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
-    public Collection<Language> get() {
+    public List<Language> get() {
 
-        return languageDao.get();                                       // Get all languages
+        final List<Language> languages = new ArrayList<>();
+        languageDao.findAll().forEach(languages::add);                  // Convert iterable to list
+
+        return languages;                                               // Get all languages
     }
 
     /**
@@ -74,8 +79,8 @@ public class LanguageRestService {
         language = trimLanguageValues(language);                        // Trim strings
         validateLanguageToUpdate(language);                             // Validate mandatory properties
 
-        if (languageDao.exist(language.getCode()))
-            languageDao.update(language);                               // Update language if it exists
+        if (languageDao.exists(language.getCode()))
+            languageDao.save(language);                               // Update language if it exists
         else
             throw new LanguageNotFoundException(language.getCode());    // Else throw an exception
     }
@@ -90,7 +95,7 @@ public class LanguageRestService {
 
         code = code.trim();                                             // Trim string
 
-        if (languageDao.exist(code))
+        if (languageDao.exists(code))
             languageDao.delete(code);                                   // Delete language if it exists
         else
             throw new LanguageNotFoundException(code);                  // Else throw an exception
