@@ -16,6 +16,11 @@ public class Language {
 
 
     /**
+     * Empty constructor
+     */
+    public Language() {}
+
+    /**
      * Constructor with property initialization
      * @param code The code to set
      * @param label The label to set

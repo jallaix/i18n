@@ -1,4 +1,4 @@
-package info.jallaix.common.language;
+package info.jallaix.common.conf;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
