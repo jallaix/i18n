@@ -1,5 +1,7 @@
 package info.jallaix.common.language.dto;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 
@@ -119,5 +121,14 @@ public class Language {
         result = 31 * result + (label != null ? label.hashCode() : 0);
         result = 31 * result + (englishLabel != null ? englishLabel.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return "An error occured when calling toString : " + e.getMessage();
+        }
     }
 }
