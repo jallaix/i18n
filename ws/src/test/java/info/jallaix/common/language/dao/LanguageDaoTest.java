@@ -5,6 +5,7 @@ import info.jallaix.common.language.dto.Language;
 import org.elasticsearch.client.Client;
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
@@ -24,17 +25,47 @@ import static com.github.tlrx.elasticsearch.test.EsSetup.*;
 @ContextConfiguration(classes = LanguageDaoTestConfiguration.class)
 public class LanguageDaoTest {
 
+    /**
+     * Spring class rule
+     */
     @ClassRule
     public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
-    public static final String INDEX = "message";
-    public static final String TYPE = "language";
+    /**
+     * Spring method rule
+     */
     @Rule
-    public final SpringMethodRule springMethodRule = new SpringMethodRule();
+    public final SpringMethodRule SPRING_METHOD_RULE = new SpringMethodRule();
+    /**
+     * Elastic index of the document to test
+     */
+    private static final String INDEX = Language.class.getDeclaredAnnotation(Document.class).indexName();
+    /**
+     * Elastic type of the document to test
+     */
+    private static final String TYPE = Language.class.getDeclaredAnnotation(Document.class).type();
 
+    /**
+     * File extension for document mapping
+     */
+    public static final String DOCUMENT_MAPPING_EXTENSION = ".mapping.json";
+    /**
+     * File extension for document data
+     */
+    public static final String DOCUMENT_DATA_EXTENSION = ".data.bulk";
+
+    /**
+     * Elastic client
+     */
     @Autowired
     private Client elasticsearchClient;
-    EsSetup esSetup;
+    /**
+     * Elastic setup for index/type initialization
+     */
+    private EsSetup esSetup;
 
+    /**
+     * Language DAO to test
+     */
     @Autowired
     private LanguageDao languageDao;
 
@@ -44,17 +75,20 @@ public class LanguageDaoTest {
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Create a "message" Elastic index with "language" type data
+     * Create a "message" Elastic index with "language" data type
      */
     @Before
     public void initElasticIndex() {
+
+        String mappingClassPath = this.getClass().getName().replace(".", "/") + DOCUMENT_MAPPING_EXTENSION;
+        String dataClassPath = this.getClass().getName().replace(".", "/") + DOCUMENT_DATA_EXTENSION;
 
         esSetup = new EsSetup(elasticsearchClient, false);
         esSetup.execute(
                 deleteAll(),
                 createIndex(INDEX)
-                        .withMapping(TYPE, fromClassPath("info/jallaix/common/language/dao/LanguageDaoTest.mapping.json"))
-                        .withData(fromClassPath("info/jallaix/common/language/dao/LanguageDaoTest.json.bulk"))
+                        .withMapping(TYPE, fromClassPath(mappingClassPath))
+                        .withData(fromClassPath(dataClassPath))
                 );
     }
 
