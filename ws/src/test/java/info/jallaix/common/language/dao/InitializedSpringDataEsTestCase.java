@@ -19,14 +19,28 @@ import org.springframework.test.context.ContextConfiguration;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.github.tlrx.elasticsearch.test.EsSetup.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * Test class for the Spring Data Elastic module.<br/>
  * It supports data initialization thanks to the <a href="https://github.com/tlrx/elasticsearch-test">elasticsearch-test framework</a>.<br/>
- * It also performs generic CRUD tests on the tested repository.
+ * It also performs generic CRUD tests on the tested repository.<br/><br/>
+ * The repository must verify the following tests related to <b>indexing</b> or <b>saving</b> that have the same behavior :
+ * <ul>
+ *     <li>Indexing a null document throws an IllegalArgumentException.</li>
+ *     <li>Saving a null document throws an IllegalArgumentException.</li>
+ *     <li>Saving a list of documents with one null throws an IllegalArgumentException and no document is indexed.</li>
+ *     <li>Indexing a new document inserts the document in the index.</li>
+ *     <li>Saving a new document inserts the document in the index.</li>
+ *     <li>Saving a list of new documents inserts the documents in the index.</li>
+ *     <li>Indexing an existing document replaces the document in the index.</li>
+ *     <li>Saving an existing document replaces the document in the index.</li>
+ *     <li>Saving a list of existing documents replaces the documents in the index.</li>
+ * </ul>
  */
 @ContextConfiguration(classes = SpringDataEsTestConfiguration.class)
 public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable, R extends ElasticsearchRepository<T, ID>> {
@@ -46,6 +60,11 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
      * Elastic type of the document to test
      */
     private final String type;
+
+    /**
+     * Number of types documents in the index at initialization
+     */
+    private long initialDocumentCount = 0;
 
     /**
      * File extension for document mapping
@@ -77,7 +96,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Empty constructor that gets the Elastic index and type from the associated Java entity.
+     * Empty constructor that gets the Elastic index and type from the associated entity class.
      */
     public InitializedSpringDataEsTestCase() {
 
@@ -118,10 +137,12 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         esSetup = new EsSetup(elasticsearchClient, false);
         try {
             esSetup.execute(deleteAll(), createIndex);
+            initialDocumentCount = countDocuments();                   // Initial number of documents
         }
         catch (EsSetupRuntimeException e) {
             //noinspection ThrowableResultOfMethodCallIgnored
             logger.warn(ExceptionUtils.getRootCause(e).getMessage());
+            esSetup = null;
         }
     }
 
@@ -159,6 +180,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
      * Give access to the tested repository.
      * @return The tested repository
      */
+    @SuppressWarnings("unused")
     protected R getRepository() { return repository; }
 
     /**
@@ -197,33 +219,112 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
     }
 
     /**
-     * Indexing a non existing document inserts the document in the index.
-     * @throws ReflectiveOperationException
+     * Saving a null document throws an IllegalArgumentException.
+     */
+    @Test(expected=IllegalArgumentException.class)
+    public void saveNullDocument() {
+
+        repository.save((T)null);
+    }
+
+    /**
+     * Indexing a list of documents with one null throws an IllegalArgumentException and no document is indexed.
      */
     @Test
-    public void indexNewDocument() throws ReflectiveOperationException {
+    public void saveNullDocuments() {
 
-        assertEquals(2, countDocuments());
+        List<T> documents = new ArrayList<>(1);
+        documents.add(newDocumentToInsert());
+        documents.add(null);
+
+        try {
+            repository.save(documents);
+            fail("IllegalArgumentException must be thrown");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(initialDocumentCount, countDocuments());
+        }
+    }
+
+    /**
+     * Indexing a new document inserts the document in the index.
+     */
+    @Test
+    public void indexNewDocument() {
 
         T toInsert = newDocumentToInsert();
         T inserted = repository.index(toInsert);
 
-        assertEquals(3, countDocuments());
+        assertEquals(initialDocumentCount + 1, countDocuments());
         assertEquals(toInsert, inserted);
     }
 
     /**
-     * Indexing an existing document replaces the document in the index.
-     * @throws ReflectiveOperationException
+     * Saving a new document inserts the document in the index.
      */
     @Test
-    public void indexExistingDocument() throws ReflectiveOperationException {
+    public void saveNewDocument() {
 
-        assertEquals(2, countDocuments());
+        T toInsert = newDocumentToInsert();
+        T inserted = repository.save(toInsert);
+
+        assertEquals(initialDocumentCount + 1, countDocuments());
+        assertEquals(toInsert, inserted);
+    }
+
+    /**
+     * Saving a list of new documents inserts the documents in the index.
+     */
+    @Test
+    public void saveNewDocuments() {
+
+        List<T> toInsert = new ArrayList<>(1);
+        toInsert.add(newDocumentToInsert());
+        List<T> inserted = new ArrayList<>(1);
+        repository.save(toInsert).forEach(inserted::add);
+
+        assertEquals(initialDocumentCount + 1, countDocuments());
+        assertArrayEquals(toInsert.toArray(), inserted.toArray());
+    }
+
+    /**
+     * Indexing an existing document replaces the document in the index.
+     */
+    @Test
+    public void indexExistingDocument() {
+
         T toUpdate = newDocumentToUpdate();
         T updated = repository.index(toUpdate);
 
-        assertEquals(2, countDocuments());
+        assertEquals(initialDocumentCount, countDocuments());
         assertEquals(toUpdate, updated);
+    }
+
+    /**
+     * Saving an existing document replaces the document in the index.
+     */
+    @Test
+    public void saveExistingDocument() {
+
+        T toUpdate = newDocumentToUpdate();
+        T updated = repository.save(toUpdate);
+
+        assertEquals(initialDocumentCount, countDocuments());
+        assertEquals(toUpdate, updated);
+    }
+
+    /**
+     * Saving a list of existing documents replaces the documents in the index.
+     */
+    @Test
+    public void saveExistingDocuments() {
+
+        List<T> toUpdate = new ArrayList<>(1);
+        toUpdate.add(newDocumentToUpdate());
+        List<T> updated = new ArrayList<>(1);
+        repository.save(toUpdate).forEach(updated::add);
+
+        assertEquals(initialDocumentCount, countDocuments());
+        assertArrayEquals(toUpdate.toArray(), updated.toArray());
     }
 }
