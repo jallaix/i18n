@@ -13,7 +13,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
  */
 @Configuration
 @EnableElasticsearchRepositories(basePackages = "info.jallaix.common.language.dao")
-public class LanguageDaoTestConfiguration {
+public class SpringDataEsTestConfiguration {
 
     @Bean
     public Client elasticsearchClient() {
