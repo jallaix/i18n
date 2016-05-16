@@ -45,26 +45,34 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = SpringDataEsTestConfiguration.class)
 public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable, R extends ElasticsearchRepository<T, ID>> {
 
-    /**
-     * Document repository
-     */
-    @SuppressWarnings("SpringJavaAutowiringInspection")
-    @Autowired
-    private R repository;
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                 Properties                                                     */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Elastic index of the document to test
+     * Logger
      */
-    private final String index;
-    /**
-     * Elastic type of the document to test
-     */
-    private final String type;
+    private static final Logger logger = LoggerFactory.getLogger(InitializedSpringDataEsTestCase.class);
 
     /**
      * Number of types documents in the index at initialization
      */
     private long initialDocumentCount = 0;
+
+    /**
+     * Elastic client
+     */
+    @Autowired
+    private Client elasticClient;
+    /**
+     * Elastic setup for index/type initialization
+     */
+    private EsSetup esSetup;
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                           Pre-test data loading                                                */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * File extension for document mapping
@@ -76,53 +84,18 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
     protected static final String DOCUMENT_DATA_EXTENSION = ".data.bulk";
 
     /**
-     * Elastic client
+     * Load data in an Elastic index before a test executes
+     * @param indexName Index name
+     * @param type Type
      */
-    @Autowired
-    private Client elasticsearchClient;
-    /**
-     * Elastic setup for index/type initialization
-     */
-    private EsSetup esSetup;
+    private void loadPreTestData(String indexName, String type) {
 
-    /**
-     * Logger
-     */
-    private static final Logger logger = LoggerFactory.getLogger(InitializedSpringDataEsTestCase.class);
-
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                      Initialization of Elastic index                                           */
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    /**
-     * Empty constructor that gets the Elastic index and type from the associated entity class.
-     */
-    public InitializedSpringDataEsTestCase() {
-
-        // Find document class
-        ParameterizedType superClass = (ParameterizedType) getClass().getGenericSuperclass();
-        Type [] types = superClass.getActualTypeArguments();
-        @SuppressWarnings("unchecked")
-        Class<T> documentClass = (Class<T>) types[0];
-
-        // Get index and type from document class annotations
-        index = documentClass.getDeclaredAnnotation(Document.class).indexName();
-        type = documentClass.getDeclaredAnnotation(Document.class).type();
-    }
-
-    /**
-     * Create an Elastic index and type and load custom data in it.
-     */
-    @Before
-    public void initElasticIndex() {
-
-        CreateIndex createIndex = createIndex(getIndex());
+        CreateIndex createIndex = createIndex(indexName);
 
         // Add mapping to the Elastic type
         JSONProvider mappingClassPath = fromClassPath(getClass().getName().replace(".", "/") + DOCUMENT_MAPPING_EXTENSION);
         try {
-            createIndex.withMapping(getType(), mappingClassPath);
+            createIndex.withMapping(type, mappingClassPath);
         }
         catch (EsSetupRuntimeException e) {
             //noinspection ThrowableResultOfMethodCallIgnored
@@ -134,7 +107,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         createIndex.withData(dataClassPath);
 
         // Setup Elastic index/type initialization
-        esSetup = new EsSetup(elasticsearchClient, false);
+        esSetup = new EsSetup(elasticClient, false);
         try {
             esSetup.execute(deleteAll(), createIndex);
             initialDocumentCount = countDocuments();                   // Initial number of documents
@@ -144,6 +117,21 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
             logger.warn(ExceptionUtils.getRootCause(e).getMessage());
             esSetup = null;
         }
+    }
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                      Initialization of Elastic index                                           */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Create an Elastic index and type and load custom data in it.
+     */
+    @Before
+    public void initElasticIndex() {
+
+        documentMetadata = findDocumentMetadata();
+
+        loadPreTestData(documentMetadata.indexName(), documentMetadata.type());
     }
 
     /**
@@ -157,24 +145,47 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                             Sub-classes methods                                                */
+    /*                                           Tested document metadata                                             */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Get the Elastic index.
-     * @return The Elastic index
+     * Elastic document metadata
      */
-    protected String getIndex() {
-        return index;
-    }
+    private Document documentMetadata;
 
     /**
-     * Get the Elastic type.
-     * @return The Elastic type
+     * Get the Elastic document metadata
+     * @return The Elastic document metadata
      */
-    protected String getType() {
-        return type;
+    protected Document getDocumentMetadata() { return documentMetadata; }
+
+    /**
+     * Find Elastic metadata (index, type, ...) of the tested document
+     * @return The document metadata
+     */
+    private Document findDocumentMetadata() {
+
+        // Find document class
+        ParameterizedType superClass = (ParameterizedType) getClass().getGenericSuperclass();
+        Type [] types = superClass.getActualTypeArguments();
+        @SuppressWarnings("unchecked")
+        Class<T> documentClass = (Class<T>) types[0];
+
+        // Get annotation from document class
+        return documentClass.getDeclaredAnnotation(Document.class);
     }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                              Tested Repository                                                 */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Tested repository
+     */
+    @SuppressWarnings("SpringJavaAutowiringInspection")
+    @Autowired
+    private R repository;
 
     /**
      * Give access to the tested repository.
@@ -183,13 +194,18 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
     @SuppressWarnings("unused")
     protected R getRepository() { return repository; }
 
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                             Sub-classes methods                                                */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
     /**
      * Count the number of typed documents in the index.
      * @return The number of typed documents found
      */
     protected long countDocuments() {
 
-        return elasticsearchClient.prepareCount(getIndex()).setTypes(getType()).get().getCount();
+        return elasticClient.prepareCount(documentMetadata.indexName()).setTypes(documentMetadata.type()).get().getCount();
     }
 
     /**
