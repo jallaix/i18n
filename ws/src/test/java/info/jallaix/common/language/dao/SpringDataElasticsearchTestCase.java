@@ -1,16 +1,9 @@
 package info.jallaix.common.language.dao;
 
-import com.github.tlrx.elasticsearch.test.EsSetup;
-import com.github.tlrx.elasticsearch.test.EsSetupRuntimeException;
-import com.github.tlrx.elasticsearch.test.provider.JSONProvider;
-import com.github.tlrx.elasticsearch.test.request.CreateIndex;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.elasticsearch.client.Client;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
@@ -22,11 +15,10 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.tlrx.elasticsearch.test.EsSetup.*;
 import static org.junit.Assert.*;
 
 /**
- * Test class for the Spring Data Elastic module.<br/>
+ * Test class for the Spring Data Elasticsearch module.<br/>
  * It supports data initialization thanks to the <a href="https://github.com/tlrx/elasticsearch-test">elasticsearch-test framework</a>.<br/>
  * It also performs generic CRUD tests on the tested repository.<br/><br/>
  * The repository must verify the following tests related to <b>indexing</b> or <b>saving</b> that have the same behavior :
@@ -42,32 +34,20 @@ import static org.junit.Assert.*;
  *     <li>Saving a list of existing documents replaces the documents in the index.</li>
  * </ul>
  */
-@ContextConfiguration(classes = SpringDataEsTestConfiguration.class)
-public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable, R extends ElasticsearchRepository<T, ID>> {
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                                 Properties                                                     */
-    /*----------------------------------------------------------------------------------------------------------------*/
+@ContextConfiguration(classes = SpringDataElasticsearchTestConfiguration.class)
+public abstract class SpringDataElasticsearchTestCase<T, ID extends Serializable, R extends ElasticsearchRepository<T, ID>> {
 
     /**
-     * Logger
-     */
-    private static final Logger logger = LoggerFactory.getLogger(InitializedSpringDataEsTestCase.class);
-
-    /**
-     * Number of types documents in the index at initialization
-     */
-    private long initialDocumentCount = 0;
-
-    /**
-     * Elastic client
+     * Test documents loader
      */
     @Autowired
-    private Client elasticClient;
+    private TestDocumentsLoader testDocumentsLoader;
+
     /**
-     * Elastic setup for index/type initialization
+     * Elasticsearch client
      */
-    private EsSetup esSetup;
+    @Autowired
+    private Client esClient;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -75,73 +55,23 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * File extension for document mapping
-     */
-    protected static final String DOCUMENT_MAPPING_EXTENSION = ".mapping.json";
-    /**
-     * File extension for document data
-     */
-    protected static final String DOCUMENT_DATA_EXTENSION = ".data.bulk";
-
-    /**
-     * Load data in an Elastic index before a test executes
-     * @param indexName Index name
-     * @param type Type
-     */
-    private void loadPreTestData(String indexName, String type) {
-
-        CreateIndex createIndex = createIndex(indexName);
-
-        // Add mapping to the Elastic type
-        JSONProvider mappingClassPath = fromClassPath(getClass().getName().replace(".", "/") + DOCUMENT_MAPPING_EXTENSION);
-        try {
-            createIndex.withMapping(type, mappingClassPath);
-        }
-        catch (EsSetupRuntimeException e) {
-            //noinspection ThrowableResultOfMethodCallIgnored
-            logger.warn(ExceptionUtils.getRootCause(e).getMessage());
-        }
-
-        // Add data to the Elastic type
-        JSONProvider dataClassPath = fromClassPath(getClass().getName().replace(".", "/") + DOCUMENT_DATA_EXTENSION);
-        createIndex.withData(dataClassPath);
-
-        // Setup Elastic index/type initialization
-        esSetup = new EsSetup(elasticClient, false);
-        try {
-            esSetup.execute(deleteAll(), createIndex);
-            initialDocumentCount = countDocuments();                   // Initial number of documents
-        }
-        catch (EsSetupRuntimeException e) {
-            //noinspection ThrowableResultOfMethodCallIgnored
-            logger.warn(ExceptionUtils.getRootCause(e).getMessage());
-            esSetup = null;
-        }
-    }
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                      Initialization of Elastic index                                           */
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    /**
-     * Create an Elastic index and type and load custom data in it.
+     * Create an Elasticsearch index and type and load custom data in it.
      */
     @Before
     public void initElasticIndex() {
 
-        documentMetadata = findDocumentMetadata();
-
-        loadPreTestData(documentMetadata.indexName(), documentMetadata.type());
+        documentMetadata = findDocumentMetadata();          // Find document metadata (index, type)
+        testDocumentsLoader.initElasticIndex(               // Load documents into index
+                documentMetadata.indexName(),
+                documentMetadata.type(),
+                this.getClass().getName());
     }
 
     /**
      * Free resources used by Elastic.
      */
     @After
-    public void terminateElasticIndex() {
-
-        esSetup.terminate();
-    }
+    public void terminateElasticIndex() { testDocumentsLoader.terminateElasticIndex(); }
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -157,6 +87,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
      * Get the Elastic document metadata
      * @return The Elastic document metadata
      */
+    @SuppressWarnings("unused")
     protected Document getDocumentMetadata() { return documentMetadata; }
 
     /**
@@ -205,7 +136,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
      */
     protected long countDocuments() {
 
-        return elasticClient.prepareCount(documentMetadata.indexName()).setTypes(documentMetadata.type()).get().getCount();
+        return esClient.prepareCount(documentMetadata.indexName()).setTypes(documentMetadata.type()).get().getCount();
     }
 
     /**
@@ -258,7 +189,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
             fail("IllegalArgumentException must be thrown");
         }
         catch (IllegalArgumentException e) {
-            assertEquals(initialDocumentCount, countDocuments());
+            assertEquals(testDocumentsLoader.getLoadedDocumentCount(), countDocuments());
         }
     }
 
@@ -271,7 +202,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         T toInsert = newDocumentToInsert();
         T inserted = repository.index(toInsert);
 
-        assertEquals(initialDocumentCount + 1, countDocuments());
+        assertEquals(testDocumentsLoader.getLoadedDocumentCount() + 1, countDocuments());
         assertEquals(toInsert, inserted);
     }
 
@@ -284,7 +215,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         T toInsert = newDocumentToInsert();
         T inserted = repository.save(toInsert);
 
-        assertEquals(initialDocumentCount + 1, countDocuments());
+        assertEquals(testDocumentsLoader.getLoadedDocumentCount() + 1, countDocuments());
         assertEquals(toInsert, inserted);
     }
 
@@ -299,7 +230,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         List<T> inserted = new ArrayList<>(1);
         repository.save(toInsert).forEach(inserted::add);
 
-        assertEquals(initialDocumentCount + 1, countDocuments());
+        assertEquals(testDocumentsLoader.getLoadedDocumentCount() + 1, countDocuments());
         assertArrayEquals(toInsert.toArray(), inserted.toArray());
     }
 
@@ -312,7 +243,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         T toUpdate = newDocumentToUpdate();
         T updated = repository.index(toUpdate);
 
-        assertEquals(initialDocumentCount, countDocuments());
+        assertEquals(testDocumentsLoader.getLoadedDocumentCount(), countDocuments());
         assertEquals(toUpdate, updated);
     }
 
@@ -325,7 +256,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         T toUpdate = newDocumentToUpdate();
         T updated = repository.save(toUpdate);
 
-        assertEquals(initialDocumentCount, countDocuments());
+        assertEquals(testDocumentsLoader.getLoadedDocumentCount(), countDocuments());
         assertEquals(toUpdate, updated);
     }
 
@@ -340,7 +271,7 @@ public abstract class InitializedSpringDataEsTestCase<T, ID extends Serializable
         List<T> updated = new ArrayList<>(1);
         repository.save(toUpdate).forEach(updated::add);
 
-        assertEquals(initialDocumentCount, countDocuments());
+        assertEquals(testDocumentsLoader.getLoadedDocumentCount(), countDocuments());
         assertArrayEquals(toUpdate.toArray(), updated.toArray());
     }
 }

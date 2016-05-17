@@ -9,11 +9,11 @@ import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
 /**
- * Created by Julien on 12/05/2016.
+ * Spring configuration for Elasticsearch repository tests
  */
 @Configuration
 @EnableElasticsearchRepositories(basePackages = "info.jallaix.common.language.dao")
-public class SpringDataEsTestConfiguration {
+public class SpringDataElasticsearchTestConfiguration {
 
     @Bean
     public Client elasticsearchClient() {
@@ -29,5 +29,11 @@ public class SpringDataEsTestConfiguration {
     public ElasticsearchOperations elasticsearchTemplate() {
 
         return new ElasticsearchTemplate(elasticsearchClient());
+    }
+
+    @Bean
+    public TestDocumentsLoader testDataLoader() {
+
+        return new TestDocumentsLoader(elasticsearchClient());
     }
 }

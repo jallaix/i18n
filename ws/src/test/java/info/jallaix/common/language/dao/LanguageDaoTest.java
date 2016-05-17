@@ -14,7 +14,7 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
  * </ul>
  */
 //@SpringApplicationConfiguration(classes = Application.class)
-public class LanguageDaoTest extends InitializedSpringDataEsTestCase<Language, String, LanguageDao> {
+public class LanguageDaoTest extends SpringDataElasticsearchTestCase<Language, String, LanguageDao> {
 
     /**
      * Spring class rule
@@ -29,7 +29,7 @@ public class LanguageDaoTest extends InitializedSpringDataEsTestCase<Language, S
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                   InitializedSpringDataEsTestCase overriden methods                            */
+    /*                                   SpringDataElasticsearchTestCase overriden methods                            */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     @Override
