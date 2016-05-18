@@ -1,6 +1,7 @@
 package info.jallaix.common.language.dao;
 
 import info.jallaix.common.language.dto.Language;
+import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
 import org.junit.*;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
@@ -14,7 +15,7 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
  * </ul>
  */
 //@SpringApplicationConfiguration(classes = Application.class)
-public class LanguageDaoTest extends SpringDataElasticsearchTestCase<Language, String, LanguageDao> {
+public class LanguageDaoTest extends SpringDataEsTestCase<Language, String, LanguageDao> {
 
     /**
      * Spring class rule
