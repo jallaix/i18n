@@ -51,6 +51,7 @@
             <groupId>info.jallaix.test</groupId>
             <artifactId>spring-data-elasticsearch-test</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

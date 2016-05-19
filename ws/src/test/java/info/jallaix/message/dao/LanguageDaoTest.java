@@ -1,20 +1,23 @@
-package info.jallaix.common.language.dao;
+package info.jallaix.message.dao;
 
-import info.jallaix.common.language.dto.Language;
+import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
+import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import org.junit.*;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 /**
- * The Language DAO must verify the following tests related to <b>language saving</b> :
- * <ul>
- *     <li>Indexing a null language throws an IllegalArgumentException.</li>
- *     <li>Indexing a non existing language inserts the language in the index.</li>
- *     <li>Indexing an existing language replaces the language in the index.</li>
- * </ul>
+ * The Language DAO must verify all tests provided by SpringDataEsTestCase :
  */
-//@SpringApplicationConfiguration(classes = Application.class)
+@Configuration
+@Import(SpringDataEsTestConfiguration.class)
+@EnableElasticsearchRepositories(basePackageClasses = LanguageDaoTest.class)
+@ContextConfiguration(classes = LanguageDaoTest.class)
 public class LanguageDaoTest extends SpringDataEsTestCase<Language, String, LanguageDao> {
 
     /**

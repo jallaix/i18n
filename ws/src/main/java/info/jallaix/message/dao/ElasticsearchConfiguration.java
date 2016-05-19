@@ -1,4 +1,4 @@
-package info.jallaix.common.conf;
+package info.jallaix.message.dao;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
@@ -18,8 +18,8 @@ import javax.annotation.Resource;
  * Configuration d'Elasticsearch
  */
 @Configuration
-@PropertySource(value = "classpath:elasticsearch.properties")
-@EnableElasticsearchRepositories(basePackages = "info.jallaix.common")
+@PropertySource(value = "classpath:info/jallaix/message/dao/elasticsearch.properties")
+@EnableElasticsearchRepositories
 public class ElasticsearchConfiguration {
 
     @Resource

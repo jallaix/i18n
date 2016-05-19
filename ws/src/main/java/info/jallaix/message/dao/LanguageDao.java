@@ -1,6 +1,6 @@
-package info.jallaix.common.language.dao;
+package info.jallaix.message.dao;
 
-import info.jallaix.common.language.dto.Language;
+import info.jallaix.message.dto.Language;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 

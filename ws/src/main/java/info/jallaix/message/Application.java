@@ -1,4 +1,4 @@
-package info.jallaix.common;
+package info.jallaix.message;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,6 +1,6 @@
-package info.jallaix.common.language.service;
+package info.jallaix.message.service.exception;
 
-import info.jallaix.common.language.dto.Language;
+import info.jallaix.message.dto.Language;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
