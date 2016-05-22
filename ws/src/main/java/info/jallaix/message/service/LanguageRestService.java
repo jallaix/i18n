@@ -83,7 +83,7 @@ public class LanguageRestService {
         validateLanguageToUpdate(language);                             // Validate mandatory properties
 
         if (languageDao.exists(language.getCode()))
-            languageDao.save(language);                               // Update language if it exists
+            languageDao.index(language);                                // Update language if it exists
         else
             throw new LanguageNotFoundException(language.getCode());    // Else throw an exception
     }

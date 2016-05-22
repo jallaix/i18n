@@ -3,6 +3,7 @@ package info.jallaix.message.dao;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
+import info.jallaix.spring.data.es.test.TestedMethod;
 import org.junit.*;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -36,6 +37,18 @@ public class LanguageDaoTest extends SpringDataEsTestCase<Language, String, Lang
     /*                                   SpringDataElasticsearchTestCase overriden methods                            */
     /*----------------------------------------------------------------------------------------------------------------*/
 
+    /**
+     * Constructor that defines the tests to pass
+     */
+    public LanguageDaoTest() {
+        super(
+                TestedMethod.Exist.class,
+                TestedMethod.Index.class,
+                TestedMethod.FindOne.class,
+                TestedMethod.FindAll.class,
+                TestedMethod.DeleteById.class);
+    }
+
     @Override
     protected Language newDocumentToInsert() {
         return new Language("esp", "Español", "Spanish");
@@ -45,4 +58,7 @@ public class LanguageDaoTest extends SpringDataEsTestCase<Language, String, Lang
     protected Language newDocumentToUpdate() {
         return new Language("fra", "Español", "Spanish");
     }
+
+    @Override
+    protected int getPageSize() { return 2; }
 }
