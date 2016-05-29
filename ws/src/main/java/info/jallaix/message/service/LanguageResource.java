@@ -1,4 +1,4 @@
-package info.jallaix.message.dao;
+package info.jallaix.message.service;
 
 import org.springframework.hateoas.ResourceSupport;
 

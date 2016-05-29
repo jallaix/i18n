@@ -1,4 +1,4 @@
-package info.jallaix.message.dao;
+package info.jallaix.message.service;
 
 import info.jallaix.message.dto.Language;
 import org.springframework.hateoas.Link;
@@ -10,7 +10,7 @@ import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
 public class LanguageResourceAssembler extends ResourceAssemblerSupport<Language, LanguageResource> {
 
     public LanguageResourceAssembler() {
-        super(LanguageDao.class, LanguageResource.class);
+        super(LanguageController.class, LanguageResource.class);
     }
 
     @Override

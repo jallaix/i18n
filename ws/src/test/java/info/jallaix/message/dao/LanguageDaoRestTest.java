@@ -3,6 +3,8 @@ package info.jallaix.message.dao;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import info.jallaix.message.dto.Language;
+import info.jallaix.message.service.LanguageResource;
+import info.jallaix.message.service.LanguageResourceAssembler;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.TestClientOperations;
@@ -18,10 +20,7 @@ import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.hal.Jackson2HalModule;
 import org.springframework.hateoas.mvc.TypeReferences;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -127,6 +126,30 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                    Tests related to language creation                                          */
     /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
+     */
+    @Test
+    public void createDuplicateLanguage() {
+
+        // Construct POST content
+        Language toInsert = newDocumentToUpdate();                                  // Existing document
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
+        HttpEntity<Language> httpEntity = new HttpEntity<>(toInsert, httpHeaders);
+
+        // Call REST service
+        ResponseEntity<Resource<LanguageResource>> responseEntity =
+                getHalRestTemplate().exchange(
+                        "http://localhost:8080/languages",
+                        HttpMethod.POST,
+                        httpEntity,
+                        new TypeReferences.ResourceType<LanguageResource>() {},
+                        Collections.emptyMap());
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
+    }
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                     Tests related to language search                                           */
