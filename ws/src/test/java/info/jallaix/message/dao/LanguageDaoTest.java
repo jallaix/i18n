@@ -1,7 +1,7 @@
 package info.jallaix.message.dao;
 
 import info.jallaix.message.dto.Language;
-import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
+import info.jallaix.spring.data.es.test.SpringDataEsCrudTestCase;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.TestedMethod;
 import org.junit.*;
@@ -13,13 +13,13 @@ import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 /**
- * The Language DAO must verify all tests provided by SpringDataEsTestCase :
+ * The Language DAO must verify some tests provided by SpringDataEsCrudTestCase.
  */
 @Configuration
 @Import(SpringDataEsTestConfiguration.class)
-@EnableElasticsearchRepositories(basePackageClasses = LanguageDaoTest.class)
+@EnableElasticsearchRepositories(basePackageClasses = LanguageDao.class)
 @ContextConfiguration(classes = LanguageDaoTest.class)
-public class LanguageDaoTest extends SpringDataEsTestCase<Language, String, LanguageDao> {
+public class LanguageDaoTest extends SpringDataEsCrudTestCase<Language, String, LanguageDao> {
 
     /**
      * Spring class rule

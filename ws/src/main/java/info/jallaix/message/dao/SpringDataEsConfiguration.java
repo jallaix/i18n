@@ -4,6 +4,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.node.NodeBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -19,8 +20,8 @@ import javax.annotation.Resource;
  */
 @Configuration
 @PropertySource(value = "classpath:info/jallaix/message/dao/elasticsearch.properties")
-@EnableElasticsearchRepositories
-public class ElasticsearchConfiguration {
+@EnableElasticsearchRepositories(repositoryFactoryBeanClass = RestElasticsearchRepositoryFactoryBean.class)
+public class SpringDataEsConfiguration {
 
     @Resource
     private Environment environment;
@@ -28,13 +29,18 @@ public class ElasticsearchConfiguration {
     @Bean
     public Client client() {
 
-        TransportClient client = new TransportClient();
+        /*TransportClient client = new TransportClient();
         TransportAddress address = new InetSocketTransportAddress(
                 environment.getProperty("elasticsearch.host"),
                 Integer.parseInt(environment.getProperty("elasticsearch.port")));
         client.addTransportAddress(address);
 
-        return client;
+        return client;*/
+        NodeBuilder nodeBuilder = NodeBuilder.nodeBuilder();
+        nodeBuilder.settings().put("path.data", "target/data");
+        nodeBuilder.local(true);
+
+        return nodeBuilder.node().client();
     }
 
     @Bean
