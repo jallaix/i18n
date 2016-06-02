@@ -2,20 +2,17 @@ package info.jallaix.message.dao;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dto.Language;
 import info.jallaix.message.service.LanguageResource;
 import info.jallaix.message.service.LanguageResourceAssembler;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
-import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.TestClientOperations;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.hal.Jackson2HalModule;
@@ -24,7 +21,7 @@ import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
@@ -32,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -90,11 +88,9 @@ import static org.junit.Assert.assertThat;
  *     <li>Deleting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
  *     <li>Deleting a language entry returns an HTTP 200 status code (OK) if a language is found.</li>
  * </ul>
- */@Configuration
-@EnableAutoConfiguration
-@EnableElasticsearchRepositories(repositoryFactoryBeanClass = RestElasticsearchRepositoryFactoryBean.class)
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration({LanguageDaoRestTest.class, SpringDataEsTestConfiguration.class })
+@SpringApplicationConfiguration(ApplicationMock.class)
 @WebIntegrationTest
 public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, LanguageDao> {
 
@@ -140,15 +136,24 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
         HttpEntity<Language> httpEntity = new HttpEntity<>(toInsert, httpHeaders);
 
         // Call REST service
-        ResponseEntity<Resource<LanguageResource>> responseEntity =
-                getHalRestTemplate().exchange(
-                        "http://localhost:8080/languages",
-                        HttpMethod.POST,
-                        httpEntity,
-                        new TypeReferences.ResourceType<LanguageResource>() {},
-                        Collections.emptyMap());
+        ResponseEntity<Resource<LanguageResource>> responseEntity;
+        try {
+            responseEntity =
+                    getHalRestTemplate().exchange(
+                            "http://localhost:8080/languages",
+                            HttpMethod.POST,
+                            httpEntity,
+                            new TypeReferences.ResourceType<LanguageResource>() {},
+                            Collections.emptyMap());
+        }
+        catch (HttpStatusCodeException e) {
+
+            assertThat(e.getStatusCode(), is(HttpStatus.CONFLICT));
+            return;
+        }
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
+        assertThat(responseEntity.getBody().getContent(), is(nullValue()));
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -180,33 +185,54 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
         assertThat(responseEntity.getBody().getContent().toArray(), is(fixture.toArray()));
     }
 
+    /**
+     * Getting an existing language entry returns this entry in HAL format and an HTTP 200 status code (OK).
+     */
     @Test
     public void findOneExistingLanguage() {
 
-        Language initial = newDocumentToUpdate();
+        LanguageResource initial = convertToResource(newDocumentToUpdate());
 
+        // Call REST service
         ResponseEntity<Resource<LanguageResource>> responseEntity =
                 getHalRestTemplate().exchange(
-                        "http://localhost:8080/languages/" + initial.getCode(),
+                        initial.getId().getHref(),
                         HttpMethod.GET,
                         null,
                         new TypeReferences.ResourceType<LanguageResource>() {},
                         Collections.emptyMap());
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        assertThat(responseEntity.getBody().getContent(), is(initial));
     }
 
-    @Test(expected = HttpClientErrorException.class)
+    /**
+     * Getting a missing language entry returns an HTTP 404 status code (NOT FOUND).
+     */
+    @Test
     public void findOneMissingLanguage() {
 
-        Language initial = newDocumentToInsert();
+        LanguageResource initial = convertToResource(newDocumentToInsert());
 
-        getHalRestTemplate().exchange(
-                "http://localhost:8080/languages/" + initial.getCode(),
-                HttpMethod.GET,
-                null,
-                new TypeReferences.ResourceType<LanguageResource>() {},
-                Collections.emptyMap());
+        // Call REST service
+        ResponseEntity<Resource<LanguageResource>> responseEntity;
+        try {
+            responseEntity =
+                    getHalRestTemplate().exchange(
+                            initial.getId().getHref(),
+                            HttpMethod.GET,
+                            null,
+                            new TypeReferences.ResourceType<LanguageResource>() {},
+                            Collections.emptyMap());
+        }
+        catch (HttpStatusCodeException e) {
+
+            assertThat(e.getStatusCode(), is(HttpStatus.NOT_FOUND));
+            return;
+        }
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.NOT_FOUND));
+        assertThat(responseEntity.getBody().getContent(), is(nullValue()));
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -220,7 +246,6 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                    Tests related to language deletion                                          */
     /*----------------------------------------------------------------------------------------------------------------*/
-
 
     /**
      * Get a HAL REST template
@@ -240,7 +265,6 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     }
 
     private LanguageResource convertToResource(Language language) {
-
         return new LanguageResourceAssembler().toResource(language);
     }
 }
