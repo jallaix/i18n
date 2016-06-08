@@ -22,7 +22,7 @@ public class LanguageResourceAssembler extends ResourceAssemblerSupport<Language
         resource.setEnglishLabel(language.getEnglishLabel());
 
         resource.add(linkTo(LanguageController.class).withSelfRel());
-        resource.add(linkTo(LanguageController.class).withRel("language"));
+       // resource.add(linkTo(LanguageController.class).withRel("language"));
 
         return resource;
     }

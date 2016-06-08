@@ -1,6 +1,7 @@
 package info.jallaix.message.service;
 
 import info.jallaix.message.dto.Language;
+import org.springframework.http.RequestEntity;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
@@ -18,8 +19,13 @@ public class LanguageValidator implements Validator {
     @Override
     public void validate(Object target, Errors errors) {
 
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "code", "field.required");
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "label", "field.required");
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "englishLabel", "field.required");
+        if (target == null || !((RequestEntity<?>)target).hasBody())
+            errors.reject("language.required", "The language is required");
+        else {
+
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "code", "language.code.required", "The code is required");
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "label", "language.code.required", "The label is required");
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "englishLabel", "language.code.required", "The english label is required");
+        }
     }
 }

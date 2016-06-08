@@ -5,14 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dto.Language;
 import info.jallaix.message.service.LanguageResource;
-import info.jallaix.message.service.LanguageResourceAssembler;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
 import info.jallaix.spring.data.es.test.TestClientOperations;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.hal.Jackson2HalModule;
@@ -24,6 +25,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * The Language REST web service must verify the following tests related to <b>language creation</b> :
@@ -91,12 +95,16 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(ApplicationMock.class)
-@WebIntegrationTest
+@WebIntegrationTest(randomPort = true)
 public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, LanguageDao> {
+
+    @Value("${local.server.port}")
+    private int serverPort;
 
     /**
      * Test client operations
      */
+    @SuppressWarnings("SpringJavaAutowiredMembersInspection")
     @Autowired
     private TestClientOperations testClientOperations;
 
@@ -124,6 +132,44 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
+     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if it has invalid arguments.
+     */
+    @Test
+    public void createInvalidLanguage() {
+
+        // Test null language
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
+        HttpEntity<Language> httpEntityNull = new HttpEntity<>(null, httpHeaders);
+        try {
+            getHalRestTemplate().exchange(
+                    getWebServiceUrl(),
+                    HttpMethod.POST,
+                    httpEntityNull,
+                    new TypeReferences.ResourceType<LanguageResource>() {});
+            fail("Should return a 400 BAD REQUEST response");
+        }
+        catch (HttpStatusCodeException e) {
+            assertThat(e.getStatusCode(), is(HttpStatus.BAD_REQUEST));
+        }
+
+        // Test invalid code
+        callCreateLanguage(null, "Español", "Spanish");
+        callCreateLanguage("", "Español", "Spanish");
+        callCreateLanguage("  ", "Español", "Spanish");
+
+        // Test invalid label
+        callCreateLanguage("esp", null, "Spanish");
+        callCreateLanguage("esp", "", "Spanish");
+        callCreateLanguage("esp", "  ", "Spanish");
+
+        // Test invalid english label
+        callCreateLanguage("esp", "Español", null);
+        callCreateLanguage("esp", "Español", "");
+        callCreateLanguage("esp", "Español", "  ");
+    }
+
+    /**
      * Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
      */
     @Test
@@ -140,11 +186,10 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
         try {
             responseEntity =
                     getHalRestTemplate().exchange(
-                            "http://localhost:8080/languages",
+                            getWebServiceUrl(),
                             HttpMethod.POST,
                             httpEntity,
-                            new TypeReferences.ResourceType<LanguageResource>() {},
-                            Collections.emptyMap());
+                            new TypeReferences.ResourceType<LanguageResource>() {});
         }
         catch (HttpStatusCodeException e) {
 
@@ -154,6 +199,31 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
         assertThat(responseEntity.getBody().getContent(), is(nullValue()));
+    }
+
+    /**
+     * Creating a language entry returns an HTTP 201 status code (CREATED) if it doesn't already exist.
+     * @throws HttpStatusCodeException If the language creation fails
+     */
+    @Test
+    public void createValidLanguage() throws HttpStatusCodeException {
+
+        // Construct POST content
+        Language toInsert = newDocumentToInsert();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
+        HttpEntity<Language> httpEntity = new HttpEntity<>(toInsert, httpHeaders);
+
+        // Call REST service
+        ResponseEntity<LanguageResource> responseEntity =
+                    getHalRestTemplate().exchange(
+                            getWebServiceUrl(),
+                            HttpMethod.POST,
+                            httpEntity,
+                            LanguageResource.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        assertThat(responseEntity.getBody().getLinks(), is(convertToResource(toInsert).getLinks()));
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -175,11 +245,10 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
         // Call REST service
         ResponseEntity<PagedResources<LanguageResource>> responseEntity =
                 getHalRestTemplate().exchange(
-                        "http://localhost:8080/languages",
+                        getWebServiceUrl(),
                         HttpMethod.GET,
                         null,
-                        new TypeReferences.PagedResourcesType<LanguageResource>() {},
-                        Collections.emptyMap());
+                        new TypeReferences.PagedResourcesType<LanguageResource>() {});
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
         assertThat(responseEntity.getBody().getContent().toArray(), is(fixture.toArray()));
@@ -194,16 +263,15 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
         LanguageResource initial = convertToResource(newDocumentToUpdate());
 
         // Call REST service
-        ResponseEntity<Resource<LanguageResource>> responseEntity =
+        ResponseEntity<LanguageResource> responseEntity =
                 getHalRestTemplate().exchange(
                         initial.getId().getHref(),
                         HttpMethod.GET,
                         null,
-                        new TypeReferences.ResourceType<LanguageResource>() {},
-                        Collections.emptyMap());
+                        LanguageResource.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
-        assertThat(responseEntity.getBody().getContent(), is(initial));
+        assertThat(responseEntity.getBody().getLinks(), is(initial.getLinks()));
     }
 
     /**
@@ -222,8 +290,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
                             initial.getId().getHref(),
                             HttpMethod.GET,
                             null,
-                            new TypeReferences.ResourceType<LanguageResource>() {},
-                            Collections.emptyMap());
+                            new TypeReferences.ResourceType<LanguageResource>() {});
         }
         catch (HttpStatusCodeException e) {
 
@@ -248,6 +315,18 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
+     * Get URL of the web service to test
+     * @return URL of the web service to test
+     */
+    private URI getWebServiceUrl() {
+        try {
+            return new URI("http", null, "localhost", serverPort, "/languages/", null, null);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Invalid server URI", e);
+        }
+    }
+
+    /**
      * Get a HAL REST template
      * @return A HAL REST template
      */
@@ -264,7 +343,49 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
         return new RestTemplate(Collections.<HttpMessageConverter<?>> singletonList(converter));
     }
 
+    /**
+     * Convert a language to a resource containing a language
+     * @param language The language to convert
+     * @return The resource containing a language
+     */
     private LanguageResource convertToResource(Language language) {
-        return new LanguageResourceAssembler().toResource(language);
+
+        LanguageResource result = new LanguageResource();
+        result.setLabel(language.getLabel());
+        result.setEnglishLabel(language.getEnglishLabel());
+
+        result.add(new Link(getWebServiceUrl().toString() + language.getCode()));
+        result.add(new Link(getWebServiceUrl().toString() + language.getCode(), "language"));
+
+        return result;
+    }
+
+    /**
+     * Call the REST service for language creation with given properties
+     * @param code The language code
+     * @param label The language label
+     * @param englishLabel The language english label
+     */
+    private void callCreateLanguage(String code, String label, String englishLabel) {
+
+        Language language = new Language();
+        language.setCode(code);
+        language.setLabel(label);
+        language.setEnglishLabel(englishLabel);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
+        HttpEntity<Language> httpEntityEmptyCode = new HttpEntity<>(language, httpHeaders);
+        try {
+            getHalRestTemplate().exchange(
+                    getWebServiceUrl(),
+                    HttpMethod.POST,
+                    httpEntityEmptyCode,
+                    new TypeReferences.ResourceType<LanguageResource>() {});
+            fail("Should return a 400 BAD REQUEST response");
+        }
+        catch (HttpStatusCodeException e) {
+            assertThat(e.getStatusCode(), is(HttpStatus.BAD_REQUEST));
+        }
     }
 }

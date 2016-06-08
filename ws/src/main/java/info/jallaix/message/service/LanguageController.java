@@ -4,6 +4,8 @@ import info.jallaix.message.dao.LanguageDao;
 import info.jallaix.message.dto.Language;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.RepositoryRestController;
+import org.springframework.data.rest.webmvc.support.RepositoryEntityLinks;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -23,15 +25,19 @@ import javax.annotation.Resource;
 @RepositoryRestController
 public class LanguageController {
 
-    private final LanguageDao repository;
+    @Autowired
+    private LanguageDao repository;
+    @SuppressWarnings("SpringJavaAutowiringInspection")
+    @Autowired
+    private RepositoryEntityLinks entityLinks;
 
     @Resource
     Validator beforeCreateLanguageValidator;
 
-    @Autowired
+/*    @Autowired
     public LanguageController(LanguageDao repository) {
         this.repository = repository;
-    }
+    }*/
 
     @RequestMapping(method = RequestMethod.POST, value = "/languages")
     public @ResponseBody ResponseEntity<?> saveLanguage(RequestEntity<Language> request) {
@@ -44,18 +50,22 @@ public class LanguageController {
         if (errors.hasErrors())
             throw new InvalidLanguageException();
 
-        if (request.hasBody()) {
-            Language language = request.getBody();
-            if (repository.exists(language.getCode()))
-                throw new DuplicateLanguageException();
-            else {
-                language = repository.save(language);
-                LanguageResource languageResource = new LanguageResourceAssembler().toResource(language);
-                response = new ResponseEntity<>(languageResource, HttpStatus.CREATED);
-            }
+        Language language = request.getBody();
+        if (repository.exists(language.getCode()))          // The language already exists => error
+            throw new DuplicateLanguageException();
+        else {                                              // The language doesn't exist => save
+            language = repository.save(language);
+
+            // TODO Refactor
+            LanguageResource languageResource = new LanguageResource(); //LanguageResourceAssembler().toResource(language);
+            languageResource.setLabel(language.getLabel());
+            languageResource.setEnglishLabel(language.getEnglishLabel());
+            Link languageLink = entityLinks.linkToSingleResource(Language.class, language.getCode());
+            languageResource.add(languageLink.withSelfRel());
+            languageResource.add(languageLink);
+
+            response = new ResponseEntity<>(languageResource, HttpStatus.CREATED);
         }
-        else
-            response = new ResponseEntity<LanguageResource>(HttpStatus.BAD_REQUEST);
 
         return response;
     }
