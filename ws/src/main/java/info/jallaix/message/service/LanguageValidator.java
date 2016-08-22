@@ -19,7 +19,7 @@ public class LanguageValidator implements Validator {
     @Override
     public void validate(Object target, Errors errors) {
 
-        if (target == null || !((RequestEntity<?>)target).hasBody())
+        if (target == null)
             errors.reject("language.required", "The language is required");
         else {
 

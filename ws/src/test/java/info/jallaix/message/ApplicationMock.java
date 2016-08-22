@@ -18,7 +18,11 @@ import org.springframework.validation.Validator;
 import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver;
 
 /**
- * Created by Julien on 02/06/2016.
+ * <p>
+ *     This is a mock for the Spring Boot application class when running tests that send HTTP requests to the Message service.
+ * <p>
+ *     It enables the automatic discovery of Elasticsearch repositories and loads Elasticsearch test configuration.
+ *     Spring MVC controllers are also loaded to handle HTTP requests.
  */
 @Configuration
 @EnableAutoConfiguration
@@ -26,23 +30,5 @@ import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExc
         SpringDataEsTestConfiguration.class,
         GenericExceptionHandler.class})
 @EnableElasticsearchRepositories(repositoryFactoryBeanClass = RestElasticsearchRepositoryFactoryBean.class)
-public class ApplicationMock extends RepositoryRestConfigurerAdapter {
-
-    @Bean
-    public Validator beforeCreateLanguageValidator() {
-        return new LanguageValidator();
-    }
-
-    @Override
-    public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
-    }
-
-    @Override
-    public void configureExceptionHandlerExceptionResolver(ExceptionHandlerExceptionResolver exceptionResolver) {
-    }
-
-    @Override
-    public void configureValidatingRepositoryEventListener(ValidatingRepositoryEventListener validatingListener) {
-        //validatingListener.addValidator("beforeCreate", new LanguageValidator());
-    }
+public class ApplicationMock extends Application {
 }

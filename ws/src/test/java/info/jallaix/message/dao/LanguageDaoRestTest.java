@@ -7,6 +7,7 @@ import info.jallaix.message.dto.Language;
 import info.jallaix.message.service.LanguageResource;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
 import info.jallaix.spring.data.es.test.TestClientOperations;
+import org.dozer.Mapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,10 +39,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
+ * <p>
  * The Language REST web service must verify the following tests related to <b>language creation</b> :
  * <ul>
  *     <li>
- *         Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is an invalid argument:
+ *         Creating a language entry returns a {@code 400 Bad Request} HTTP status code if there is an invalid argument:
  *         <ol>
  *             <li>no language</li>
  *             <li>language with null or empty code</li>
@@ -49,26 +52,29 @@ import static org.junit.Assert.fail;
  *         </ol>
  *     </li>
  *     <li>
- *         Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
+ *         Creating a language entry returns a {@code 409 Conflict} HTTP status code if it already exists.
  *         The code value must be trimmed when tested for existence.
  *     </li>
  *     <li>
- *         Creating a language entry returns an HTTP 201 status code (CREATED) if the entry doesn't already exist and the language argument is valid.
+ *         Creating a language entry returns a {@code 201 Created} HTTP status code if the entry doesn't already exist and the language argument is valid.
  *         The code value must be trimmed when tested for existence. All property values must be trimmed when created.
  *     </li>
  * </ul>
- * <br/>
+ *
+ * <p>
  * The Language REST web service must verify the following tests related to <b>language search</b> :
  * <ul>
- *     <li>Getting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
- *     <li>Getting a language entry returns this entry and an HTTP 200 status code (OK) if a language is found.</li>
- *     <li>Getting all language entries returns these entries and an HTTP 200 status code (OK).</li>
+ *     <li>Getting a language entry returns a {@code 404 Not Found} HTTP status code if there is no language found.</li>
+ *     <li>Getting a language entry returns this entry in HAL format and a {@code 200 Ok} HTTP status code if a language is found.</li>
+ *     <li>Getting all language entries returns these entries in HAL format and a {@code 200 Ok} HTTP status code.</li>
  * </ul>
- * <br/>
+ *
+ * <p>
  * The Language REST web service must verify the following tests related to <b>language update</b> :
  * <ul>
+ *     <li>Updating a language entry returns a {@code 405 Method Not Allowed} HTTP status code if no language code is provided.</li>
  *     <li>
- *         Updating a language entry returns an HTTP 400 status code (BAD REQUEST) if there is an invalid argument:
+ *         Updating a language entry returns a {@code 400 Bad Request} if there is an invalid argument:
  *         <ol>
  *             <li>no language</li>
  *             <li>language with null or empty code</li>
@@ -86,7 +92,8 @@ import static org.junit.Assert.fail;
  *     </li>
  *     <li>Updating a language entry with null properties (except code) only updates the properties set.</li>
  * </ul>
- * <br/>
+ *
+ * <p>
  * The Language REST web service must verify the following tests related to <b>language deletion</b> :
  * <ul>
  *     <li>Deleting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
@@ -107,6 +114,9 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     @SuppressWarnings("SpringJavaAutowiredMembersInspection")
     @Autowired
     private TestClientOperations testClientOperations;
+
+    @javax.annotation.Resource
+    private Mapper beanMapper;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -132,7 +142,13 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Creating a language entry returns an HTTP 400 status code (BAD REQUEST) if it has invalid arguments.
+     * Creating a language entry returns a {@code 400 Bad Request} HTTP status code if there is an invalid argument:
+     * <ol>
+     *  <li>no language</li>
+     *  <li>language with null or empty code</li>
+     *  <li>language with null or empty label</li>
+     *  <li>language with null or empty english label</li>
+     * </ol>
      */
     @Test
     public void createInvalidLanguage() {
@@ -150,27 +166,29 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
             fail("Should return a 400 BAD REQUEST response");
         }
         catch (HttpStatusCodeException e) {
+
             assertThat(e.getStatusCode(), is(HttpStatus.BAD_REQUEST));
         }
 
         // Test invalid code
-        callCreateLanguage(null, "Español", "Spanish");
-        callCreateLanguage("", "Español", "Spanish");
-        callCreateLanguage("  ", "Español", "Spanish");
+        callLanguageOperation(HttpMethod.POST, null, "Español", "Spanish");
+        callLanguageOperation(HttpMethod.POST, "", "Español", "Spanish");
+        callLanguageOperation(HttpMethod.POST, "  ", "Español", "Spanish");
 
         // Test invalid label
-        callCreateLanguage("esp", null, "Spanish");
-        callCreateLanguage("esp", "", "Spanish");
-        callCreateLanguage("esp", "  ", "Spanish");
+        callLanguageOperation(HttpMethod.POST, "esp", null, "Spanish");
+        callLanguageOperation(HttpMethod.POST, "esp", "", "Spanish");
+        callLanguageOperation(HttpMethod.POST, "esp", "  ", "Spanish");
 
         // Test invalid english label
-        callCreateLanguage("esp", "Español", null);
-        callCreateLanguage("esp", "Español", "");
-        callCreateLanguage("esp", "Español", "  ");
+        callLanguageOperation(HttpMethod.POST, "esp", "Español", null);
+        callLanguageOperation(HttpMethod.POST, "esp", "Español", "");
+        callLanguageOperation(HttpMethod.POST, "esp", "Español", "  ");
     }
 
     /**
-     * Creating a language entry returns an HTTP 409 status code (CONFLICT) if it already exists.
+     * Creating a language entry returns a {@code 409 Conflict} HTTP status code if it already exists.
+     * The code value must be trimmed when tested for existence.
      */
     @Test
     public void createDuplicateLanguage() {
@@ -190,19 +208,17 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
                             HttpMethod.POST,
                             httpEntity,
                             new TypeReferences.ResourceType<LanguageResource>() {});
+            fail("Should return a 409 CONFLICT response");
         }
         catch (HttpStatusCodeException e) {
 
             assertThat(e.getStatusCode(), is(HttpStatus.CONFLICT));
-            return;
         }
-
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
-        assertThat(responseEntity.getBody().getContent(), is(nullValue()));
     }
 
     /**
-     * Creating a language entry returns an HTTP 201 status code (CREATED) if it doesn't already exist.
+     * Creating a language entry returns a {@code 201 Created} HTTP status code if the entry doesn't already exist and the language argument is valid.
+     * The code value must be trimmed when tested for existence. All property values must be trimmed when created.
      * @throws HttpStatusCodeException If the language creation fails
      */
     @Test
@@ -231,7 +247,52 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Getting all language entries returns these entries in HAL format and an HTTP 200 status code (OK).
+     * Getting a language entry returns a {@code 404 Not Found} HTTP status code if there is no language found.
+     */
+    @Test
+    public void findOneMissingLanguage() {
+
+        LanguageResource initial = convertToResource(newDocumentToInsert());
+
+        // Call REST service
+        ResponseEntity<Resource<LanguageResource>> responseEntity;
+        try {
+            responseEntity =
+                    getHalRestTemplate().exchange(
+                            initial.getId().getHref(),
+                            HttpMethod.GET,
+                            null,
+                            new TypeReferences.ResourceType<LanguageResource>() {});
+            fail("Should return a 404 NOT FOUND response");
+        }
+        catch (HttpStatusCodeException e) {
+
+            assertThat(e.getStatusCode(), is(HttpStatus.NOT_FOUND));
+        }
+    }
+
+    /**
+     * Getting a language entry returns this entry in HAL format and a {@code 200 Ok} HTTP status code if a language is found.
+     */
+    @Test
+    public void findOneExistingLanguage() {
+
+        LanguageResource initial = convertToResource(newDocumentToUpdate());
+
+        // Call REST service
+        ResponseEntity<LanguageResource> responseEntity =
+                getHalRestTemplate().exchange(
+                        initial.getId().getHref(),
+                        HttpMethod.GET,
+                        null,
+                        LanguageResource.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        assertThat(responseEntity.getBody().getLinks(), is(initial.getLinks()));
+    }
+
+    /**
+     * Getting all language entries returns these entries in HAL format and a {@code 200 Ok} HTTP status code.
      */
     @Test
     public void findAllLanguages() {
@@ -252,66 +313,88 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
         assertThat(responseEntity.getBody().getContent().toArray(), is(fixture.toArray()));
-    }
-
-    /**
-     * Getting an existing language entry returns this entry in HAL format and an HTTP 200 status code (OK).
-     */
-    @Test
-    public void findOneExistingLanguage() {
-
-        LanguageResource initial = convertToResource(newDocumentToUpdate());
-
-        // Call REST service
-        ResponseEntity<LanguageResource> responseEntity =
-                getHalRestTemplate().exchange(
-                        initial.getId().getHref(),
-                        HttpMethod.GET,
-                        null,
-                        LanguageResource.class);
-
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
-        assertThat(responseEntity.getBody().getLinks(), is(initial.getLinks()));
-    }
-
-    /**
-     * Getting a missing language entry returns an HTTP 404 status code (NOT FOUND).
-     */
-    @Test
-    public void findOneMissingLanguage() {
-
-        LanguageResource initial = convertToResource(newDocumentToInsert());
-
-        // Call REST service
-        ResponseEntity<Resource<LanguageResource>> responseEntity;
-        try {
-            responseEntity =
-                    getHalRestTemplate().exchange(
-                            initial.getId().getHref(),
-                            HttpMethod.GET,
-                            null,
-                            new TypeReferences.ResourceType<LanguageResource>() {});
-        }
-        catch (HttpStatusCodeException e) {
-
-            assertThat(e.getStatusCode(), is(HttpStatus.NOT_FOUND));
-            return;
-        }
-
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.NOT_FOUND));
-        assertThat(responseEntity.getBody().getContent(), is(nullValue()));
+        assertThat(responseEntity.getBody().getLinks().toArray(), is(getLanguagesLinks().toArray()));
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                     Tests related to language update                                           */
     /*----------------------------------------------------------------------------------------------------------------*/
 
+    /*
+     * Updating a language entry returns a {@code 405 Method Not Allowed} HTTP status code if no language code is provided.
+     */
+    @Test
+    public void updateLanguageWithoutCode() {
+
+        // Test null language
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
+        HttpEntity<Language> httpEntityNull = new HttpEntity<>(null, httpHeaders);
+        try {
+            getHalRestTemplate().exchange(
+                    getWebServiceUrl(),         // No code provided
+                    HttpMethod.PUT,
+                    httpEntityNull,
+                    new TypeReferences.ResourceType<LanguageResource>() {});
+            fail("Should return a 405 METHOD NOT ALLOWED response");
+        }
+        catch (HttpStatusCodeException e) {
+
+            assertThat(e.getStatusCode(), is(HttpStatus.METHOD_NOT_ALLOWED));
+        }
+    }
+
+    /*
+     * Updating a language entry returns a {@code 400 Bad Request} if there is an invalid argument:
+     * <ol>
+     *  <li>no language</li>
+     *  <li>language with null or empty code</li>
+     *  <li>language with empty label (null is accepted)</li>
+     *  <li>language with empty english label (null is accepted)</li>
+     * </ol>
+     */
+    @Test
+    public void updateInvalidLanguage() {
+
+        // Test null language
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
+        HttpEntity<Language> httpEntityNull = new HttpEntity<>(null, httpHeaders);
+        try {
+            getHalRestTemplate().exchange(
+                    getWebServiceUrl() + "/esp",
+                    HttpMethod.PUT,
+                    httpEntityNull,
+                    new TypeReferences.ResourceType<LanguageResource>() {});
+            fail("Should return a 400 BAD REQUEST response");
+        }
+        catch (HttpStatusCodeException e) {
+
+            assertThat(e.getStatusCode(), is(HttpStatus.BAD_REQUEST));
+        }
+
+        // Test invalid code
+        callLanguageOperation(HttpMethod.POST, null, "Español", "Spanish");
+        callLanguageOperation(HttpMethod.POST, "", "Español", "Spanish");
+        callLanguageOperation(HttpMethod.POST, "  ", "Español", "Spanish");
+
+        // Test invalid label
+        callLanguageOperation(HttpMethod.PUT, "esp", null, "Spanish");
+        callLanguageOperation(HttpMethod.PUT, "esp", "", "Spanish");
+        callLanguageOperation(HttpMethod.PUT, "esp", "  ", "Spanish");
+
+        // Test invalid english label
+        callLanguageOperation(HttpMethod.PUT, "esp", "Español", null);
+        callLanguageOperation(HttpMethod.PUT, "esp", "Español", "");
+        callLanguageOperation(HttpMethod.PUT, "esp", "Español", "  ");
+    }
+
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                    Tests related to language deletion                                          */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                    Tests related to language deletion                                          */
+    /*                                              Helper methods                                                    */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
@@ -319,11 +402,45 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * @return URL of the web service to test
      */
     private URI getWebServiceUrl() {
+        return getWebServiceUrl(false);
+    }
+
+    /**
+     * Get URL of the web service to test
+     * @param profile Indicate if a profile URL is returned
+     * @return URL of the web service to test
+     */
+    private URI getWebServiceUrl(boolean profile) {
         try {
-            return new URI("http", null, "localhost", serverPort, "/languages/", null, null);
+            return new URI("http", null, "localhost", serverPort, (profile ? "/profile" : "") + "/languages", null, null);
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid server URI", e);
         }
+    }
+
+    /**
+     * Convert a language to a resource containing a language anf HAL links
+     * @param language The language to convert
+     * @return The resource containing a language
+     */
+    private LanguageResource convertToResource(Language language) {
+
+        LanguageResource result = beanMapper.map(language, LanguageResource.class);
+        result.add(new Link(getWebServiceUrl().toString() + "/" + language.getCode()));
+        result.add(new Link(getWebServiceUrl().toString() + "/" + language.getCode(), "language"));
+
+        return result;
+    }
+
+    /**
+     * Get the HAL links expected when requesting languages resource
+     * @return A list of HAL links
+     */
+    private List<Link> getLanguagesLinks() {
+
+        return Arrays.asList(
+                new Link(getWebServiceUrl().toString()),
+                new Link(getWebServiceUrl(true).toString(), "profile"));
     }
 
     /**
@@ -344,29 +461,13 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     }
 
     /**
-     * Convert a language to a resource containing a language
-     * @param language The language to convert
-     * @return The resource containing a language
-     */
-    private LanguageResource convertToResource(Language language) {
-
-        LanguageResource result = new LanguageResource();
-        result.setLabel(language.getLabel());
-        result.setEnglishLabel(language.getEnglishLabel());
-
-        result.add(new Link(getWebServiceUrl().toString() + language.getCode()));
-        result.add(new Link(getWebServiceUrl().toString() + language.getCode(), "language"));
-
-        return result;
-    }
-
-    /**
      * Call the REST service for language creation with given properties
+     * @param httpMethod The HTTP method to use (POST or PUT)
      * @param code The language code
      * @param label The language label
      * @param englishLabel The language english label
      */
-    private void callCreateLanguage(String code, String label, String englishLabel) {
+    private void callLanguageOperation(HttpMethod httpMethod, String code, String label, String englishLabel) {
 
         Language language = new Language();
         language.setCode(code);
@@ -375,12 +476,12 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
-        HttpEntity<Language> httpEntityEmptyCode = new HttpEntity<>(language, httpHeaders);
+        HttpEntity<Language> httpEntityLanguage = new HttpEntity<>(language, httpHeaders);
         try {
             getHalRestTemplate().exchange(
-                    getWebServiceUrl(),
-                    HttpMethod.POST,
-                    httpEntityEmptyCode,
+                    getWebServiceUrl() + (HttpMethod.PUT.equals(httpMethod) ? "/" + code : ""),
+                    httpMethod,
+                    httpEntityLanguage,
                     new TypeReferences.ResourceType<LanguageResource>() {});
             fail("Should return a 400 BAD REQUEST response");
         }
