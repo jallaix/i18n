@@ -1,11 +1,8 @@
 package info.jallaix.message.dto;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.core.style.ToStringCreator;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 
@@ -19,8 +16,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
  */
 @Document(indexName = "message", type = "language", shards = 1, replicas = 0)
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class Language {
 
     /**
