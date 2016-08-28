@@ -16,14 +16,19 @@ import org.springframework.data.elasticsearch.annotations.Document;
  */
 @Document(indexName = "message", type = "language", shards = 1, replicas = 0)
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class Language {
+
+    /**
+     * Identifier
+     */
+    @Id
+    private String id;
 
     /**
      * Language code
      */
-    @Id
     private String code;
 
     /**

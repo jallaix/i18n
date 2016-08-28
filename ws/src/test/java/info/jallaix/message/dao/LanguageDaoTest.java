@@ -4,13 +4,16 @@ import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsCrudTestCase;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.TestedMethod;
-import org.junit.*;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
+
+import java.lang.reflect.Field;
 
 /**
  * The Language DAO must verify some tests provided by SpringDataEsCrudTestCase.
@@ -46,17 +49,28 @@ public class LanguageDaoTest extends SpringDataEsCrudTestCase<Language, String, 
                 TestedMethod.Index.class,
                 TestedMethod.FindOne.class,
                 TestedMethod.FindAll.class,
-                TestedMethod.DeleteById.class);
+                TestedMethod.DeleteById.class
+        );
     }
 
     @Override
     protected Language newDocumentToInsert() {
-        return new Language("esp", "Español", "Spanish");
+        return new Language("4", "esp", "Español", "Spanish");
     }
 
     @Override
     protected Language newDocumentToUpdate() {
-        return new Language("fra", "Español", "Spanish");
+        return new Language("2", "esp", "Español", "Spanish");
+    }
+
+    @Override
+    protected Field getFieldToSortBy() {
+
+        try {
+            return Language.class.getDeclaredField("code");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

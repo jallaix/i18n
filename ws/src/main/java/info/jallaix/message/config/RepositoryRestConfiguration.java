@@ -17,6 +17,6 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
         // Spring Data REST looks for this validator when executing a POST request on the "/languages" resource so as to validate the argument
         validatingRepositoryEventListener.addValidator("beforeCreate", new LanguageValidator());
         // Spring Data REST looks for this validator when executing a PUT request on the "/languages" resource so as to validate the argument
-        validatingRepositoryEventListener.addValidator("beforeSave", new LanguageValidator());
+        //validatingRepositoryEventListener.addValidator("beforeSave", new LanguageValidator());
     }
 }
