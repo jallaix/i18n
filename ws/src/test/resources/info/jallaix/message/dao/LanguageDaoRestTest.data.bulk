@@ -4,3 +4,45 @@
 { "code" : "fra", "label" : "Français", "englishLabel" : "French" }
 { "create" : { "_index" : "message", "_type" : "language", "_id" : "3" } }
 { "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "4" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "5" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "6" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "7" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "8" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "9" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "10" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "11" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "12" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "13" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "14" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "15" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "16" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "17" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "18" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "19" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "20" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "21" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "22" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "23" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "language", "_id" : "24" } }
+{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }

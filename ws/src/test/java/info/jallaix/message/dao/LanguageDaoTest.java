@@ -3,7 +3,7 @@ package info.jallaix.message.dao;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsCrudTestCase;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
-import info.jallaix.spring.data.es.test.TestedMethod;
+import info.jallaix.spring.data.es.test.DaoTestedMethod;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.springframework.context.annotation.Configuration;
@@ -45,11 +45,11 @@ public class LanguageDaoTest extends SpringDataEsCrudTestCase<Language, String, 
      */
     public LanguageDaoTest() {
         super(
-                TestedMethod.Exist.class,
-                TestedMethod.Index.class,
-                TestedMethod.FindOne.class,
-                TestedMethod.FindAll.class,
-                TestedMethod.DeleteById.class
+                DaoTestedMethod.Exist.class,
+                DaoTestedMethod.Index.class,
+                DaoTestedMethod.FindOne.class,
+                DaoTestedMethod.FindAll.class,
+                DaoTestedMethod.DeleteById.class
         );
     }
 
@@ -64,7 +64,7 @@ public class LanguageDaoTest extends SpringDataEsCrudTestCase<Language, String, 
     }
 
     @Override
-    protected Field getFieldToSortBy() {
+    protected Field getSortField() {
 
         try {
             return Language.class.getDeclaredField("code");
