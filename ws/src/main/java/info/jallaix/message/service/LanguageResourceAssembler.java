@@ -1,28 +1,31 @@
 package info.jallaix.message.service;
 
 import info.jallaix.message.dto.Language;
+import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
+import org.springframework.stereotype.Component;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 /**
- * Created by Julien on 29/05/2016.
+ * This class assembles languages with links to return HATEOAS resources.
  */
-public class LanguageResourceAssembler extends ResourceAssemblerSupport<Language, LanguageResource> {
+@Component
+public class LanguageResourceAssembler extends ResourceAssemblerSupport<Language, Resource> {
 
+    /**
+     * Constructor storing the Language web controller
+     */
     public LanguageResourceAssembler() {
-        super(LanguageController.class, LanguageResource.class);
+        super(LanguageController.class, Resource.class);
     }
 
     @Override
-    public LanguageResource toResource(Language language) {
+    public Resource toResource(Language language) {
 
-        LanguageResource resource = this.createResourceWithId(language.getCode(), language);
-        resource.setLabel(language.getLabel());
-        resource.setEnglishLabel(language.getEnglishLabel());
-
-        resource.add(linkTo(LanguageController.class).withSelfRel());
-       // resource.add(linkTo(LanguageController.class).withRel("language"));
+        Resource<Language> resource = new Resource<>(language);
+        resource.add(linkTo(LanguageController.class).slash(language.getId()).withSelfRel());
+        resource.add(linkTo(LanguageController.class).slash(language.getId()).withRel("language"));
 
         return resource;
     }

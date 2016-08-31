@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dto.Language;
-import info.jallaix.message.service.LanguageResource;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
 import info.jallaix.spring.data.es.test.TestClientOperations;
 import org.dozer.Mapper;
@@ -18,6 +17,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.hal.Jackson2HalModule;
 import org.springframework.hateoas.mvc.TypeReferences;
 import org.springframework.http.*;
@@ -220,7 +220,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     @Test
     public void findOneMissingLanguage() {
 
-        LanguageResource initial = convertToResource(newDocumentToInsert());
+        Resource<Language> initial = convertToResource(newDocumentToInsert());
         getLanguage(initial.getId(), HttpStatus.NOT_FOUND, true);
     }
 
@@ -230,10 +230,12 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     @Test
     public void findOneExistingLanguage() {
 
-        LanguageResource initial = convertToResource(newDocumentToUpdate());
-        ResponseEntity<LanguageResource> responseEntity = getLanguage(initial.getId(), HttpStatus.OK, false);
+        Resource<Language> initial = convertToResource(newDocumentToUpdate());
+        ResponseEntity<Resource<Language>> response = getLanguage(initial.getId(), HttpStatus.OK, false);
 
-        assertThat(responseEntity.getBody().getLinks(), is(initial.getLinks()));
+        assertThat(response, is(notNullValue()));
+        assert response != null;
+        assertThat(response.getBody().getLinks(), is(initial.getLinks()));
     }
 
     /**
@@ -272,7 +274,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
                     getWebServiceUrl(),         // No code provided
                     HttpMethod.PUT,
                     httpEntityNull,
-                    LanguageResource.class);
+                    new TypeReferences.ResourceType<Language>() {});
             fail("Should return a 405 METHOD NOT ALLOWED response");
         } catch (HttpStatusCodeException e) {
 
@@ -304,9 +306,10 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     public void updateValidLanguage() {
 
         Language languageToUpdate = newDocumentToUpdate();
-        ResponseEntity<LanguageResource> response = updateLanguage(languageToUpdate.getId(), languageToUpdate, HttpStatus.OK, false, null);
+        ResponseEntity<Resource<Language>> response = updateLanguage(languageToUpdate.getId(), languageToUpdate, HttpStatus.OK, false, null);
 
         assertThat(response, is(notNullValue()));
+        assert response != null;
         assertThat(response.getBody(), is(convertToResource(languageToUpdate)));
     }
 
@@ -347,11 +350,12 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * @param language The language to convert
      * @return The resource containing a language
      */
-    private LanguageResource convertToResource(Language language) {
+    private Resource<Language> convertToResource(Language language) {
 
-        LanguageResource result = beanMapper.map(language, LanguageResource.class);
+        Resource<Language> result = new Resource<>(language);
         result.add(new Link(getWebServiceUrl().toString() + "/" + language.getId()));
         result.add(new Link(getWebServiceUrl().toString() + "/" + language.getId(), "language"));
+        result.getContent().setId(null);
 
         return result;
     }
@@ -419,19 +423,19 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * @param expectedErrors Expected validation errors to assert
      * @return The created language resource
      */
-    private ResponseEntity<LanguageResource> createLanguage(Language language, HttpStatus expectedStatus, boolean expectedError, List<ValidationError> expectedErrors) {
+    private ResponseEntity<Resource<Language>> createLanguage(Language language, HttpStatus expectedStatus, boolean expectedError, List<ValidationError> expectedErrors) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
         HttpEntity<Language> httpEntity = new HttpEntity<>(language, httpHeaders);
 
         try {
-            ResponseEntity<LanguageResource> responseEntity =
+            ResponseEntity<Resource<Language>> responseEntity =
                     getHalRestTemplate().exchange(
                             getWebServiceUrl(),
                             HttpMethod.POST,
                             httpEntity,
-                            LanguageResource.class);
+                            new TypeReferences.ResourceType<Language>() {});
 
             if (expectedError)
                 fail("Should return a " + expectedStatus.value() + " " + expectedStatus.name() + " response");
@@ -457,15 +461,15 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * @param expectedError {@code true} if an error is expected
      * @return The get language resource
      */
-    private ResponseEntity<LanguageResource> getLanguage(Link linkId, HttpStatus expectedStatus, boolean expectedError) {
+    private ResponseEntity<Resource<Language>> getLanguage(Link linkId, HttpStatus expectedStatus, boolean expectedError) {
 
         try {
-            ResponseEntity<LanguageResource> responseEntity =
+            ResponseEntity<Resource<Language>> responseEntity =
                     getHalRestTemplate().exchange(
                             linkId.getHref(),
                             HttpMethod.GET,
                             null,
-                            LanguageResource.class);
+                            new TypeReferences.ResourceType<Language>() {});
 
             if (expectedError)
                 fail("Should return a " + expectedStatus.value() + " " + expectedStatus.name() + " response");
@@ -486,33 +490,33 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * @param page {@code null} if no page is request, else a page number starting from 0
      * @return The get language resources
      */
-    private ResponseEntity<PagedResources<LanguageResource>> findAllLanguages(Integer page) {
+    private ResponseEntity<PagedResources<Language>> findAllLanguages(Integer page) {
 
-        final Field fieldToSortBy = getSortField();
+        final Field sortField = getSortField();
         final int pageSize = getPageSize();
 
         List<Language> documents;
-        String urlParams = "?sort=" + fieldToSortBy.getName() + ",desc";
+        String urlParams = "?sort=" + sortField.getName() + ",desc";
         if (page != null) {
-            documents = testClientOperations.findAllDocumentsByPage(getDocumentMetadata(), documentClass, documentIdField, fieldToSortBy, page, pageSize);
+            documents = testClientOperations.findAllDocumentsByPage(getDocumentMetadata(), documentClass, sortField, page, pageSize);
             urlParams += "&page=" + page + "&size=" + pageSize;
         }
         else
-            documents = testClientOperations.findAllDocumentsSorted(getDocumentMetadata(), documentClass, documentIdField, fieldToSortBy);
+            documents = testClientOperations.findAllDocumentsSorted(getDocumentMetadata(), documentClass, sortField);
 
         // Find initial data
-        List<LanguageResource> fixture = documents
+        List<Resource<Language>> fixture = documents
                 .stream()
                 .map(this::convertToResource)
                 .collect(Collectors.toList());
 
         // Call REST service
-        ResponseEntity<PagedResources<LanguageResource>> responseEntity =
+        ResponseEntity<PagedResources<Language>> responseEntity =
                 getHalRestTemplate().exchange(
                         getWebServiceUrl() + urlParams,
                         HttpMethod.GET,
                         null,
-                        new TypeReferences.PagedResourcesType<LanguageResource>() {
+                        new TypeReferences.PagedResourcesType<Language>() {
                         });
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
@@ -534,19 +538,19 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * @param expectedErrors Expected validation errors to assert
      * @return The updated language resource
      */
-   private ResponseEntity<LanguageResource> updateLanguage(String id, Language language, HttpStatus expectedStatus, boolean expectedError, List<ValidationError> expectedErrors) {
+   private ResponseEntity<Resource<Language>> updateLanguage(String id, Language language, HttpStatus expectedStatus, boolean expectedError, List<ValidationError> expectedErrors) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
         HttpEntity<Language> httpEntity = new HttpEntity<>(language, httpHeaders);
 
         try {
-            ResponseEntity<LanguageResource> responseEntity =
+            ResponseEntity<Resource<Language>> responseEntity =
                     getHalRestTemplate().exchange(
                             getWebServiceUrl() + "/" + id,
                             HttpMethod.PUT,
                             httpEntity,
-                            LanguageResource.class);
+                            new TypeReferences.ResourceType<Language>() {});
 
             if (expectedError)
                 fail("Should return a " + expectedStatus.value() + " " + expectedStatus.name() + " response");
