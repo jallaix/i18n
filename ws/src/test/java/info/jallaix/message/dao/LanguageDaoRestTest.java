@@ -1,45 +1,27 @@
 package info.jallaix.message.dao;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dto.Language;
-import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
-import info.jallaix.spring.data.es.test.TestClientOperations;
+import info.jallaix.spring.data.es.test.SpringDataRestEsTestCase;
+import info.jallaix.spring.data.es.test.ValidationError;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.hal.Jackson2HalModule;
 import org.springframework.hateoas.mvc.TypeReferences;
-import org.springframework.http.*;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * <p>
@@ -93,17 +75,10 @@ import static org.junit.Assert.fail;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(ApplicationMock.class)
 @WebIntegrationTest(randomPort = true)
-public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, LanguageDao> {
+public class LanguageDaoRestTest extends SpringDataRestEsTestCase<Language, String, LanguageDao> {
 
     @Value("${local.server.port}")
     private int serverPort;
-
-    /**
-     * Test client operations
-     */
-    @SuppressWarnings("SpringJavaAutowiredMembersInspection")
-    @Autowired
-    private TestClientOperations testClientOperations;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -135,6 +110,15 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
         return 2;
     }
 
+    @Override
+    protected TypeReferences.ResourceType<Language> getResourceType() {
+        return new TypeReferences.ResourceType<Language>() {};
+    }
+
+    @Override
+    protected TypeReferences.PagedResourcesType<Resource<Language>> getPagedResourcesType() {
+        return new TypeReferences.PagedResourcesType<Resource<Language>>() {};
+    }
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                    Tests related to language creation                                          */
@@ -153,34 +137,34 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     public void createInvalidLanguage() {
 
         // Test null language
-        createLanguage(null, HttpStatus.BAD_REQUEST, true, null);
+        postEntity(null, HttpStatus.BAD_REQUEST, true);
 
         // Test invalid code
-        createLanguage(new Language(null, null, "Español", "Spanish"), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, null, "Español", "Spanish"), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.code.required", "null", "code")));
-        createLanguage(new Language(null, "", "Español", "Spanish"), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "", "Español", "Spanish"), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.code.required", "", "code")));
-        createLanguage(new Language(null, "  ", "Español", "Spanish"), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "  ", "Español", "Spanish"), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.code.required", "  ", "code")));
 
         // Test invalid label
-        createLanguage(new Language(null, "esp", null, "Spanish"), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "esp", null, "Spanish"), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.label.required", "null", "label")));
-        createLanguage(new Language(null, "esp", "", "Spanish"), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "esp", "", "Spanish"), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.label.required", "", "label")));
-        createLanguage(new Language(null, "esp", "  ", "Spanish"), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "esp", "  ", "Spanish"), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.label.required", "  ", "label")));
 
         // Test invalid english label
-        createLanguage(new Language(null, "esp", "Español", null), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "esp", "Español", null), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.englishLabel.required", "null", "englishLabel")));
-        createLanguage(new Language(null, "esp", "Español", ""), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "esp", "Español", ""), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.englishLabel.required", "", "englishLabel")));
-        createLanguage(new Language(null, "esp", "Español", "  "), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, "esp", "Español", "  "), HttpStatus.BAD_REQUEST, true,
                 Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.englishLabel.required", "  ", "englishLabel")));
 
         // Test all invalid properties
-        createLanguage(new Language(null, null, null, null), HttpStatus.BAD_REQUEST, true,
+        postEntity(new Language(null, null, null, null), HttpStatus.BAD_REQUEST, true,
                 Arrays.asList(
                         new ValidationError(Language.class.getSimpleName(), "language.code.required", "null", "code"),
                         new ValidationError(Language.class.getSimpleName(), "language.label.required", "null", "label"),
@@ -194,7 +178,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      */
     @Test
     public void createDuplicateLanguage() {
-        createLanguage(newDocumentToUpdate(), HttpStatus.CONFLICT, true, null);
+        postEntity(newDocumentToUpdate(), HttpStatus.CONFLICT, true);
     }
 
     /**
@@ -203,7 +187,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      */
     @Test
     public void createValidLanguage() {
-        createLanguage(newDocumentToInsert(), HttpStatus.CREATED, false, null);
+        postEntity(newDocumentToInsert(), HttpStatus.CREATED, false);
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -217,7 +201,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     public void findOneMissingLanguage() {
 
         Resource<Language> initial = convertToResource(newDocumentToInsert());
-        getLanguage(initial.getId(), HttpStatus.NOT_FOUND, true);
+        getEntity(initial.getId(), HttpStatus.NOT_FOUND, true);
     }
 
     /**
@@ -227,7 +211,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     public void findOneExistingLanguage() {
 
         Resource<Language> initial = convertToResource(newDocumentToUpdate());
-        ResponseEntity<Resource<Language>> response = getLanguage(initial.getId(), HttpStatus.OK, false);
+        ResponseEntity<Resource<Language>> response = getEntity(initial.getId(), HttpStatus.OK, false);
 
         assertThat(response, is(notNullValue()));
         assert response != null;
@@ -239,7 +223,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      */
     @Test
     public void findAllLanguagesSorted() {
-        findAllLanguages(null);
+        getEntities();
     }
 
     /**
@@ -248,8 +232,8 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     @Test
     public void findAllPagedLanguagesSorted() {
 
-        findAllLanguages(0);
-        findAllLanguages(1);
+        getEntities(0);
+        getEntities(1);
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -260,30 +244,14 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * Updating a language entry returns a {@code 405 Method Not Allowed} HTTP status code if no language identifier is provided.
      */
     @Test
-    public void updateLanguageWithoutId() {
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
-        HttpEntity<Language> httpEntityNull = new HttpEntity<>(null, httpHeaders);
-        try {
-            getHalRestTemplate().exchange(
-                    getWebServiceUrl(),         // No code provided
-                    HttpMethod.PUT,
-                    httpEntityNull,
-                    new TypeReferences.ResourceType<Language>() {});
-            fail("Should return a 405 METHOD NOT ALLOWED response");
-        } catch (HttpStatusCodeException e) {
-
-            assertThat(e.getStatusCode(), is(HttpStatus.METHOD_NOT_ALLOWED));
-        }
-    }
+    public void updateLanguageWithoutId() { putEntity(null, null, HttpStatus.METHOD_NOT_ALLOWED, true); }
 
     /**
      * Updating a language entry returns a {@code 400 Bad Request} HTTP status code if there is no language provided.
      */
     @Test
     public void updateInvalidLanguage() {
-        updateLanguage("1", null, HttpStatus.BAD_REQUEST, true, null);
+        putEntity("1", null, HttpStatus.BAD_REQUEST, true);
     }
 
     /**
@@ -292,7 +260,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      */
     @Test
     public void updateNonExistingLanguage() {
-        updateLanguage("4", new Language(null, "esp", "Español", "Spanish"), HttpStatus.NOT_FOUND, true, null);
+        putEntity("4", new Language(null, "esp", "Español", "Spanish"), HttpStatus.NOT_FOUND, true);
     }
 
     /**
@@ -302,7 +270,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     public void updateValidLanguage() {
 
         Language languageToUpdate = newDocumentToUpdate();
-        ResponseEntity<Resource<Language>> response = updateLanguage(languageToUpdate.getId(), languageToUpdate, HttpStatus.OK, false, null);
+        ResponseEntity<Resource<Language>> response = putEntity(languageToUpdate.getId(), languageToUpdate, HttpStatus.OK, false);
 
         assertThat(response, is(notNullValue()));
         assert response != null;
@@ -312,279 +280,4 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                    Tests related to language deletion                                          */
     /*----------------------------------------------------------------------------------------------------------------*/
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                              Helper methods                                                    */
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    /**
-     * Get URL of the web service to test
-     *
-     * @return URL of the web service to test
-     */
-    private URI getWebServiceUrl() {
-        return getWebServiceUrl(false);
-    }
-
-    /**
-     * Get URL of the web service to test
-     *
-     * @param profile Indicate if a profile URL is returned
-     * @return URL of the web service to test
-     */
-    private URI getWebServiceUrl(boolean profile) {
-        try {
-            return new URI("http", null, "localhost", serverPort, (profile ? "/profile" : "") + "/languages", null, null);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid server URI", e);
-        }
-    }
-
-    /**
-     * Convert a language to a resource containing a language with HATEOAS links
-     *
-     * @param language The language to convert
-     * @return The resource containing a language
-     */
-    private Resource<Language> convertToResource(Language language) {
-
-        Resource<Language> result = new Resource<>(language);
-        result.add(new Link(getWebServiceUrl().toString() + "/" + language.getId()));
-        result.add(new Link(getWebServiceUrl().toString() + "/" + language.getId(), "language"));
-        result.getContent().setId(null);
-
-        return result;
-    }
-
-    /**
-     * Get expected HATEOAS links when requesting language resources
-     *
-     * @return A list of HATEOAS links
-     */
-    private List<Link> getLanguagesLinks() {
-
-        return Arrays.asList(
-                new Link(getWebServiceUrl().toString()),
-                new Link(getWebServiceUrl(true).toString(), "profile"));
-    }
-
-    /**
-     * Get expected HATEOAS links when requesting paged language resources
-     *
-     * @return A list of HATEOAS links
-     */
-    private List<Link> getPagedLanguagesLinks(int page) {
-
-        final String fieldToSortBy = getSortField().getName();
-        final int pageSize = getPageSize();
-        final long documentCount = testClientOperations.countDocuments(getDocumentMetadata());
-        final long lastPage = documentCount / pageSize - (documentCount % pageSize == 0 ? 1 : 0);
-
-        List<Link> links = new ArrayList<>();
-        links.add(new Link(getWebServiceUrl().toString() + "?page=0&size=" + pageSize + "&sort=" + fieldToSortBy + ",desc", "first"));
-        if (page > 0)
-            links.add(new Link(getWebServiceUrl().toString() + "?page=" + (page - 1) + "&size=" + pageSize + "&sort=" + fieldToSortBy + ",desc", "prev"));
-        links.add(new Link(getWebServiceUrl().toString()));
-        if (page < lastPage)
-            links.add(new Link(getWebServiceUrl().toString() + "?page=" + (page + 1) + "&size=" + pageSize + "&sort=" + fieldToSortBy + ",desc", "next"));
-        links.add(new Link(getWebServiceUrl().toString() + "?page=" + lastPage + "&size=" + pageSize + "&sort=" + fieldToSortBy + ",desc", "last"));
-        links.add(new Link(getWebServiceUrl(true).toString(), "profile"));
-
-        return links;
-    }
-
-    /**
-     * Get a HAL REST template
-     *
-     * @return A HAL REST template
-     */
-    private RestTemplate getHalRestTemplate() {
-
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(new Jackson2HalModule());
-
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-        converter.setSupportedMediaTypes(MediaType.parseMediaTypes("application/hal+json"));
-        converter.setObjectMapper(mapper);
-
-        return new RestTemplate(Collections.<HttpMessageConverter<?>>singletonList(converter));
-    }
-
-    /**
-     * Call the Language REST service to create an entity
-     * @param language Language data to create
-     * @param expectedStatus Expected HTTP status to assert
-     * @param expectedError {@code true} if an error is expected
-     * @param expectedErrors Expected validation errors to assert
-     * @return The created language resource
-     */
-    private ResponseEntity<Resource<Language>> createLanguage(Language language, HttpStatus expectedStatus, boolean expectedError, List<ValidationError> expectedErrors) {
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
-        HttpEntity<Language> httpEntity = new HttpEntity<>(language, httpHeaders);
-
-        try {
-            ResponseEntity<Resource<Language>> responseEntity =
-                    getHalRestTemplate().exchange(
-                            getWebServiceUrl(),
-                            HttpMethod.POST,
-                            httpEntity,
-                            new TypeReferences.ResourceType<Language>() {});
-
-            if (expectedError)
-                fail("Should return a " + expectedStatus.value() + " " + expectedStatus.name() + " response");
-            else {
-                assertThat(responseEntity.getStatusCode(), is(expectedStatus));
-                return responseEntity;
-            }
-        }
-        catch (HttpStatusCodeException e) {
-
-            assertThat(e.getStatusCode(), is(expectedStatus));
-            if (expectedErrors != null)
-                assertThat(findValidationErrors(e).toArray(), is(expectedErrors.toArray()));
-        }
-
-        return null;
-    }
-
-    /**
-     * Call the Language REST service to get an entity
-     * @param linkId HATEOAS link to get the entity
-     * @param expectedStatus Expected HTTP status to assert
-     * @param expectedError {@code true} if an error is expected
-     * @return The language resource found
-     */
-    private ResponseEntity<Resource<Language>> getLanguage(Link linkId, HttpStatus expectedStatus, boolean expectedError) {
-
-        try {
-            ResponseEntity<Resource<Language>> responseEntity =
-                    getHalRestTemplate().exchange(
-                            linkId.getHref(),
-                            HttpMethod.GET,
-                            null,
-                            new TypeReferences.ResourceType<Language>() {});
-
-            if (expectedError)
-                fail("Should return a " + expectedStatus.value() + " " + expectedStatus.name() + " response");
-            else {
-                assertThat(responseEntity.getStatusCode(), is(expectedStatus));
-                return responseEntity;
-            }
-        }
-        catch (HttpStatusCodeException e) {
-            assertThat(e.getStatusCode(), is(HttpStatus.NOT_FOUND));
-        }
-
-        return null;
-    }
-
-    /**
-     * Call the Language REST service to get all entities
-     * @param page {@code null} if no page is request, else a page number starting from 0
-     * @return The language resources found
-     */
-    private ResponseEntity<PagedResources<Resource<Language>>> findAllLanguages(Integer page) {
-
-        final Field sortField = getSortField();
-        final int pageSize = getPageSize();
-
-        List<Language> documents;
-        String urlParams = "?sort=" + sortField.getName() + ",desc";
-        if (page != null) {
-            documents = testClientOperations.findAllDocumentsByPage(getDocumentMetadata(), documentClass, sortField, page, pageSize);
-            urlParams += "&page=" + page + "&size=" + pageSize;
-        }
-        else
-            documents = testClientOperations.findAllDocumentsSorted(getDocumentMetadata(), documentClass, sortField);
-
-        // Find initial data
-        List<Resource<Language>> fixture = documents
-                .stream()
-                .map(this::convertToResource)
-                .collect(Collectors.toList());
-
-        // Call REST service
-        ResponseEntity<PagedResources<Resource<Language>>> responseEntity =
-                getHalRestTemplate().exchange(
-                        getWebServiceUrl() + urlParams,
-                        HttpMethod.GET,
-                        null,
-                        new TypeReferences.PagedResourcesType<Resource<Language>>() {
-                        });
-
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
-        assertThat(responseEntity.getBody().getContent().toArray(), is(fixture.toArray()));
-        if (page != null)
-            assertThat(responseEntity.getBody().getLinks().toArray(), is(getPagedLanguagesLinks(page).toArray()));
-        else
-            assertThat(responseEntity.getBody().getLinks().toArray(), is(getLanguagesLinks().toArray()));
-
-        return responseEntity;
-    }
-
-    /**
-     * Call the Language REST service to update
-     * @param id Identifier of the language resource to update
-     * @param language Language data to update
-     * @param expectedStatus Expected HTTP status to assert
-     * @param expectedError {@code true} if an error is expected
-     * @param expectedErrors Expected validation errors to assert
-     * @return The updated language resource
-     */
-   private ResponseEntity<Resource<Language>> updateLanguage(String id, Language language, HttpStatus expectedStatus, boolean expectedError, List<ValidationError> expectedErrors) {
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.parseMediaType("application/hal+json"));
-        HttpEntity<Language> httpEntity = new HttpEntity<>(language, httpHeaders);
-
-        try {
-            ResponseEntity<Resource<Language>> responseEntity =
-                    getHalRestTemplate().exchange(
-                            getWebServiceUrl() + "/" + id,
-                            HttpMethod.PUT,
-                            httpEntity,
-                            new TypeReferences.ResourceType<Language>() {});
-
-            if (expectedError)
-                fail("Should return a " + expectedStatus.value() + " " + expectedStatus.name() + " response");
-            else {
-                assertThat(responseEntity.getStatusCode(), is(expectedStatus));
-                return responseEntity;
-            }
-        }
-        catch (HttpStatusCodeException e) {
-
-            assertThat(e.getStatusCode(), is(expectedStatus));
-            if (expectedErrors != null)
-                assertThat(findValidationErrors(e).toArray(), is(expectedErrors.toArray()));
-        }
-
-        return null;
-    }
-
-    /**
-     * Find validation errors from the HTTP exception body
-     * @param httpException HTTP exception that contains validation errors
-     * @return The list of validation errors found
-     */
-    private List<ValidationError> findValidationErrors(HttpStatusCodeException httpException) {
-
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            // The "errors" child node contains all validation errors
-            JsonNode errorsNode = mapper.readTree(httpException.getResponseBodyAsString()).get("errors");
-
-            // Map each error to a ValidationError object
-            TypeReference<ArrayList<ValidationError>> typeRef = new TypeReference<ArrayList<ValidationError>>() {};
-            return mapper.readValue(errorsNode.traverse(), typeRef);
-
-        } catch (IOException ioe) {
-
-            fail("Could not convert response body into JSON");
-            return new ArrayList<>();
-        }
-    }
 }
