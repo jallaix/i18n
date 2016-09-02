@@ -8,7 +8,6 @@ import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsTestCase;
 import info.jallaix.spring.data.es.test.TestClientOperations;
-import org.dozer.Mapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,9 +104,6 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     @SuppressWarnings("SpringJavaAutowiredMembersInspection")
     @Autowired
     private TestClientOperations testClientOperations;
-
-    @javax.annotation.Resource
-    private Mapper beanMapper;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -459,7 +455,7 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
      * @param linkId HATEOAS link to get the entity
      * @param expectedStatus Expected HTTP status to assert
      * @param expectedError {@code true} if an error is expected
-     * @return The get language resource
+     * @return The language resource found
      */
     private ResponseEntity<Resource<Language>> getLanguage(Link linkId, HttpStatus expectedStatus, boolean expectedError) {
 
@@ -488,9 +484,9 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
     /**
      * Call the Language REST service to get all entities
      * @param page {@code null} if no page is request, else a page number starting from 0
-     * @return The get language resources
+     * @return The language resources found
      */
-    private ResponseEntity<PagedResources<Language>> findAllLanguages(Integer page) {
+    private ResponseEntity<PagedResources<Resource<Language>>> findAllLanguages(Integer page) {
 
         final Field sortField = getSortField();
         final int pageSize = getPageSize();
@@ -511,12 +507,12 @@ public class LanguageDaoRestTest extends SpringDataEsTestCase<Language, String, 
                 .collect(Collectors.toList());
 
         // Call REST service
-        ResponseEntity<PagedResources<Language>> responseEntity =
+        ResponseEntity<PagedResources<Resource<Language>>> responseEntity =
                 getHalRestTemplate().exchange(
                         getWebServiceUrl() + urlParams,
                         HttpMethod.GET,
                         null,
-                        new TypeReferences.PagedResourcesType<Language>() {
+                        new TypeReferences.PagedResourcesType<Resource<Language>>() {
                         });
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));

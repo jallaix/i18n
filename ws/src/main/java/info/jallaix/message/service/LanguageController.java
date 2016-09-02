@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
  *     This controller overrides the POST operation for the {@link Language} entity so that it throws a {@code 409 Conflict} HTTP error when trying to update an existing {@link Language}.
  */
 @RepositoryRestController
-@RequestMapping("/languages")
 public class LanguageController {
 
     /**
@@ -43,6 +42,7 @@ public class LanguageController {
     /**
      * Validating event listener
      */
+    @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
     ValidatingRepositoryEventListener eventListener;
 
@@ -51,7 +51,7 @@ public class LanguageController {
      * @param request An HTTP request that contains a {@link Language} entity and headers
      * @return An HTTP response with a language resource
      */
-    @RequestMapping(method = RequestMethod.POST)
+    @RequestMapping(method = RequestMethod.POST, value="/languages")
     public @ResponseBody ResponseEntity<Resource> createLanguage(RequestEntity<Language> request) {
 
         // Argument validation
@@ -78,7 +78,7 @@ public class LanguageController {
      * @param id Identifier of the entity to update
      * @return An HTTP response with a language resource}
      */
-    @RequestMapping(method = RequestMethod.PUT, value = "/{id}")
+    @RequestMapping(method = RequestMethod.PUT, value = "/languages/{id}")
     public @ResponseBody ResponseEntity<Resource> saveLanguage(RequestEntity<Language> request, @PathVariable String id) {
 
         // Argument validation
