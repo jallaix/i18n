@@ -2,11 +2,10 @@ package info.jallaix.message.dao;
 
 import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dto.Language;
-import info.jallaix.spring.data.es.test.SpringDataRestEsTestCase;
-import info.jallaix.spring.data.es.test.ValidationError;
+import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
+import info.jallaix.spring.data.es.test.bean.ValidationError;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.hateoas.Resource;
@@ -75,11 +74,7 @@ import static org.junit.Assert.assertThat;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(ApplicationMock.class)
 @WebIntegrationTest(randomPort = true)
-public class LanguageDaoRestTest extends SpringDataRestEsTestCase<Language, String, LanguageDao> {
-
-    @Value("${local.server.port}")
-    private int serverPort;
-
+public class LanguageDaoRestTest extends BaseRestElasticsearchTestCase<Language, String, LanguageDao> {
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                      Abstract methods implementation                                           */
