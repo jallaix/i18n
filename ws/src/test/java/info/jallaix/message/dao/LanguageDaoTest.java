@@ -64,6 +64,11 @@ public class LanguageDaoTest extends BaseDaoElasticsearchTestCase<Language, Stri
     }
 
     @Override
+    protected Language newExistingDocument() {
+        return new Language("2", "fra", "Français", "French");
+    }
+
+    @Override
     protected Field getSortField() {
 
         try {
