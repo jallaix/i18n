@@ -20,36 +20,6 @@ import java.util.Map;
 
 /**
  * <p>
- * The Language REST web service must verify the following tests related to <b>language creation</b> :
- * <ul>
- *     <li>
- *         Creating a language entry returns a {@code 400 Bad Request} HTTP status code if there is an invalid argument:
- *         <ol>
- *             <li>no language</li>
- *             <li>language with null or empty code</li>
- *             <li>language with null or empty label</li>
- *             <li>language with null or empty english label</li>
- *         </ol>
- *     </li>
- *     <li>
- *         Creating a language entry returns a {@code 409 Conflict} HTTP status code if it already exists.
- *         The code value must be trimmed when tested for existence.
- *     </li>
- *     <li>
- *         Creating a language entry returns a {@code 201 Created} HTTP status code if the entry doesn't already exist and the language argument is valid.
- *         The code value must be trimmed when tested for existence. All property values must be trimmed when created.
- *     </li>
- * </ul>
- *
- * <p>
- * The Language REST web service must verify the following tests related to <b>language search</b> :
- * <ul>
- *     <li>Getting a language entry returns a {@code 404 Not Found} HTTP status code if there is no language found.</li>
- *     <li>Getting a language entry returns this entry in HATEOAS format and a {@code 200 Ok} HTTP status code if a language is found.</li>
- *     <li>Getting all language entries returns these entries in HATEOAS format and a {@code 200 Ok} HTTP status code.</li>
- * </ul>
- *
- * <p>
  * The Language REST web service must verify the following tests related to <b>language update</b> :
  * <ul>
  *     <li>Updating a language entry returns a {@code 405 Method Not Allowed} HTTP status code if no language identifier is provided.</li>
@@ -134,37 +104,37 @@ public class LanguageDaoRestTest extends BaseRestElasticsearchTestCase<Language,
         return ImmutableMap.<Language, List<ValidationError>>builder()
                 // Test invalid code
                 .put(
-                        new Language(null, null, "Español", "Spanish"),
+                        new Language("2", null, "Español", "Spanish"),
                         Collections.singletonList(new ValidationError(languageClassName, "language.code.required", "null", "code")))
                 .put(
-                        new Language(null, "", "Español", "Spanish"),
+                        new Language("2", "", "Español", "Spanish"),
                         Collections.singletonList(new ValidationError(languageClassName, "language.code.required", "", "code")))
                 .put(
-                        new Language(null, "  ", "Español", "Spanish"),
+                        new Language("2", "  ", "Español", "Spanish"),
                         Collections.singletonList(new ValidationError(languageClassName, "language.code.required", "  ", "code")))
                 // Test invalid label
                 .put(
-                        new Language(null, "esp", null, "Spanish"),
+                        new Language("2", "esp", null, "Spanish"),
                         Collections.singletonList(new ValidationError(languageClassName, "language.label.required", "null", "label")))
                 .put(
-                        new Language(null, "esp", "", "Spanish"),
+                        new Language("2", "esp", "", "Spanish"),
                         Collections.singletonList(new ValidationError(languageClassName, "language.label.required", "", "label")))
                 .put(
-                        new Language(null, "esp", "  ", "Spanish"),
+                        new Language("2", "esp", "  ", "Spanish"),
                         Collections.singletonList(new ValidationError(languageClassName, "language.label.required", "  ", "label")))
                 // Test invalid english label
                 .put(
-                        new Language(null, "esp", "Español", null),
+                        new Language("2", "esp", "Español", null),
                         Collections.singletonList(new ValidationError(languageClassName, "language.englishLabel.required", "null", "englishLabel")))
                 .put(
-                        new Language(null, "esp", "Español", ""),
+                        new Language("2", "esp", "Español", ""),
                         Collections.singletonList(new ValidationError(languageClassName, "language.englishLabel.required", "", "englishLabel")))
                 .put(
-                        new Language(null, "esp", "Español", "  "),
+                        new Language("2", "esp", "Español", "  "),
                         Collections.singletonList(new ValidationError(languageClassName, "language.englishLabel.required", "  ", "englishLabel")))
                 // Test all invalid properties
                 .put(
-                        new Language(null, null, null, null),
+                        new Language("2", null, null, null),
                         Arrays.asList(
                                 new ValidationError(languageClassName, "language.code.required", "null", "code"),
                                 new ValidationError(languageClassName, "language.label.required", "null", "label"),

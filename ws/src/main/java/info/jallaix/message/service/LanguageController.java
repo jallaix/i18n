@@ -5,6 +5,7 @@ import info.jallaix.message.dto.Language;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.core.event.BeforeCreateEvent;
+import org.springframework.data.rest.core.event.BeforeSaveEvent;
 import org.springframework.data.rest.core.event.ValidatingRepositoryEventListener;
 import org.springframework.data.rest.webmvc.RepositoryRestController;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -84,6 +85,8 @@ public class LanguageController {
         // Argument validation
         if (request.getBody() == null)
             throw new HttpMessageNotReadableException("Missing language data");
+
+        eventListener.onApplicationEvent(new BeforeSaveEvent(request.getBody()));
 
         // Update the language
         Language language = request.getBody();
