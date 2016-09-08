@@ -3,6 +3,7 @@ package info.jallaix.message.dao;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
+import info.jallaix.spring.data.es.test.testcase.DaoTestedMethod;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.springframework.context.annotation.Configuration;
@@ -43,13 +44,13 @@ public class LanguageDaoTest extends BaseDaoElasticsearchTestCase<Language, Stri
      * Constructor that defines the tests to pass
      */
     public LanguageDaoTest() {
-        /*super(
+        super(
                 DaoTestedMethod.Exist.class,
                 DaoTestedMethod.Index.class,
                 DaoTestedMethod.FindOne.class,
                 DaoTestedMethod.FindAll.class,
-                DaoTestedMethod.DeleteById.class
-        );*/
+                DaoTestedMethod.Delete.class
+        );
     }
 
     @Override
