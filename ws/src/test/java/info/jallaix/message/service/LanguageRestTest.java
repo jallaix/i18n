@@ -1,7 +1,8 @@
-package info.jallaix.message.dao;
+package info.jallaix.message.service;
 
 import com.google.common.collect.ImmutableMap;
 import info.jallaix.message.ApplicationMock;
+import info.jallaix.message.dao.LanguageDao;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.bean.ValidationError;
 import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
@@ -19,28 +20,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>
+ * <p/>
  * The Language REST web service must verify the following tests related to <b>language update</b> :
  * <ul>
- *     <li>Updating a language entry returns a {@code 405 Method Not Allowed} HTTP status code if no language identifier is provided.</li>
- *     <li>Updating a language entry returns a {@code 400 Bad Request} HTTP status code if there is no language provided.</li>
- *     <li>
- *         Updating a language entry returns a {@code 404 Not Found} HTTP status code if there is no existing language to update.
- *     </li>
- *     <li>Updating an existing language entry returns a {@code 200 Ok} HTTP status code as well as the updated resource that matches the resource in the request.</li>
+ * <li>Updating a language entry returns a {@code 405 Method Not Allowed} HTTP status code if no language identifier is provided.</li>
+ * <li>Updating a language entry returns a {@code 400 Bad Request} HTTP status code if there is no language provided.</li>
+ * <li>
+ * Updating a language entry returns a {@code 404 Not Found} HTTP status code if there is no existing language to update.
+ * </li>
+ * <li>Updating an existing language entry returns a {@code 200 Ok} HTTP status code as well as the updated resource that matches the resource in the request.</li>
  * </ul>
- *
- * <p>
+ * <p/>
+ * <p/>
  * The Language REST web service must verify the following tests related to <b>language deletion</b> :
  * <ul>
- *     <li>Deleting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
- *     <li>Deleting a language entry returns an HTTP 200 status code (OK) if a language is found.</li>
+ * <li>Deleting a language entry returns an HTTP 404 status code (NOT FOUND) if there is no language found.</li>
+ * <li>Deleting a language entry returns an HTTP 200 status code (OK) if a language is found.</li>
  * </ul>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(ApplicationMock.class)
 @WebIntegrationTest(randomPort = true)
-public class LanguageDaoRestTest extends BaseRestElasticsearchTestCase<Language, String, LanguageDao> {
+public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, String, LanguageDao> {
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                      Abstract methods implementation                                           */
@@ -78,26 +79,28 @@ public class LanguageDaoRestTest extends BaseRestElasticsearchTestCase<Language,
 
     @Override
     protected TypeReferences.ResourceType<Language> getResourceType() {
-        return new TypeReferences.ResourceType<Language>() {};
+        return new TypeReferences.ResourceType<Language>() {
+        };
     }
 
     @Override
     protected TypeReferences.PagedResourcesType<Resource<Language>> getPagedResourcesType() {
-        return new TypeReferences.PagedResourcesType<Resource<Language>>() {};
+        return new TypeReferences.PagedResourcesType<Resource<Language>>() {
+        };
     }
 
     /**
      * Expected validation errors:
      * <ol>
-     *  <li>language with null or empty code</li>
-     *  <li>language with null or empty label</li>
-     *  <li>language with null or empty english label</li>
+     * <li>language with null or empty code</li>
+     * <li>language with null or empty label</li>
+     * <li>language with null or empty english label</li>
      * </ol>
      *
      * @return A map of languages linked to a list of expected validation errors
      */
     @Override
-    protected Map<Language, List<ValidationError>> getExpectedValidationErrors() {
+    protected Map<Language, List<ValidationError>> getExpectedValidationErrorsOnCreateOrUpdate() {
 
         final String languageClassName = Language.class.getSimpleName();
 
@@ -140,6 +143,22 @@ public class LanguageDaoRestTest extends BaseRestElasticsearchTestCase<Language,
                                 new ValidationError(languageClassName, "language.label.required", "null", "label"),
                                 new ValidationError(languageClassName, "language.englishLabel.required", "null", "englishLabel")
                         ))
+                .build();
+    }
+
+    /**
+     * Expected validation errors: language with linked messages
+     */
+    @Override
+    protected Map<Language, List<ValidationError>> getExpectedValidationErrorsOnDelete() {
+
+        Language language = new Language("1", "eng", "English", "English");
+
+        return ImmutableMap.<Language, List<ValidationError>>builder()
+                // Test invalid code
+                .put(
+                        language,
+                        Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.message.existing", language.getCode(), "code")))
                 .build();
     }
 }

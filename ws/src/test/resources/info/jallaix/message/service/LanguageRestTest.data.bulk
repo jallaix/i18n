@@ -4,3 +4,5 @@
 { "code" : "fra", "label" : "Français", "englishLabel" : "French" }
 { "create" : { "_index" : "message", "_type" : "language", "_id" : "3" } }
 { "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }
+{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "1" } }
+{ "code" : "message", "defaultLanguage" : "eng", "languages" : [{ "code" : "eng", "messages" : [{ "code" : "label1", "content" : "label 1" }]}, { "code" : "ger", "messages" : [{ "code" : "label1", "content" : "wortlaut 1" }]}] }

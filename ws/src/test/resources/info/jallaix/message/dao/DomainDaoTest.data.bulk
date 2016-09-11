@@ -1,0 +1,6 @@
+{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "1" } }
+{ "code" : "project1", "defaultLanguage" : "eng", "languages" : [{ "code" : "eng", "messages" : [{ "code" : "label1", "content" : "label 1" }, { "code" : "label2", "content" : "label 2" }]}, { "code" : "fra", "messages" : [{ "code" : "label1", "content" : "libellé 1" }, { "code" : "label2", "content" : "libellé 2" }]}] }
+{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "2" } }
+{ "code" : "project2", "defaultLanguage" : "fra", "languages" : [{ "code" : "eng", "messages" : [{ "code" : "label1", "content" : "label 1" }, { "code" : "label2", "content" : "label 2" }]}, { "code" : "fra", "messages" : [{ "code" : "label1", "content" : "libellé 1" }, { "code" : "label2", "content" : "libellé 2" }]}] }
+{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "3" } }
+{ "code" : "project3", "defaultLanguage" : "eng", "languages" : [{ "code" : "eng", "messages" : [{ "code" : "label1", "content" : "label 1" }, { "code" : "label2", "content" : "label 2" }]}, { "code" : "fra", "messages" : [{ "code" : "label1", "content" : "libellé 1" }, { "code" : "label2", "content" : "libellé 2" }]}] }

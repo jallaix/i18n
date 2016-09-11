@@ -13,6 +13,7 @@ public class BeanMappingConfiguration {
 
     /**
      * Default dozer mapper
+     *
      * @return the default dozer mapper
      */
     @Bean
