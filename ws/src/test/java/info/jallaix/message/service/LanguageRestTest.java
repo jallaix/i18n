@@ -48,7 +48,7 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
     /**
      * Constructor that defines the tests to pass
      */
-    public LanguageDaoRestTest() {
+    public LanguageRestTest() {
         super(
                 RestTestedMethod.Create.class,
                 RestTestedMethod.Update.class,
