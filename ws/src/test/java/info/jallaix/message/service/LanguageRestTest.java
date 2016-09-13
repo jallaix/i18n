@@ -6,6 +6,7 @@ import info.jallaix.message.dao.LanguageDao;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.bean.ValidationError;
 import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
+import info.jallaix.spring.data.es.test.testcase.RestTestedMethod;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
@@ -14,10 +15,7 @@ import org.springframework.hateoas.mvc.TypeReferences;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <p/>
@@ -46,6 +44,17 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                      Abstract methods implementation                                           */
     /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Constructor that defines the tests to pass
+     */
+    public LanguageDaoRestTest() {
+        super(
+                RestTestedMethod.Create.class,
+                RestTestedMethod.Update.class,
+                RestTestedMethod.FindAll.class,
+                RestTestedMethod.Delete.class);
+    }
 
     @Override
     protected Language newDocumentToInsert() {

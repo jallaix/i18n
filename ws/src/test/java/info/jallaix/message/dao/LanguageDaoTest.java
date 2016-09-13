@@ -6,7 +6,6 @@ import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
 import info.jallaix.spring.data.es.test.testcase.DaoTestedMethod;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
@@ -17,7 +16,7 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
 import java.lang.reflect.Field;
 
 /**
- * The Language DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
+ * The Language DAO must verify some tests provided by BaseDaoElasticsearchTestCase.
  */
 @Configuration
 @Import(SpringDataEsTestConfiguration.class)
@@ -38,7 +37,7 @@ public class LanguageDaoTest extends BaseDaoElasticsearchTestCase<Language, Stri
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                                   Overriden methods                                            */
+    /*                                   SpringDataElasticsearchTestCase overriden methods                            */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
@@ -50,12 +49,14 @@ public class LanguageDaoTest extends BaseDaoElasticsearchTestCase<Language, Stri
                 DaoTestedMethod.Index.class,
                 DaoTestedMethod.FindOne.class,
                 DaoTestedMethod.FindAll.class,
-                DaoTestedMethod.DeleteById.class
+                DaoTestedMethod.Delete.class
         );
     }
 
     @Override
-    protected Language newDocumentToInsert() { return new Language("4", "esp", "Español", "Spanish");}
+    protected Language newDocumentToInsert() {
+        return new Language("4", "esp", "Español", "Spanish");
+    }
 
     @Override
     protected Language newDocumentToUpdate() {
