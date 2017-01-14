@@ -15,7 +15,10 @@ import org.springframework.hateoas.mvc.TypeReferences;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p/>
@@ -52,7 +55,9 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
         super(
                 RestTestedMethod.Create.class,
                 RestTestedMethod.Update.class,
+                RestTestedMethod.Patch.class,
                 RestTestedMethod.FindAll.class,
+                RestTestedMethod.Exist.class,
                 RestTestedMethod.Delete.class);
     }
 
@@ -75,10 +80,23 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
     protected Field getSortField() {
 
         try {
-            return Language.class.getDeclaredField("code");
+            Field f = Language.class.getDeclaredField("code");
+            f.setAccessible(true);
+            return f;
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected Object newObjectForPatch() {
+
+        return new Object() {
+            @SuppressWarnings("unused")
+            public String getCode() { return "esp"; }
+            @SuppressWarnings("unused")
+            public String getLabel() { return "Español"; }
+        };
     }
 
     @Override
@@ -168,6 +186,67 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
                 .put(
                         language,
                         Collections.singletonList(new ValidationError(Language.class.getSimpleName(), "language.message.existing", language.getCode(), "code")))
+                .build();
+    }
+
+    /**
+     * Expected validation errors:
+     * <ol>
+     * <li>language with null or empty code</li>
+     * <li>language with null or empty label</li>
+     * <li>language with null or empty english label</li>
+     * </ol>
+     *
+     * @return A map of languages linked to a list of expected validation errors
+     */
+    @Override
+    protected Map<Object, List<ValidationError>> getExpectedValidationErrorsOnPatch() {
+
+        final String languageClassName = Language.class.getSimpleName();
+
+        return ImmutableMap.<Object, List<ValidationError>>builder()
+                // Test invalid code
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getCode() { return null; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.code.required", "null", "code")))
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getCode() { return ""; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.code.required", "", "code")))
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getCode() { return "  "; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.code.required", "  ", "code")))
+                // Test invalid label
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getLabel() { return null; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.label.required", "null", "label")))
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getLabel() { return ""; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.label.required", "", "label")))
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getLabel() { return "  "; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.label.required", "  ", "label")))
+                // Test invalid english label
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getEnglishLabel() { return null; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.englishLabel.required", "null", "englishLabel")))
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getEnglishLabel() { return ""; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.englishLabel.required", "", "englishLabel")))
+                .put(
+                        new Object() { @SuppressWarnings("unused") public String getEnglishLabel() { return "  "; }},
+                        Collections.singletonList(new ValidationError(languageClassName, "language.englishLabel.required", "  ", "englishLabel")))
+                // Test all invalid properties
+                .put(
+                        new Object() {
+                            @SuppressWarnings("unused") public String getCode() { return null; }
+                            @SuppressWarnings("unused") public String getLabel() { return null; }
+                            @SuppressWarnings("unused") public String getEnglishLabel() { return null; }
+                        },
+                        Arrays.asList(
+                                new ValidationError(languageClassName, "language.code.required", "null", "code"),
+                                new ValidationError(languageClassName, "language.label.required", "null", "label"),
+                                new ValidationError(languageClassName, "language.englishLabel.required", "null", "englishLabel")
+                        ))
                 .build();
     }
 }

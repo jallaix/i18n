@@ -21,9 +21,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * <p>
- *     Spring Data REST for Elasticsearch doesn't properly handle POST requests. It should only create new entities but it also updates existing ones.
+ *     Spring Data REST for Elasticsearch permits both POST and PUT requests to create and update entities.
+ *     The {@link LanguageController} overrides the default behaviour by forcing POST for creation and PUT for update.
  * <p>
  *     This controller overrides the POST operation for the {@link Language} entity so that it throws a {@code 409 Conflict} HTTP error when trying to update an existing {@link Language}.
+ * <p>
+ *     It also overrides the PUT operation for the {@link Language} entity so that it throws a {@code 404 Bad Request} HTTP error when trying to create a new {@link Language}.
  */
 @RepositoryRestController
 public class LanguageController {
