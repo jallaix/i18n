@@ -4,7 +4,6 @@ import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
-import info.jallaix.spring.data.es.test.testcase.DaoTestedMethod;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,7 +49,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * Constructor that defines the tests to pass
      */
     public DomainDaoTest() {
-        super(DaoTestedMethod.Exist.class);
+        super(/*DaoTestedMethod.Exist.class*/);
     }
 
     /**
@@ -61,16 +60,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected Domain newDocumentToInsert() {
 
-        return new Domain("4", "project4", "esp", Arrays.asList(
-                new Domain.Language("esp", Arrays.asList(
-                        new Domain.Language.Message("label1", "Fraseología 1"),
-                        new Domain.Language.Message("label2", "Fraseología 2")
-                )),
-                new Domain.Language("rom", Arrays.asList(
-                        new Domain.Language.Message("label1", "Formulare 1"),
-                        new Domain.Language.Message("label2", "Formulare 2")
-                ))
-        ));
+        return new Domain("4", "project4", "project4.description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
     }
 
     /**
@@ -81,16 +71,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected Domain newDocumentToUpdate() {
 
-        return new Domain("2", "project4", "esp", Arrays.asList(
-                new Domain.Language("esp", Arrays.asList(
-                        new Domain.Language.Message("label1", "Fraseología 1"),
-                        new Domain.Language.Message("label2", "Fraseología 2")
-                )),
-                new Domain.Language("rom", Arrays.asList(
-                        new Domain.Language.Message("label1", "Formulare 1"),
-                        new Domain.Language.Message("label2", "Formulare 2")
-                ))
-        ));
+        return new Domain("2", "project4", "project4.description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
     }
 
     /**
@@ -101,16 +82,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected Domain newExistingDocument() {
 
-        return new Domain("1", "project1", "eng", Arrays.asList(
-                new Domain.Language("eng", Arrays.asList(
-                        new Domain.Language.Message("label1", "label 1"),
-                        new Domain.Language.Message("label2", "label 2")
-                )),
-                new Domain.Language("fra", Arrays.asList(
-                        new Domain.Language.Message("label1", "libellé 1"),
-                        new Domain.Language.Message("label2", "libellé 2")
-                ))
-        ));
+        return new Domain("2", "project2", "project2.description", "fr-FR", Arrays.asList("en-US", "fr-FR", "es-ES"));
     }
 
     /**
@@ -148,7 +120,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      */
     @Test
     public void languageIsUsed() {
-        assertThat(getRepository().isLanguageUsed("eng"), is(true));
+        assertThat(getRepository().isLanguageUsed("en-US"), is(true));
     }
 
     /**
@@ -156,6 +128,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      */
     @Test
     public void languageIsNotUsed() {
-        assertThat(getRepository().isLanguageUsed("esp"), is(false));
+        assertThat(getRepository().isLanguageUsed("es-ES"), is(false));
     }
 }

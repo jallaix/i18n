@@ -80,7 +80,7 @@ public class LanguageController {
      * Save an existing language upon an HTTP PUT operation
      * @param request An HTTP request that contains a {@link Language} entity and headers
      * @param id Identifier of the entity to update
-     * @return An HTTP response with a language resource}
+     * @return An HTTP response with a language resource
      */
     @RequestMapping(method = RequestMethod.PUT, value = "/languages/{id}")
     public @ResponseBody ResponseEntity<Resource> saveLanguage(RequestEntity<Language> request, @PathVariable String id) {

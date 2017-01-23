@@ -3,9 +3,7 @@ package info.jallaix.message;
 import info.jallaix.message.config.BeanMappingConfiguration;
 import info.jallaix.message.config.RepositoryRestConfiguration;
 import info.jallaix.message.dao.RestElasticsearchRepositoryFactoryBean;
-import info.jallaix.message.service.GenericExceptionHandler;
-import info.jallaix.message.service.LanguageController;
-import info.jallaix.message.service.LanguageResourceAssembler;
+import info.jallaix.message.service.*;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
@@ -21,9 +19,11 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
  */
 @Configuration
 @EnableAutoConfiguration
-@Import({LanguageController.class,
+@Import({DomainController.class,
+        LanguageController.class,
         SpringDataEsTestConfiguration.class,
         GenericExceptionHandler.class,
+        DomainResourceAssembler.class,
         LanguageResourceAssembler.class,
         RepositoryRestConfiguration.class,
         BeanMappingConfiguration.class})

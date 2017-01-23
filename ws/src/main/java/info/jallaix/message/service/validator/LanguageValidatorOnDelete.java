@@ -3,7 +3,6 @@ package info.jallaix.message.service.validator;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dto.Language;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
 /**

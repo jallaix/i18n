@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "defaultLanguageId": {
+      "type": "string"
+    }
+  }
+}

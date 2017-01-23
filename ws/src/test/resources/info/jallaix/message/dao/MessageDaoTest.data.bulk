@@ -1,0 +1,16 @@
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "1" } }
+{ "code" : "label1", "domainCode" : "project1", "languageTag" : "en-US", "content" : "label 1 for domain 1 and language 1" }
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "2" } }
+{ "code" : "label2", "domainCode" : "project1", "languageTag" : "en-US", "content" : "label 2 for domain 1 and language 1" }
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "3" } }
+{ "code" : "label1", "domainCode" : "project1", "languageTag" : "fr-FR", "content" : "libellé 1 pour domaine 1 and langue 2" }
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "4" } }
+{ "code" : "label2", "domainCode" : "project1", "languageTag" : "fr-FR", "content" : "libellé 2 pour domaine 1 and langue 2" }
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "5" } }
+{ "code" : "label1", "domainCode" : "project2", "languageTag" : "en-US", "content" : "label 1 for domain 2 and language 1" }
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "6" } }
+{ "code" : "label2", "domainCode" : "project2", "languageTag" : "en-US", "content" : "label 2 for domain 2 and language 1" }
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "7" } }
+{ "code" : "label1", "domainCode" : "project2", "languageTag" : "fr-FR", "content" : "libellé 1 pour domaine 2 and langue 2" }
+{ "create" : { "_index" : "message", "_type" : "message", "_id" : "8" } }
+{ "code" : "label2", "domainCode" : "project2", "languageTag" : "fr-FR", "content" : "libellé 2 pour domaine 2 and langue 2" }

@@ -1,14 +1,12 @@
 package info.jallaix.message.dao;
 
-import info.jallaix.message.dto.Domain;
-
 /**
  * This interface manages custom datasource accesses related to a domain.
  */
-public interface DomainDaoCustom {
+public interface MessageDaoCustom {
 
     /**
-     * Indicate if a language is used in any domain
+     * Indicate if a language is used in any message
      * @param languageId The language identifier
      * @return {@code true} if the language is used, else {@code false}
      */
