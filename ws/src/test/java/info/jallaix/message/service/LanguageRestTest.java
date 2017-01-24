@@ -127,7 +127,7 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
      * @return A map of languages linked to a list of expected validation errors
      */
     @Override
-    protected Map<Language, List<ValidationError>> getExpectedValidationErrorsOnCreateOrUpdate() {
+    protected Map<Language, List<ValidationError>> getExpectedValidationErrorsOnCreate() {
 
         final String languageClassName = Language.class.getSimpleName();
 
@@ -171,6 +171,10 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
                                 new ValidationError(languageClassName, "language.englishLabel.required", "null", "englishLabel")
                         ))
                 .build();
+    }
+    @Override
+    protected Map<Language, List<ValidationError>> getExpectedValidationErrorsOnUpdate() {
+        return getExpectedValidationErrorsOnCreate();
     }
 
     /**

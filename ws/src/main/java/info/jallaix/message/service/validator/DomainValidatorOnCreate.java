@@ -3,6 +3,7 @@ package info.jallaix.message.service.validator;
 import info.jallaix.message.dto.Domain;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -13,7 +14,8 @@ import java.util.Locale;
 /**
  * Created by Julien on 22/01/2017.
  */
-public class DomainValidatorOnCreateOrUpdate implements Validator {
+@Component
+public class DomainValidatorOnCreate implements Validator {
 
     @Override
     public boolean supports(Class<?> clazz) {

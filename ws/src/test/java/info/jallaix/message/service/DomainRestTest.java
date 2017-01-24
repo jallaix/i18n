@@ -104,7 +104,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     }
 
     @Override
-    protected Map<Domain, List<ValidationError>> getExpectedValidationErrorsOnCreateOrUpdate() {
+    protected Map<Domain, List<ValidationError>> getExpectedValidationErrorsOnCreate() {
 
         final String domainClassName = Domain.class.getSimpleName();
 
@@ -165,6 +165,69 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
                         new Domain("2", null, null, null, null),
                         Arrays.asList(
                                 new ValidationError(domainClassName, "domain.code.required", "null", "code"),
+                                new ValidationError(domainClassName, "domain.description.required", "null", "description"),
+                                new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "null", "defaultLanguageTag"),
+                                new ValidationError(domainClassName, "domain.availableLanguageTags.required", "null", "availableLanguageTags")
+                        ))
+                .build();
+    }
+
+    @Override
+    protected Map<Domain, List<ValidationError>> getExpectedValidationErrorsOnUpdate() {
+
+        final String domainClassName = Domain.class.getSimpleName();
+
+        return ImmutableMap.<Domain, List<ValidationError>>builder()
+                // Code can't change
+                .put(
+                        new Domain("2", "project4", "project2.description", "fr-FR", Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.code.immutable", "project4", "code")))
+                // Test invalid description
+                .put(
+                        new Domain("2", "project2", null, "fr-FR", Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.description.required", "null", "description")))
+                .put(
+                        new Domain("2", "project2", "", "fr-FR", Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.description.required", "", "description")))
+                .put(
+                        new Domain("2", "project2", "  ", "fr-FR", Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.description.required", "  ", "description")))
+                // Default language tag required
+                .put(
+                        new Domain("2", "project2", "project2.description", null, Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "null", "defaultLanguageTag")))
+                .put(
+                        new Domain("2", "project2", "project2.description", "", Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "", "defaultLanguageTag")))
+                .put(
+                        new Domain("2", "project2", "project2.description", "  ", Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "  ", "defaultLanguageTag")))
+                // Default language tag must exist in available language tags
+                .put(
+                        new Domain("2", "project2", "project2.description", "fr-FR", Collections.singletonList("en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.matchAvailable", "fr-FR", "defaultLanguageTag")))
+                // Default language tag must match an existing locale
+                .put(
+                        new Domain("2", "project2", "project2.description", "unknown-language-tag", Arrays.asList("fr-FR", "en-US", "unknown-language-tag")),
+                        Arrays.asList(new ValidationError(domainClassName, "domain.defaultLanguageTag.unavailable", "unknown-language-tag", "defaultLanguageTag"),
+                                new ValidationError(domainClassName, "domain.availableLanguageTags.unavailable", "[fr-FR, en-US, unknown-language-tag]", "availableLanguageTags"))
+                )
+                // Available language tags can't be empty
+                .put(
+                        new Domain("2", "project2", "project2.description", "fr-FR", null),
+                        singletonList(new ValidationError(domainClassName, "domain.availableLanguageTags.required", "null", "availableLanguageTags")))
+                .put(
+                        new Domain("2", "project2", "project2.description", "fr-FR", Collections.emptyList()),
+                        singletonList(new ValidationError(domainClassName, "domain.availableLanguageTags.required", "[]", "availableLanguageTags")))
+                // Available language tags must match existing locales
+                .put(
+                        new Domain("2", "project2", "project2.description", "fr-FR", Arrays.asList("fr-FR", "unknown-language-tag")),
+                        singletonList(new ValidationError(domainClassName, "domain.availableLanguageTags.unavailable", "[fr-FR, unknown-language-tag]", "availableLanguageTags")))
+                // Test all invalid properties
+                .put(
+                        new Domain("2", null, null, null, null),
+                        Arrays.asList(
+                                new ValidationError(domainClassName, "domain.code.immutable", "null", "code"),
                                 new ValidationError(domainClassName, "domain.description.required", "null", "description"),
                                 new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "null", "defaultLanguageTag"),
                                 new ValidationError(domainClassName, "domain.availableLanguageTags.required", "null", "availableLanguageTags")

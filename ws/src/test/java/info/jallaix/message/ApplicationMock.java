@@ -4,6 +4,8 @@ import info.jallaix.message.config.BeanMappingConfiguration;
 import info.jallaix.message.config.RepositoryRestConfiguration;
 import info.jallaix.message.dao.RestElasticsearchRepositoryFactoryBean;
 import info.jallaix.message.service.*;
+import info.jallaix.message.service.validator.DomainValidatorOnCreate;
+import info.jallaix.message.service.validator.DomainValidatorOnUpdate;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +22,8 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 @Configuration
 @EnableAutoConfiguration
 @Import({DomainController.class,
+        DomainValidatorOnCreate.class,
+        DomainValidatorOnUpdate.class,
         LanguageController.class,
         SpringDataEsTestConfiguration.class,
         GenericExceptionHandler.class,
