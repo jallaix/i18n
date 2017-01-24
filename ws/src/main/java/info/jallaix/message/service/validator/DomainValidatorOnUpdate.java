@@ -37,9 +37,14 @@ public class DomainValidatorOnUpdate implements Validator {
         if (domainSaved != null && !domainSaved.getCode().equals(domain.getCode()))
             errors.rejectValue("code", "domain.code.immutable", "domain.code.immutable");
 
-        // Description, default language tag and available language tags can't be empty
+        // Description can't be empty
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "domain.description.required", "domain.description.required");
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "defaultLanguageTag", "domain.defaultLanguageTag.required", "domain.defaultLanguageTag.required");
+
+        // Default language tag can't change
+        if (domainSaved != null && !domainSaved.getDefaultLanguageTag().equals(domain.getDefaultLanguageTag()))
+            errors.rejectValue("defaultLanguageTag", "domain.defaultLanguageTag.immutable", "domain.defaultLanguageTag.immutable");
+
+        // Available language tags can't be empty
         if (CollectionUtils.isEmpty(domain.getAvailableLanguageTags()))
             errors.rejectValue("availableLanguageTags", "domain.availableLanguageTags.required", "domain.availableLanguageTags.required");
 
@@ -47,11 +52,6 @@ public class DomainValidatorOnUpdate implements Validator {
         if (!StringUtils.isBlank(domain.getDefaultLanguageTag()) && !CollectionUtils.isEmpty(domain.getAvailableLanguageTags()))
             if (!domain.getAvailableLanguageTags().contains(domain.getDefaultLanguageTag()))
                 errors.rejectValue("defaultLanguageTag", "domain.defaultLanguageTag.matchAvailable", "domain.defaultLanguageTag.matchAvailable");
-
-        // Default language tag must match an existing locale
-        if (!StringUtils.isBlank(domain.getDefaultLanguageTag()))
-            if (!LocaleUtils.isAvailableLocale(Locale.forLanguageTag(domain.getDefaultLanguageTag())))
-                errors.rejectValue("defaultLanguageTag", "domain.defaultLanguageTag.unavailable", "domain.defaultLanguageTag.unavailable");
 
         // Available language tags must match an existing locales
         if (!CollectionUtils.isEmpty(domain.getAvailableLanguageTags()))

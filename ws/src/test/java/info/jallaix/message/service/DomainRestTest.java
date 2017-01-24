@@ -50,7 +50,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
 
     @Override
     protected Domain newDocumentToUpdate() {
-        return new Domain("2", "project2", "project4.description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("2", "project2", "project4.description", "fr-FR", Arrays.asList("en-US", "fr-FR", "es-ES"));
     }
 
     @Override
@@ -58,8 +58,8 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
 
         return new Object() {
             @SuppressWarnings("unused")
-            public String getDefaultLanguageTag() {
-                return "fr-CA";
+            public String getDescription() {
+                return "project4.description";
             }
 
             @SuppressWarnings("unused")
@@ -186,6 +186,20 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
                 .build();
     }
 
+    /**
+     * Expected validation errors on update:
+     * <ol>
+     * <li>domain with new code</li>
+     * <li>domain with null or empty description</li>
+     * <li>domain with new default language tag</li>
+     * <li>default language tag not present in available language tags</li>
+     * <li>default language tag not matching an existing locale</li>
+     * <li>domain with null or empty list of available language tags</li>
+     * <li>available language tags not matching existing locales</li>
+     * </ol>
+     *
+     * @return A map of languages linked to a list of expected validation errors
+     */
     @Override
     protected Map<Domain, List<ValidationError>> getExpectedValidationErrorsOnUpdate() {
 
@@ -206,26 +220,14 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
                 .put(
                         new Domain("2", "project2", "  ", "fr-FR", Arrays.asList("fr-FR", "en-US")),
                         singletonList(new ValidationError(domainClassName, "domain.description.required", "  ", "description")))
-                // Default language tag required
+                // Default language tag can't change
                 .put(
-                        new Domain("2", "project2", "project2.description", null, Arrays.asList("fr-FR", "en-US")),
-                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "null", "defaultLanguageTag")))
-                .put(
-                        new Domain("2", "project2", "project2.description", "", Arrays.asList("fr-FR", "en-US")),
-                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "", "defaultLanguageTag")))
-                .put(
-                        new Domain("2", "project2", "project2.description", "  ", Arrays.asList("fr-FR", "en-US")),
-                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "  ", "defaultLanguageTag")))
+                        new Domain("2", "project2", "project2.description", "en-US", Arrays.asList("fr-FR", "en-US")),
+                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.immutable", "en-US", "defaultLanguageTag")))
                 // Default language tag must exist in available language tags
                 .put(
                         new Domain("2", "project2", "project2.description", "fr-FR", Collections.singletonList("en-US")),
                         singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.matchAvailable", "fr-FR", "defaultLanguageTag")))
-                // Default language tag must match an existing locale
-                .put(
-                        new Domain("2", "project2", "project2.description", "unknown-language-tag", Arrays.asList("fr-FR", "en-US", "unknown-language-tag")),
-                        Arrays.asList(new ValidationError(domainClassName, "domain.defaultLanguageTag.unavailable", "unknown-language-tag", "defaultLanguageTag"),
-                                new ValidationError(domainClassName, "domain.availableLanguageTags.unavailable", "[fr-FR, en-US, unknown-language-tag]", "availableLanguageTags"))
-                )
                 // Available language tags can't be empty
                 .put(
                         new Domain("2", "project2", "project2.description", "fr-FR", null),
@@ -243,7 +245,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
                         Arrays.asList(
                                 new ValidationError(domainClassName, "domain.code.immutable", "null", "code"),
                                 new ValidationError(domainClassName, "domain.description.required", "null", "description"),
-                                new ValidationError(domainClassName, "domain.defaultLanguageTag.required", "null", "defaultLanguageTag"),
+                                new ValidationError(domainClassName, "domain.defaultLanguageTag.immutable", "null", "defaultLanguageTag"),
                                 new ValidationError(domainClassName, "domain.availableLanguageTags.required", "null", "availableLanguageTags")
                         ))
                 .build();
