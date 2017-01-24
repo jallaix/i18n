@@ -50,7 +50,23 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
 
     @Override
     protected Domain newDocumentToUpdate() {
-        return new Domain("2", "project4", "project4.description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("2", "project2", "project4.description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
+    }
+
+    @Override
+    protected Object newObjectForPatch() {
+
+        return new Object() {
+            @SuppressWarnings("unused")
+            public String getDefaultLanguageTag() {
+                return "fr-CA";
+            }
+
+            @SuppressWarnings("unused")
+            public Collection<String> getAvailableLanguageTags() {
+                return Arrays.asList("en-GB", "fr-FR", "es-ES", "fr-CA");
+            }
+        };
     }
 
     @Override
@@ -71,22 +87,6 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     }
 
     @Override
-    protected Object newObjectForPatch() {
-
-        return new Object() {
-            @SuppressWarnings("unused")
-            public String getCode() {
-                return "project4";
-            }
-
-            @SuppressWarnings("unused")
-            public Collection<String> getAvailableLanguageTags() {
-                return Arrays.asList("en-GB", "fr-FR", "es-ES", "fr-CA");
-            }
-        };
-    }
-
-    @Override
     protected int getPageSize() {
         return 2;
     }
@@ -103,6 +103,20 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
         };
     }
 
+    /**
+     * Expected validation errors on create:
+     * <ol>
+     * <li>domain with null or empty code</li>
+     * <li>domain with null or empty description</li>
+     * <li>domain with null or empty default language tag</li>
+     * <li>default language tag not present in available language tags</li>
+     * <li>default language tag not matching an existing locale</li>
+     * <li>domain with null or empty list of available language tags</li>
+     * <li>available language tags not matching existing locales</li>
+     * </ol>
+     *
+     * @return A map of languages linked to a list of expected validation errors
+     */
     @Override
     protected Map<Domain, List<ValidationError>> getExpectedValidationErrorsOnCreate() {
 
@@ -119,7 +133,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
                 .put(
                         new Domain("2", "  ", "project2.description", "fr-FR", Arrays.asList("fr-FR", "en-US")),
                         singletonList(new ValidationError(domainClassName, "domain.code.required", "  ", "code")))
-                // Test invalid description
+                // Description required
                 .put(
                         new Domain("2", "project2", null, "fr-FR", Arrays.asList("fr-FR", "en-US")),
                         singletonList(new ValidationError(domainClassName, "domain.description.required", "null", "description")))
