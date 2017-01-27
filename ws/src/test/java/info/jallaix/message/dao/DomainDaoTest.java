@@ -1,5 +1,6 @@
 package info.jallaix.message.dao;
 
+import info.jallaix.message.dao.interceptor.SpringDataEsMessageInterceptor;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Language;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
@@ -8,6 +9,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.test.context.ContextConfiguration;
@@ -24,8 +26,9 @@ import static org.junit.Assert.assertThat;
  * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
  */
 @Configuration
-@Import(SpringDataEsTestConfiguration.class)
+@Import({SpringDataEsTestConfiguration.class, SpringDataEsMessageInterceptor.class})
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class)
+@EnableAspectJAutoProxy
 @ContextConfiguration(classes = DomainDaoTest.class)
 public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
 
