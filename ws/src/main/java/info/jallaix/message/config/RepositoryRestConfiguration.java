@@ -3,7 +3,8 @@ package info.jallaix.message.config;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.MessageDao;
 import info.jallaix.message.dto.Domain;
-import info.jallaix.message.service.validator.DomainValidatorOnCreateOrUpdate;
+import info.jallaix.message.service.validator.DomainValidatorOnCreate;
+import info.jallaix.message.service.validator.DomainValidatorOnUpdate;
 import info.jallaix.message.service.validator.LanguageValidatorOnCreateOrUpdate;
 import info.jallaix.message.service.validator.LanguageValidatorOnDelete;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,11 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
     @Autowired
     private MessageDao messageDao;
 
+    @Autowired
+    private DomainValidatorOnCreate domainValidatorOnCreate;
+    @Autowired
+    private DomainValidatorOnUpdate domainValidatorOnUpdate;
+
     /**
      * Configure validators for POST, PUT and DELETE requests
      *
@@ -35,8 +41,8 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
 
         validatingRepositoryEventListener.addValidator("beforeCreate", new LanguageValidatorOnCreateOrUpdate());
         validatingRepositoryEventListener.addValidator("beforeSave", new LanguageValidatorOnCreateOrUpdate());
-        validatingRepositoryEventListener.addValidator("beforeCreate", new DomainValidatorOnCreateOrUpdate());
-        validatingRepositoryEventListener.addValidator("beforeSave", new DomainValidatorOnCreateOrUpdate());
+        validatingRepositoryEventListener.addValidator("beforeCreate", domainValidatorOnCreate);
+        validatingRepositoryEventListener.addValidator("beforeSave", domainValidatorOnUpdate);
         validatingRepositoryEventListener.addValidator("beforeDelete", new LanguageValidatorOnDelete(domainDao));
     }
 
