@@ -83,7 +83,7 @@ public class DomainDaoInterceptor {
         messageDomain.getAvailableLanguageTags().forEach(languageTag -> {
 
             // Create and save the domain description's message
-            Message message = buildMessage(languageTag);
+            Message message = buildMessage(domain.getCode(), languageTag);
             message = messageDao.index(message);
         });
 
@@ -100,14 +100,14 @@ public class DomainDaoInterceptor {
      *
      * @return The built message
      */
-    private Message buildMessage(String languageTag) {
+    private Message buildMessage(String domainCode, String languageTag) {
 
         Message message = new Message();
 
         // Message code
         message.setCode(descriptionUuid.get().toString());
         // Domain code
-        message.setDomainCode(messageDomain.getCode());
+        message.setDomainCode(domainCode);
         // Message type
         //TODO message.setType(Domain.class.getName() + ".description");
         // Input language tag

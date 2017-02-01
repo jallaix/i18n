@@ -9,6 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.GetQuery;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
 
 import java.util.Collections;
 
@@ -24,6 +29,9 @@ public class BeanMappingConfiguration {
      */
     @Autowired
     private DomainDao domainDao;
+
+    @Autowired
+    private ElasticsearchOperations esOperations;
 
 
     /**
@@ -51,13 +59,20 @@ public class BeanMappingConfiguration {
     public Domain messageDomain() {
 
         // Get the message domain
-        Domain messageDomain = domainDao.findByCode("i18n.message");
+        Domain messageDomain = null;
+        if (esOperations.indexExists(Domain.class))
+            messageDomain = esOperations.queryForObject(new CriteriaQuery(new Criteria("code").is("i18n.message")), Domain.class);
 
         // Index the message domain if it's unavailable in the ES index
         if (messageDomain == null) {
 
-            Domain messageDomainToIndex = new Domain(null, "i18n.message", "Internationalized messages", "en-US", Collections.singleton("en-US"));
-            messageDomain = domainDao.index(messageDomainToIndex);
+            IndexQuery indexQuery = new IndexQuery();
+            indexQuery.setObject(new Domain(null, "i18n.message", "Internationalized messages", "en-US", Collections.singleton("en-US")));
+            String messageDomainId = esOperations.index(indexQuery);
+
+            GetQuery getQuery = new GetQuery();
+            getQuery.setId(messageDomainId);
+            messageDomain = esOperations.queryForObject(getQuery, Domain.class);
         }
 
         return messageDomain;
