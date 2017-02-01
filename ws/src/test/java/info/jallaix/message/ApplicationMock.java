@@ -1,6 +1,6 @@
 package info.jallaix.message;
 
-import info.jallaix.message.config.BeanMappingConfiguration;
+import info.jallaix.message.config.ProjectConfiguration;
 import info.jallaix.message.config.RepositoryRestConfiguration;
 import info.jallaix.message.config.WebMvcConfiguration;
 import info.jallaix.message.dao.RestElasticsearchRepositoryFactoryBean;
@@ -31,7 +31,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
         DomainResourceAssembler.class,
         LanguageResourceAssembler.class,
         RepositoryRestConfiguration.class,
-        BeanMappingConfiguration.class,
+        ProjectConfiguration.class,
         WebMvcConfiguration.class})
 @EnableElasticsearchRepositories(repositoryFactoryBeanClass = RestElasticsearchRepositoryFactoryBean.class)
 public class ApplicationMock {}

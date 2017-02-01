@@ -47,15 +47,15 @@ public class DomainDaoInterceptor {
     /**
      * Intercept a domain before it's indexed to replace its description's value by a message code.
      *
-     * @param arg The domain to index
+     * @param entity The domain to index
      */
-    @Before("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(arg)"
-            + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object)) && args(arg)")
-    public void beforeCreation(Object arg) {
+    @Before("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(entity)"
+            + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object)) && args(entity)")
+    public void beforeCreation(Object entity) {
 
-        if (arg == null)
+        if (entity == null)
             return;
-        Domain domain = Domain.class.cast(arg);
+        Domain domain = Domain.class.cast(entity);
 
         // Store the domain description
         descriptionContent.set(domain.getDescription());

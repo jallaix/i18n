@@ -40,7 +40,7 @@ public class Domain {
     private String description;
 
     /**
-     * Domain default language tag (in BCP 47 format)
+     * Default language tag (in BCP 47 format) for the domain
      */
     private String defaultLanguageTag;
 

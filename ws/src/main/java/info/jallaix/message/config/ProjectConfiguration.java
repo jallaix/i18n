@@ -2,8 +2,6 @@ package info.jallaix.message.config;
 
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dto.Domain;
-import org.dozer.DozerBeanMapper;
-import org.dozer.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,11 +16,11 @@ import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import java.util.Collections;
 
 /**
- * Bean mapping configuration
+ * Project configuration
  */
 @Configuration
-@PropertySource("classpath:/info/jallaix/message/config/config.properties}")
-public class BeanMappingConfiguration {
+@PropertySource("classpath:/info/jallaix/message/config/project.properties}")
+public class ProjectConfiguration {
 
     /**
      * Repository for domain data
@@ -33,18 +31,11 @@ public class BeanMappingConfiguration {
     @Autowired
     private ElasticsearchOperations esOperations;
 
-
     /**
-     * Default dozer mapper
+     * Property resource configurer that resolves ${} in @Value annotations
      *
-     * @return the default dozer mapper
+     * @return The property resource configurer
      */
-    @Bean
-    public Mapper beanMapper() {
-        return new DozerBeanMapper();
-    }
-
-    //To resolve ${} in @Value
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertyConfig() {
         return new PropertySourcesPlaceholderConfigurer();
