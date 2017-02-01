@@ -64,4 +64,6 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
             }
         };
     }
+    @Bean
+    public String domain() { return "message"; }
 }

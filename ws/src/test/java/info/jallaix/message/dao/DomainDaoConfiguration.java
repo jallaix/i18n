@@ -1,46 +1,23 @@
-package info.jallaix.message.config;
+package info.jallaix.message.dao;
 
-import info.jallaix.message.dao.DomainDao;
+import info.jallaix.message.dao.interceptor.DomainDaoInterceptor;
 import info.jallaix.message.dto.Domain;
-import org.dozer.DozerBeanMapper;
-import org.dozer.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.context.annotation.Import;
 
 import java.util.Collections;
 
 /**
- * Bean mapping configuration
+ * Created by Julien on 01/02/2017.
  */
 @Configuration
-@PropertySource("classpath:/info/jallaix/message/config/config.properties}")
-public class BeanMappingConfiguration {
+@Import({DomainDaoInterceptor.class})
+public class DomainDaoConfiguration {
 
-    /**
-     * Repository for domain data
-     */
     @Autowired
     private DomainDao domainDao;
-
-
-    /**
-     * Default dozer mapper
-     *
-     * @return the default dozer mapper
-     */
-    @Bean
-    public Mapper beanMapper() {
-        return new DozerBeanMapper();
-    }
-
-    //To resolve ${} in @Value
-    @Bean
-    public static PropertySourcesPlaceholderConfigurer propertyConfig() {
-        return new PropertySourcesPlaceholderConfigurer();
-    }
 
     /**
      * The message domain bean contains the domain data for the current application.

@@ -1,13 +1,16 @@
 package info.jallaix.message.dao;
 
-import info.jallaix.message.dao.interceptor.SpringDataEsMessageInterceptor;
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Language;
+import info.jallaix.message.dto.Message;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
+import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
@@ -16,17 +19,18 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
+import javax.annotation.Resource;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
  */
 @Configuration
-@Import({SpringDataEsTestConfiguration.class, SpringDataEsMessageInterceptor.class})
+@Import({SpringDataEsTestConfiguration.class, DomainDaoConfiguration.class})
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class)
 @EnableAspectJAutoProxy
 @ContextConfiguration(classes = DomainDaoTest.class)
@@ -42,6 +46,20 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      */
     @Rule
     public final SpringMethodRule SPRING_METHOD_RULE = new SpringMethodRule();
+
+    @Resource
+    private Domain messageDomain;
+
+    @Autowired
+    private MessageDao messageDao;
+
+    @Autowired
+    private ThreadLocaleHolder threadLocaleHolder;
+
+    @After
+    public void clearLocales() {
+        threadLocaleHolder.clear();
+    }
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -132,5 +150,33 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Test
     public void languageIsNotUsed() {
         assertThat(getRepository().isLanguageUsed("es-ES"), is(false));
+    }
+
+    /**
+     * Saving a new domain inserts the domain in the index.
+     * It also inserts the domain description in the message's index type, localized with the domain's default language.
+     */
+    @Override
+    public void saveNewDocument() {
+
+        // Insert a new document in the index
+        super.saveNewDocument();
+
+        // The domain description in the Elasticsearch index must contain a message code
+        Domain inserted = newDocumentToInsert();
+        Domain realDomain = testClientOperations.findDocument(Domain.class, inserted.getId());
+        assertNotEquals(inserted.getDescription(), realDomain.getDescription());
+
+        // Get the message domain to verify that all supported languages have a matching description
+        messageDomain.getAvailableLanguageTags().forEach(languageTag -> {
+
+            // A message with the localized description must be linked to the message code
+            Message message = messageDao.findByCodeAndLanguageTagAndDomainCode(
+                    realDomain.getDescription(),
+                    languageTag,
+                    "default");
+            assertNotNull(message);
+            assertEquals(inserted.getDescription(), message.getContent());
+        });
     }
 }

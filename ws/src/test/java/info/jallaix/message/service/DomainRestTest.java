@@ -3,20 +3,27 @@ package info.jallaix.message.service;
 import com.google.common.collect.ImmutableMap;
 import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dao.DomainDao;
+import info.jallaix.message.dao.MessageDao;
 import info.jallaix.message.dto.Domain;
+import info.jallaix.message.dto.Message;
 import info.jallaix.spring.data.es.test.bean.ValidationError;
 import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.mvc.TypeReferences;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.lang.reflect.Field;
 import java.util.*;
 
 import static java.util.Collections.singletonList;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
 
 /**
  * Created by Julien on 22/01/2017.
@@ -259,5 +266,23 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     @Override
     protected Map<Object, List<ValidationError>> getExpectedValidationErrorsOnPatch() {
         return Collections.emptyMap();
+    }
+
+    @javax.annotation.Resource
+    private String domain;
+
+    @Autowired
+    private MessageDao messageDao;
+
+    @Override
+    public void createValidEntity() {
+        ResponseEntity<Resource<Domain>> httpResponse = postEntity(newDocumentToInsert(), HttpStatus.CREATED, false);
+
+        Domain savedDomain = httpResponse.getBody().getContent();
+        String languageTag = savedDomain.getDefaultLanguageTag();
+        String messageCode = savedDomain.getDescription();
+
+        Message message = messageDao.findByCodeAndLanguageTagAndDomainCode(messageCode, languageTag, domain);
+        assertThat(message, is(notNullValue()));
     }
 }

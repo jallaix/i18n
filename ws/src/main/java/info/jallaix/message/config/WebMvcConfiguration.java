@@ -1,9 +1,11 @@
 package info.jallaix.message.config;
 
+import info.jallaix.message.service.MessageHandlerInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.handler.MappedInterceptor;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +16,11 @@ import java.util.Locale;
  */
 @Configuration
 public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
+
+    @Bean
+    public MappedInterceptor messageHandlerInterceptor() {
+        return new MappedInterceptor(new String[]{"/**"}, new MessageHandlerInterceptor());
+    }
 
     /**
      * Resolver for locale

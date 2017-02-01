@@ -9,4 +9,12 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface DomainDao extends ElasticsearchRepository<Domain, String>, DomainDaoCustom {
+
+    /**
+     * Find a domain by a code.
+     *
+     * @param code The domain code
+     * @return The found domain
+     */
+    Domain findByCode(String code);
 }
