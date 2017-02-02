@@ -3,9 +3,9 @@ package info.jallaix.message.dao.interceptor;
 import info.jallaix.message.dao.MessageDao;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Message;
-import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /**
  * <p>
- * This bean intercepts Spring Data Elasticsearch operations to manage localized messages.
+ * This aspect intercepts Spring Data Elasticsearch operations to manage localized messages.
  * </p>
  * <p>
  * When creating entities, localized property values are replaced by message codes and original values are saved in the message index.
@@ -30,69 +30,55 @@ public class DomainDaoInterceptor {
     @Autowired
     private MessageDao messageDao;
 
-    private ThreadLocal<UUID> descriptionUuid = new ThreadLocal<>();
-    private ThreadLocal<String> descriptionContent = new ThreadLocal<>();
-
     /**
      * Intercept entities before they are created to save localized messages in the index and replace matching property values by message codes.
      *
      * @param entities The list of entities to create
      */
-    @Before("execution(* org.springframework.data.elasticsearch.repository.ElasticsearchRepository+.save(Iterable,..)) && args(entities,..)"
-            + " || execution(* org.springframework.data.elasticsearch.repository.ElasticsearchRepository+.index(Iterable,..)) && args(entities,..)")
-    public void beforeCreation(Iterable entities) {
-        System.out.println(entities);
+    @Around("execution(* org.springframework.data.elasticsearch.repository.ElasticsearchRepository+.save(Iterable,..)) && args(entities,..)")
+    public void aroundSaving(ProceedingJoinPoint joinPoint, Iterable entities) {
+
     }
 
     /**
-     * Intercept a domain before it's indexed to replace its description's value by a message code.
+     * Intercept a domain saving operation before it's indexed to replace its description's value by a message code
+     * and store its localized descriptions.
      *
-     * @param entity The domain to index
+     * @param joinPoint Joint point for the targeted operation
+     * @param entity    The domain to index
      */
-    @Before("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(entity)"
+    @Around("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(entity)"
             + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object)) && args(entity)")
-    public void beforeCreation(Object entity) {
+    public Object aroundSaving(ProceedingJoinPoint joinPoint, Object entity) throws Throwable {
 
+        // Get the domain to save
         if (entity == null)
-            return;
-        Domain domain = Domain.class.cast(entity);
+            return joinPoint.proceed(new Object[]{null});
+        Domain initialDomain = Domain.class.cast(entity);
 
         // Store the domain description
-        descriptionContent.set(domain.getDescription());
+        final String descriptionContent = initialDomain.getDescription();
 
         // Replace the domain description's value by a random UUID that will be used to store the description in the message index
-        descriptionUuid.set(UUID.randomUUID());
-        domain.setDescription(descriptionUuid.get().toString());
-    }
+        final UUID descriptionUuid = UUID.randomUUID();
+        initialDomain.setDescription(descriptionUuid.toString());
 
-    /**
-     * Intercept a domain after been indexed to store its original description's value in the message index.
-     * The returned domain's description is replaced by the matching value from the message index.
-     *
-     * @param result The indexed domain
-     */
-    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.save(Object))"
-            + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object))", returning = "result")
-    public void afterCreation(Object result) throws NoSuchFieldException {
+        // Call the save method
+        Object resultEntity = joinPoint.proceed(new Object[]{initialDomain});
 
-        if (result == null)
-            return;
-        Domain domain = Domain.class.cast(result);
+        // Get the saved domain
+        if (resultEntity == null)
+            return null;
+        Domain resultDomain = Domain.class.cast(resultEntity);
 
-        // Get the message domain
-        messageDomain.getAvailableLanguageTags().forEach(languageTag -> {
+        // Create and save the domain description's message for each language supported by the Message application
+        messageDomain.getAvailableLanguageTags().forEach(languageTag ->
+                messageDao.index(buildMessage(resultDomain.getCode(), languageTag, descriptionUuid, descriptionContent)));
 
-            // Create and save the domain description's message
-            Message message = buildMessage(domain.getCode(), languageTag);
-            message = messageDao.index(message);
-        });
+        // Set back the localized domain description
+        resultDomain.setDescription(descriptionContent);
 
-        // Set the localized domain description
-        domain.setDescription(descriptionContent.get());
-
-        // Clear thread local values
-        descriptionUuid.remove();
-        descriptionContent.remove();
+        return resultDomain;
     }
 
     /**
@@ -100,12 +86,12 @@ public class DomainDaoInterceptor {
      *
      * @return The built message
      */
-    private Message buildMessage(String domainCode, String languageTag) {
+    private Message buildMessage(String domainCode, String languageTag, UUID descriptionUuid, String descriptionContent) {
 
         Message message = new Message();
 
         // Message code
-        message.setCode(descriptionUuid.get().toString());
+        message.setCode(descriptionUuid.toString());
         // Domain code
         message.setDomainCode(domainCode);
         // Message type
@@ -113,7 +99,7 @@ public class DomainDaoInterceptor {
         // Input language tag
         message.setLanguageTag(languageTag);
         // Localized content
-        message.setContent(descriptionContent.get());
+        message.setContent(descriptionContent);
 
         return message;
     }

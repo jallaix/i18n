@@ -178,6 +178,19 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
+     * Saving a list of new documents inserts the documents in the index.
+     * It also inserts the domain description for each document in the message's index type,
+     * localized with the domain's supported languages.
+     */
+    @Override
+    public void saveNewDocuments() {
+
+        // Insert new documents in the index
+        super.saveNewDocuments();
+        checkNewDocumentMessages();
+    }
+
+    /**
      * Check if a new domain description is indexed in the message type.
      */
     private void checkNewDocumentMessages() {
