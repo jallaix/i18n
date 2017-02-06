@@ -209,15 +209,20 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     public void saveExistingDocument() {
 
+        // Find messages linked to the domain to update
+        List<Message> originalMessages = getMessages(newDocumentToUpdate());
+
         // Update an existing document in the index
         super.saveExistingDocument();
-        checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()));
+
+        // Check the integrity of domain and messages
+        checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
     }
 
     /**
      * Check if an existing domain description is updated for the specified locale only.
      */
-    private void checkExistingDocumentMessages(Locale locale) {
+    private void checkExistingDocumentMessages(Locale locale, List<Message> originalMessages) {
 
         // The domain description in the Elasticsearch index must contain a message code
         Domain updated = newDocumentToUpdate();
@@ -227,12 +232,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         assertNotEquals(updated.getDescription(), savedDomain.getDescription());
 
         // Get all localized messages for a message and domain codes
-        List<Message> messages = esOperations.queryForList(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
-                                .and(new Criteria("type").is(savedDomain.getDescription()))
-                                .and(new Criteria("entityId").is(savedDomain.getId()))),
-                Message.class);
+        List<Message> messages = getMessages(savedDomain);
 
         // The domain description for the input locale must match the one expected by the update operation
         Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(locale.toLanguageTag())).findFirst();
@@ -240,11 +240,23 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         assertEquals(updated.getDescription(), message.get().getContent());
 
         // The domain descriptions for locales other than the input locale must match the original descriptions
-        // TODO test bidon : il faut sauver les valeurs avant update pour comparer
         messages.stream().filter(m -> !m.getLanguageTag().equals(locale.toLanguageTag()))
-                .forEach(m -> {
-                    assertNotEquals(updated.getDescription(), message.get().getContent());
-                });
+                .forEach(m -> assertTrue(messages.contains(m)));
+    }
+
+    /**
+     * Find messages linked to a domain
+     *
+     * @param domain The domain linked to the message
+     * @return The set a messages
+     */
+    private List<Message> getMessages(Domain domain) {
+        return esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(domain.getDescription()))
+                                .and(new Criteria("entityId").is(domain.getId()))),
+                Message.class);
     }
 
     /**
