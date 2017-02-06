@@ -8,6 +8,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,23 +49,22 @@ public class DomainDaoInterceptor {
     /**
      * Intercept entities before they are created to save localized messages in the index and replace matching property values by message codes.
      *
-     * @param joinPoint Joint point for the targeted operation
-     * @param entities  The list of entities to create
+     * @param joinPoint      Joint point for the targeted operation
+     * @param initialDomains The list of entities to create
      */
-    @Around("execution(* org.springframework.data.elasticsearch.repository.ElasticsearchRepository+.save(Iterable,..)) && args(entities,..)")
-    public Object aroundSaving(ProceedingJoinPoint joinPoint, Iterable<?> entities) throws Throwable {
+    @Around("execution(* org.springframework.data.elasticsearch.repository.ElasticsearchRepository+.save(Iterable,..)) && args(initialDomains,..)")
+    public Object aroundSaving(ProceedingJoinPoint joinPoint, Iterable<Domain> initialDomains) throws Throwable {
 
         // Execute the default process if there are no entities to save
-        if (entities == null)
+        if (initialDomains == null)
             return joinPoint.proceed(new Object[]{null});
 
         // Replace the domain description's literal value for each domain to save
         List<Pair<Domain, String>> descriptions = new ArrayList<>();
-        for (Object entity : entities) {
+        for (Domain initialDomain : initialDomains) {
 
-            if (entity != null) {
+            if (initialDomain != null) {
                 // Replace the domain description's literal value by a message type
-                Domain initialDomain = Domain.class.cast(entity);
                 Pair<Domain, String> updatedDomainDescription = updateDescription(initialDomain);
 
                 // Get the existing domain to update if it already exists
@@ -77,7 +77,7 @@ public class DomainDaoInterceptor {
         }
 
         // Call the save method
-        Object result = joinPoint.proceed(new Object[]{entities});
+        Object result = joinPoint.proceed(new Object[]{initialDomains});
 
         // Store domain description's literal values in the Message index
         // Replace the domain description's UUIDs by their matching literal values
@@ -110,17 +110,16 @@ public class DomainDaoInterceptor {
      * Intercept a domain saving operation before it's indexed to replace its description's value by a message code
      * and store its localized descriptions.
      *
-     * @param joinPoint Joint point for the targeted operation
-     * @param entity    The domain to index
+     * @param joinPoint     Joint point for the targeted operation
+     * @param initialDomain The domain to index
      */
-    @Around("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(entity)"
-            + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object)) && args(entity)")
-    public Object aroundSaving(ProceedingJoinPoint joinPoint, Object entity) throws Throwable {
+    @Around("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(initialDomain)"
+            + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object)) && args(initialDomain)")
+    public Object aroundSaving(ProceedingJoinPoint joinPoint, Domain initialDomain) throws Throwable {
 
         // Execute the default process if there is no entity to save
-        if (entity == null)
+        if (initialDomain == null)
             return joinPoint.proceed(new Object[]{null});
-        Domain initialDomain = Domain.class.cast(entity);
 
         // Replace the domain description's literal value by a message type
         Pair<Domain, String> updatedDomainDescription = updateDescription(initialDomain);
@@ -128,10 +127,8 @@ public class DomainDaoInterceptor {
         // Get the existing domain to update if it already exists
         final Domain existingDomain = findExistingDomain(initialDomain);
 
-        // Call the save method
+        // Call the save method and get the saved domain
         Object resultEntity = joinPoint.proceed(new Object[]{updatedDomainDescription.getLeft()});
-
-        // Get the saved domain
         if (resultEntity == null)
             return null;
         Domain resultDomain = Domain.class.cast(resultEntity);
@@ -147,6 +144,26 @@ public class DomainDaoInterceptor {
         resultDomain.setDescription(updatedDomainDescription.getRight());
 
         return resultDomain;
+    }
+
+    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findOne(*))", returning = "foundDomain")
+    public void afterFindOne(Domain foundDomain) {
+
+        if (foundDomain == null)
+            return;
+
+        Domain i18nDomain = i18nDomainHolder.getDomain();
+        final String languageTag = threadLocaleHolder.getInputLocale() == null ?
+                i18nDomain.getDefaultLanguageTag() :
+                threadLocaleHolder.getOutputLocale().getLanguage();
+
+        Message message = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(
+                i18nDomainHolder.getDomain().getId(),
+                DOMAIN_DESCRIPTION_TYPE,
+                foundDomain.getId(),
+                languageTag);
+
+        foundDomain.setDescription(message.getContent());
     }
 
     /**
