@@ -1,14 +1,14 @@
 package info.jallaix.message.dao;
 
+import info.jallaix.message.config.DomainDaoTestConfiguration;
+import info.jallaix.message.config.DomainHolder;
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Language;
 import info.jallaix.message.dto.Message;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
-import org.junit.After;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -22,10 +22,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
  * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
  */
 @Configuration
-@Import({SpringDataEsTestConfiguration.class, DomainDaoConfiguration.class})
+@Import({SpringDataEsTestConfiguration.class, DomainDaoTestConfiguration.class})
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class)
 @EnableAspectJAutoProxy
 @ContextConfiguration(classes = DomainDaoTest.class)
@@ -52,14 +52,23 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Rule
     public final SpringMethodRule SPRING_METHOD_RULE = new SpringMethodRule();
 
-    @Resource
-    private Domain messageDomain;
+    @Autowired
+    private DomainHolder i18nDomainHolder;
 
     @Autowired
     private ElasticsearchOperations esOperations;
 
+    @Autowired
+    private ThreadLocaleHolder threadLocaleHolder;
+
+    @Before
+    public void initMessageDomain() {
+
+    }
+
     @After
     public void clearLocales() {
+        threadLocaleHolder.clear();
     }
 
 
@@ -82,7 +91,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected Domain newDocumentToInsert() {
 
-        return new Domain("4", "project4", "project4.description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("5", "test.project4", "Test project 4's description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
     }
 
     /**
@@ -93,7 +102,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected Domain newDocumentToUpdate() {
 
-        return new Domain("2", "project4", "project4.description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("3", "test.project2", "New project 2's description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
     }
 
     /**
@@ -104,7 +113,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected Domain newExistingDocument() {
 
-        return new Domain("2", "project2", "project2.description", "fr-FR", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("3", "test.project2", "Test project 2's description", "fr-FR", Arrays.asList("en-US", "fr-FR", "es-ES"));
     }
 
     /**
@@ -155,8 +164,9 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Saving a new domain inserts the domain in the index.
-     * It also inserts the domain description in the message's index type, localized with the domain's supported languages.
+     * It also inserts the domain description in the message's index type for each Message domain's supported languages.
      */
+    @Test
     @Override
     public void saveNewDocument() {
 
@@ -167,8 +177,9 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Indexing a new domain inserts the domain in the index.
-     * It also inserts the domain description in the message's index type, localized with the domain's supported languages.
+     * It also inserts the domain description in the message's index type for each Message domain's supported languages.
      */
+    @Test
     @Override
     public void indexNewDocument() {
 
@@ -179,9 +190,9 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Saving a list of new documents inserts the documents in the index.
-     * It also inserts the domain description for each document in the message's index type,
-     * localized with the domain's supported languages.
+     * It also inserts the domains descriptions in the message's index type for each Message domain's supported languages.
      */
+    @Test
     @Override
     public void saveNewDocuments() {
 
@@ -191,9 +202,57 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
+     * Saving an existing document replaces the document in the index.
+     * It also updates the domain description for the default locale in the message's index type.
+     */
+    @Test
+    @Override
+    public void saveExistingDocument() {
+
+        // Update an existing document in the index
+        super.saveExistingDocument();
+        checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()));
+    }
+
+    /**
+     * Check if an existing domain description is updated for the specified locale only.
+     */
+    private void checkExistingDocumentMessages(Locale locale) {
+
+        // The domain description in the Elasticsearch index must contain a message code
+        Domain updated = newDocumentToUpdate();
+        GetQuery getQuery = new GetQuery();
+        getQuery.setId(updated.getId());
+        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+        assertNotEquals(updated.getDescription(), savedDomain.getDescription());
+
+        // Get all localized messages for a message and domain codes
+        List<Message> messages = esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(savedDomain.getDescription()))
+                                .and(new Criteria("entityId").is(savedDomain.getId()))),
+                Message.class);
+
+        // The domain description for the input locale must match the one expected by the update operation
+        Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(locale.toLanguageTag())).findFirst();
+        assertTrue(message.isPresent());
+        assertEquals(updated.getDescription(), message.get().getContent());
+
+        // The domain descriptions for locales other than the input locale must match the original descriptions
+        // TODO test bidon : il faut sauver les valeurs avant update pour comparer
+        messages.stream().filter(m -> !m.getLanguageTag().equals(locale.toLanguageTag()))
+                .forEach(m -> {
+                    assertNotEquals(updated.getDescription(), message.get().getContent());
+                });
+    }
+
+    /**
      * Check if a new domain description is indexed in the message type.
      */
     private void checkNewDocumentMessages() {
+
+        Domain i18nDomain = i18nDomainHolder.getDomain();
 
         // The domain description in the Elasticsearch index must contain a message code
         Domain inserted = newDocumentToInsert();
@@ -205,12 +264,13 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         // Get all localized messages for a message and domain codes
         List<Message> messages = esOperations.queryForList(
                 new CriteriaQuery(
-                        new Criteria("code").is(savedDomain.getDescription())
-                                .and(new Criteria("domainCode").is(inserted.getCode()))),
+                        new Criteria("domainId").is(i18nDomain.getId())
+                                .and(new Criteria("type").is(savedDomain.getDescription()))
+                                .and(new Criteria("entityId").is(savedDomain.getId()))),
                 Message.class);
 
         // Get the message domain to verify that all supported languages have a matching description
-        messageDomain.getAvailableLanguageTags().forEach(languageTag -> {
+        i18nDomain.getAvailableLanguageTags().forEach(languageTag -> {
 
             // A message with the localized description must be linked to the message code
             Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(languageTag)).findFirst();

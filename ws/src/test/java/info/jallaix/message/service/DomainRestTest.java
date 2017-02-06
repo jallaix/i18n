@@ -32,6 +32,10 @@ import static org.junit.Assert.assertThat;
 @SpringApplicationConfiguration(ApplicationMock.class)
 @WebIntegrationTest(randomPort = true)
 public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String, DomainDao> {
+
+    @Autowired
+    private Domain messageDomain;
+
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                      Abstract methods implementation                                           */
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -280,9 +284,9 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
 
         Domain savedDomain = httpResponse.getBody().getContent();
         String languageTag = savedDomain.getDefaultLanguageTag();
-        String messageCode = savedDomain.getDescription();
+        String messageType = savedDomain.getDescription();
 
-        Message message = messageDao.findByCodeAndLanguageTagAndDomainCode(messageCode, languageTag, domain);
+        Message message = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(messageDomain.getId(), messageType, savedDomain.getId(), languageTag);
         assertThat(message, is(notNullValue()));
     }
 }

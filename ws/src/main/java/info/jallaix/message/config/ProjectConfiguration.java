@@ -1,19 +1,12 @@
 package info.jallaix.message.config;
 
 import info.jallaix.message.dao.DomainDao;
-import info.jallaix.message.dto.Domain;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
-import org.springframework.data.elasticsearch.core.query.GetQuery;
-import org.springframework.data.elasticsearch.core.query.IndexQuery;
-
-import java.util.Collections;
 
 /**
  * Project configuration
@@ -42,30 +35,12 @@ public class ProjectConfiguration {
     }
 
     /**
-     * The message domain bean contains the domain data for the current application.
+     * The i18n domain holder gives access to the domain data for the current application.
      *
-     * @return The message domain
+     * @return The i18n domain holder
      */
     @Bean
-    public Domain messageDomain() {
-
-        // Get the message domain
-        Domain messageDomain = null;
-        if (esOperations.indexExists(Domain.class))
-            messageDomain = esOperations.queryForObject(new CriteriaQuery(new Criteria("code").is("i18n.message")), Domain.class);
-
-        // Index the message domain if it's unavailable in the ES index
-        if (messageDomain == null) {
-
-            IndexQuery indexQuery = new IndexQuery();
-            indexQuery.setObject(new Domain(null, "i18n.message", "Internationalized messages", "en-US", Collections.singleton("en-US")));
-            String messageDomainId = esOperations.index(indexQuery);
-
-            GetQuery getQuery = new GetQuery();
-            getQuery.setId(messageDomainId);
-            messageDomain = esOperations.queryForObject(getQuery, Domain.class);
-        }
-
-        return messageDomain;
+    public DomainHolder i18nDomainHolder() {
+        return new I18nDomainHolder(esOperations);
     }
 }

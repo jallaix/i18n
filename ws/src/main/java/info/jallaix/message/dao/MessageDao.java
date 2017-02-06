@@ -19,7 +19,7 @@ public interface MessageDao extends ElasticsearchRepository<Message, String>, Me
      * @return The message found
      */
     @SuppressWarnings("unused")
-    Message findByCodeAndLanguageTagAndDomainCode(String code, String languageTag, String domainCode);
+    Message findByDomainIdAndTypeAndEntityIdAndLanguageTag(String domainId, String type, String entityId, String languageTag);
 
     /**
      * Find all messages that belong to a domain.
@@ -28,5 +28,5 @@ public interface MessageDao extends ElasticsearchRepository<Message, String>, Me
      * @return The collection of messages that belong to the domain
      */
     @SuppressWarnings("unused")
-    Collection<Message> findByDomainCode(String domainCode);
+    Collection<Message> findByDomainId(String domainId);
 }

@@ -1,10 +1,10 @@
 package info.jallaix.message.dao.interceptor;
 
+import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dto.Domain;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -29,8 +29,8 @@ public class ThreadLocaleHolder {
     /**
      * The message domain
      */
-    @Value("${i18n.message.domain ?: 'default'}")
-    private String messageDomain;
+    @Autowired
+    private DomainHolder i18nDomainHolder;
 
     @Autowired
     private DomainDao domainDao;
@@ -104,8 +104,8 @@ public class ThreadLocaleHolder {
      */
     private void checkInputLocale(Locale inputLocale) throws UnsupportedLanguageException {
 
-        Domain domain = domainDao.findByCode(messageDomain);
-        if (!domain.getAvailableLanguageTags().contains(inputLocale.getLanguage()))
-            throw new UnsupportedLanguageException(inputLocale.getLanguage(), messageDomain);
+        Domain i18nDomain = i18nDomainHolder.getDomain();
+        if (!i18nDomain.getAvailableLanguageTags().contains(inputLocale.getLanguage()))
+            throw new UnsupportedLanguageException(inputLocale.getLanguage(), i18nDomain.getCode());
     }
 }

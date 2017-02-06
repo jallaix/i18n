@@ -1,6 +1,24 @@
 { "create" : { "_index" : "message", "_type" : "domain", "_id" : "1" } }
-{ "code" : "project1", "description" : "project1.description", "defaultLanguageTag" : "en-US", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
+{ "code" : "i18n.message", "description" : "info.jallaix.message.dto.Domain.description", "defaultLanguageTag" : "en-US", "availableLanguageTags" : [ "en-US", "fr-FR" ] }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "1", "languageTag" : "en-US", "content" : "Internationalized messages" }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "1", "languageTag" : "fr-FR", "content" : "Messages internationalisés" }
 { "create" : { "_index" : "message", "_type" : "domain", "_id" : "2" } }
-{ "code" : "project2", "description" : "project2.description", "defaultLanguageTag" : "fr-FR", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
+{ "code" : "test.project1", "description" : "info.jallaix.message.dto.Domain.description", "defaultLanguageTag" : "en-US", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "2", "languageTag" : "en-US", "content" : "Test project 1's description" }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "2", "languageTag" : "fr-FR", "content" : "Description du projet de test 1" }
 { "create" : { "_index" : "message", "_type" : "domain", "_id" : "3" } }
-{ "code" : "project3", "description" : "project3.description", "defaultLanguageTag" : "en-US", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
+{ "code" : "test.project2", "description" : "info.jallaix.message.dto.Domain.description", "defaultLanguageTag" : "fr-FR", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "3", "languageTag" : "en-US", "content" : "Test project 2's description" }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "3", "languageTag" : "fr-FR", "content" : "Description du projet de test 2" }
+{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "4" } }
+{ "code" : "test.project3", "description" : "info.jallaix.message.dto.Domain.description", "defaultLanguageTag" : "en-US", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "4", "languageTag" : "en-US", "content" : "Test project 3's description" }
+{ "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "4", "languageTag" : "fr-FR", "content" : "Description du projet de test 3" }
