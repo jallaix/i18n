@@ -152,18 +152,20 @@ public class DomainDaoInterceptor {
         if (foundDomain == null)
             return;
 
-        Domain i18nDomain = i18nDomainHolder.getDomain();
-        final String languageTag = threadLocaleHolder.getInputLocale() == null ?
-                i18nDomain.getDefaultLanguageTag() :
-                threadLocaleHolder.getOutputLocale().getLanguage();
-
         Message message = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(
                 i18nDomainHolder.getDomain().getId(),
                 DOMAIN_DESCRIPTION_TYPE,
                 foundDomain.getId(),
-                languageTag);
+                getOutputLanguageTag());
 
         foundDomain.setDescription(message.getContent());
+    }
+
+    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findAll())", returning = "domainIterator")
+    public void afterFindAll(Iterable<?> domainIterator) {
+
+        if (domainIterator == null)
+            return;
     }
 
     /**
@@ -221,17 +223,40 @@ public class DomainDaoInterceptor {
      */
     private void updateExistingMessage(String domainId, String descriptionContent) {
 
-        Domain i18nDomain = i18nDomainHolder.getDomain();
-        final String languageTag = threadLocaleHolder.getInputLocale() == null ?
-                i18nDomain.getDefaultLanguageTag() :
-                threadLocaleHolder.getInputLocale().getLanguage();
         Message messageToUpdate = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(
-                i18nDomain.getId(),
+                i18nDomainHolder.getDomain().getId(),
                 DOMAIN_DESCRIPTION_TYPE,
                 domainId,
-                languageTag);
+                getInputLanguageTag());
+
         messageToUpdate.setContent(descriptionContent);
         messageDao.index(messageToUpdate);
+    }
+
+    /**
+     * Get the language tag for input data
+     *
+     * @return The language tag for input data
+     */
+    private String getInputLanguageTag() {
+
+        Domain i18nDomain = i18nDomainHolder.getDomain();
+        return threadLocaleHolder.getInputLocale() == null ?
+                i18nDomain.getDefaultLanguageTag() :
+                threadLocaleHolder.getInputLocale().toLanguageTag();
+    }
+
+    /**
+     * Get the language tag for output data
+     *
+     * @return The language tag for output data
+     */
+    private String getOutputLanguageTag() {
+
+        Domain i18nDomain = i18nDomainHolder.getDomain();
+        return threadLocaleHolder.getInputLocale() == null ?
+                i18nDomain.getDefaultLanguageTag() :
+                threadLocaleHolder.getOutputLocale().toLanguageTag();
     }
 
     /**

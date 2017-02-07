@@ -23,10 +23,7 @@ import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
@@ -189,19 +186,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Saving a list of new documents inserts the documents in the index.
-     * It also inserts the domains descriptions in the message's index type for each Message domain's supported languages.
-     */
-    @Test
-    @Override
-    public void saveNewDocuments() {
-
-        // Insert new documents in the index
-        super.saveNewDocuments();
-        checkNewDocumentMessages();
-    }
-
-    /**
      * Saving an existing document replaces the document in the index.
      * It also updates the domain description for the default locale in the message's index type.
      */
@@ -218,6 +202,92 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         // Check the integrity of domain and messages
         checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
     }
+
+    /**
+     * Saving a list of documents inserts and updates the documents in the index.
+     * On creation, it also inserts the domains descriptions in the message's index type for each Message domain's supported languages.
+     * On update, it also updates the domain description for the default locale in the message's index type.
+     */
+    @Test
+    @Override
+    public void saveDocuments() {
+
+        // Find messages linked to the domain to update
+        List<Message> originalMessages = getMessages(newDocumentToUpdate());
+
+        // Insert and update documents in the index
+        super.saveDocuments();
+
+        // Check the integrity of domain and messages
+        checkNewDocumentMessages();
+        checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
+    }
+
+    /**
+     * Finding a list of all existing documents returns an iterable with all these documents.
+     */
+    @Test
+    @Override
+    public void findAllDocuments() {
+
+        // Fixture
+        List<Domain> initialList = testClientOperations.findAllDocumentsPaged(getDocumentMetaData(), 0, (int) this.getTestDocumentsLoader().getLoadedDocumentCount());
+        for (Domain initial : initialList) {
+
+            Optional<Message> message = getMessages(initial).stream().filter(m -> m.getLanguageTag().equals(i18nDomainHolder.getDomain().getDefaultLanguageTag())).findFirst();
+            if (!message.isPresent())
+                fail("Bad fixture: No domain message for " + i18nDomainHolder.getDomain().getDefaultLanguageTag());
+            initial.setDescription(message.get().getContent());
+        }
+
+        // Repository search
+        List<Domain> foundList = new ArrayList<>();
+        getRepository().findAll()
+                .forEach(foundList::add);
+
+        assertArrayEquals(initialList.toArray(), foundList.toArray());
+    }
+
+    /**
+     * Finding a list of existing documents by identifier returns an iterable with all these documents.
+     */
+    @Test
+    @Override
+    public void findAllDocumentsByIdentifier() {
+        super.findAllDocumentsByIdentifier();
+    }
+
+    /**
+     * Finding a page of existing documents returns an iterable with all these documents.
+     */
+    @Test
+    @Override
+    public void findAllDocumentsSorted() {
+        super.findAllDocumentsSorted();
+    }
+
+    /**
+     * Finding a page of sorted existing documents returns an iterable with all these sorted documents.
+     */
+    @Test
+    @Override
+    public void findAllDocumentsByPage() {
+        super.findAllDocumentsByPage();
+    }
+
+    /**
+     * Finding a page of sorted existing documents returns an iterable with all these sorted documents.
+     */
+    @Test
+    @Override
+    public void findAllDocumentsByPageSorted() {
+        super.findAllDocumentsByPageSorted();
+    }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                Private methods                                                 */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * Check if an existing domain description is updated for the specified locale only.
