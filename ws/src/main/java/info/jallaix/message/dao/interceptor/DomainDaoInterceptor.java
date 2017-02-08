@@ -166,6 +166,22 @@ public class DomainDaoInterceptor {
 
         if (domainIterator == null)
             return;
+
+        for (Object domainObject : domainIterator) {
+
+            Domain foundDomain = Domain.class.cast(domainObject);
+
+            Message message = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(
+                    i18nDomainHolder.getDomain().getId(),
+                    DOMAIN_DESCRIPTION_TYPE,
+                    foundDomain.getId(),
+                    getInputLanguageTag());
+            if (message == null) {
+                throw new RuntimeException("No message found for the domain description with id=" + foundDomain.getId() + " and languageTag=" + getInputLanguageTag());
+            }
+
+            foundDomain.setDescription(message.getContent());
+        }
     }
 
     /**
