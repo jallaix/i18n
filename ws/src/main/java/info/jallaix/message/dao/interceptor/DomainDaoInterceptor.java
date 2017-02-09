@@ -146,6 +146,11 @@ public class DomainDaoInterceptor {
         return resultDomain;
     }
 
+    /**
+     * Intercept a domain finding operation after it is get to replace its message code by a description's value.
+     *
+     * @param foundDomain The found domain
+     */
     @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findOne(*))", returning = "foundDomain")
     public void afterFindOne(Domain foundDomain) {
 
@@ -161,11 +166,19 @@ public class DomainDaoInterceptor {
         foundDomain.setDescription(message.getContent());
     }
 
-    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findAll())", returning = "domainIterator")
-    public void afterFindAll(Iterable<?> domainIterator) {
+    /**
+     * Intercept domains finding operation after there are get to replace their message codes by their description's values.
+     *
+     * @param domains The list of found domains
+     */
+    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findAll(*))"
+            + " || execution(* info.jallaix.message.dao.DomainDao+.findAll())", returning = "domains")
+    public void afterFindAll(Iterable<?> domains) {
 
-        if (domainIterator == null)
+        if (domains == null)
             return;
+
+        domains.forEach(domain -> afterFindOne(Domain.class.cast(domain)));
     }
 
     /**
