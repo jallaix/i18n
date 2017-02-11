@@ -13,8 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
@@ -25,8 +23,10 @@ import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import java.lang.reflect.Field;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
@@ -141,6 +141,76 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         return 2;
     }
 
+    /**
+     * Get all internationalized typed documents from the index.
+     *
+     * @return All internationalized typed documents from the index
+     */
+    @Override
+    protected List<Domain> getFixtureForFindAll() {
+        return internationalizeDomains(super.getFixtureForFindAll());
+    }
+
+    /**
+     * Get some internationalized typed documents from the index depending of the default page size.
+     *
+     * @return Some internationalized typed documents from the index depending of the default page size
+     */
+    @Override
+    protected List<Domain> getFixtureForFindAllByIdentifier() {
+        return internationalizeDomains(super.getFixtureForFindAllByIdentifier());
+    }
+
+    /**
+     * Get all internationalized typed documents sorted from the index.
+     *
+     * @return All internationalized typed documents sorted from the index
+     */
+    @Override
+    protected List<Domain> getFixtureForFindAllSorted() {
+        return internationalizeDomains(super.getFixtureForFindAllSorted());
+    }
+
+    /**
+     * Get internationalized typed documents from the index for the first page
+     *
+     * @return Internationalized typed documents from the index for the first page
+     */
+    @Override
+    protected List<Domain> getFixtureForFindAllByPageForFirstPage() {
+        return internationalizeDomains(super.getFixtureForFindAllByPageForFirstPage());
+    }
+
+    /**
+     * Get internationalized typed documents from the index for the last page
+     *
+     * @return Internationalized typed documents internationalized from the index for the last page
+     */
+    @Override
+    protected List<Domain> getFixtureForFindAllByPageForLastPage() {
+        return internationalizeDomains(super.getFixtureForFindAllByPageForLastPage());
+    }
+
+    /**
+     * Get internationalized typed documents sorted from the index for the first page
+     *
+     * @return Internationalized typed documents sorted from the index for the first page
+     */
+    @Override
+    protected List<Domain> getFixtureForFindAllByPageSortedForFirstPage() {
+        return internationalizeDomains(super.getFixtureForFindAllByPageSortedForFirstPage());
+    }
+
+    /**
+     * Get internationalized typed documents sorted from the index for the last page
+     *
+     * @return Internationalized typed documents sorted from the index for the last page
+     */
+    @Override
+    protected List<Domain> getFixtureForFindAllByPageSortedForLastPage() {
+        return internationalizeDomains(super.getFixtureForFindAllByPageSortedForLastPage());
+    }
+
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                     Custom tests                                               */
@@ -224,161 +294,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         // Check the integrity of domain and messages
         checkNewDocumentMessages();
         checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
-    }
-
-    /**
-     * Finding a list of all existing documents returns these documents with an internationalized description.
-     */
-    @Test
-    @Override
-    public void findAllDocuments() {
-
-        // Fixture
-        List<Domain> initialList = testClientOperations.findAllDocumentsPaged(getDocumentMetaData(), 0, (int) this.getTestDocumentsLoader().getLoadedDocumentCount());
-        List<Domain> internationalizedList = internationalizeDomains(initialList);
-
-        // Repository search
-        List<Domain> foundList = new ArrayList<>();
-        getRepository().findAll()
-                .forEach(foundList::add);
-
-        assertArrayEquals(internationalizedList.toArray(), foundList.toArray());
-    }
-
-    /**
-     * Finding a list of existing documents by identifier returns these documents with an internationalized description.
-     */
-    @Test
-    @Override
-    public void findAllDocumentsByIdentifier() {
-
-        // Fixture
-        List<Domain> initialList = testClientOperations.findAllDocuments(getDocumentMetaData());
-        List<Domain> internationalizedList = internationalizeDomains(initialList);
-        List<String> initialKeys = initialList.stream()
-                .map(this::getIdFieldValue)
-                .collect(Collectors.toList());
-
-        // Repository search
-        List<Domain> foundList = new ArrayList<>();
-        getRepository().findAll(initialKeys)
-                .forEach(foundList::add);
-
-        assertArrayEquals(internationalizedList.toArray(), foundList.toArray());
-    }
-
-    /**
-     * Finding a sorted list of all existing documents returns these documents sorted with an internationalized description.
-     */
-    @Test
-    @Override
-    public void findAllDocumentsSorted() {
-
-        // Fixture
-        List<Domain> initialList = testClientOperations.findAllDocumentsPagedSorted(
-                getDocumentMetaData(),
-                getSortField(),
-                0,
-                (int) this.getTestDocumentsLoader().getLoadedDocumentCount());
-        List<Domain> internationalizedList = internationalizeDomains(initialList);
-
-        // Repository search
-        Sort sorting = new Sort(Sort.Direction.DESC, getSortField().getName());
-        List<Domain> foundList = new ArrayList<>();
-        getRepository().findAll(sorting)
-                .forEach(foundList::add);
-
-        assertArrayEquals(internationalizedList.toArray(), foundList.toArray());
-    }
-
-    /**
-     * Finding a page of existing documents returns an iterable with all these documents for a page with an internationalized description.
-     */
-    @Test
-    @Override
-    public void findAllDocumentsByPage() {
-
-        // Define the page parameters
-        long documentsCount = testClientOperations.countDocuments(getDocumentMetaData().getDocumentAnnotation());
-        org.springframework.util.Assert.isTrue(documentsCount > 0, "No document loaded");
-        int pageSize = getPageSize();
-        org.springframework.util.Assert.isTrue(pageSize > 0, "Page size must be positive");
-        int nbPages = (int) documentsCount / pageSize + (documentsCount % pageSize == 0 ? 0 : 1);
-
-        // Fixture for first page
-        List<Domain> initialList = testClientOperations.findAllDocumentsPaged(
-                getDocumentMetaData(),
-                0,
-                pageSize);
-        List<Domain> internationalizedList = internationalizeDomains(initialList);
-
-        // Repository search
-        List<Domain> foundList = new ArrayList<>();
-        getRepository().findAll(new PageRequest(0, pageSize))
-                .forEach(foundList::add);
-
-        assertArrayEquals(internationalizedList.toArray(), foundList.toArray());
-
-        // Fixture for last page
-        initialList = testClientOperations.findAllDocumentsPaged(
-                getDocumentMetaData(),
-                nbPages - 1,
-                pageSize);
-        internationalizedList = internationalizeDomains(initialList);
-
-        // Repository search
-        foundList.clear();
-        getRepository().findAll(new PageRequest(nbPages - 1, pageSize))
-                .forEach(foundList::add);
-
-        assertArrayEquals(internationalizedList.toArray(), foundList.toArray());
-    }
-
-    /**
-     * Finding a sorted page of existing documents returns an iterable with all these documents sorted for a page with an internationalized description.
-     */
-    @Test
-    @Override
-    public void findAllDocumentsByPageSorted() {
-
-        // Define the page parameters
-        long documentsCount = testClientOperations.countDocuments(getDocumentMetaData().getDocumentAnnotation());
-        org.springframework.util.Assert.isTrue(documentsCount > 0, "No document loaded");
-        int pageSize = getPageSize();
-        org.springframework.util.Assert.isTrue(pageSize > 0, "Page size must be positive");
-        int nbPages = (int) documentsCount / pageSize + (documentsCount % pageSize == 0 ? 0 : 1);
-        Field sortField = getSortField();
-
-        // Fixture for first page
-        List<Domain> initialList = testClientOperations.findAllDocumentsPagedSorted(
-                getDocumentMetaData(),
-                sortField,
-                0,
-                pageSize);
-        List<Domain> internationalizedList = internationalizeDomains(initialList);
-
-        // Repository search
-        Sort sorting = new Sort(Sort.Direction.DESC, getSortField().getName());
-        List<Domain> foundList = new ArrayList<>();
-        getRepository().findAll(new PageRequest(0, pageSize, sorting))
-                .forEach(foundList::add);
-
-        assertArrayEquals(internationalizedList.toArray(), foundList.toArray());
-
-        // Fixture for last page
-        initialList = testClientOperations.findAllDocumentsPagedSorted(
-                getDocumentMetaData(),
-                sortField,
-                nbPages - 1,
-                pageSize);
-        internationalizedList = internationalizeDomains(initialList);
-
-        // Repository search
-        foundList.clear();
-        getRepository().findAll(new PageRequest(nbPages - 1, pageSize, sorting))
-                .forEach(foundList::add);
-
-        assertArrayEquals(internationalizedList.toArray(), foundList.toArray());
     }
 
 
