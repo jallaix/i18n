@@ -3,7 +3,6 @@ package info.jallaix.message.config;
 import info.jallaix.message.dao.interceptor.DomainDaoInterceptor;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -15,7 +14,7 @@ import java.util.Arrays;
  */
 @Configuration
 @Import({DomainDaoInterceptor.class, ThreadLocaleHolder.class})
-public class DomainDaoTestConfiguration {
+public class DomainDaoTestConfiguration extends ProjectConfiguration {
 
     @Autowired
     private ElasticsearchOperations esOperations;
@@ -26,7 +25,7 @@ public class DomainDaoTestConfiguration {
      *
      * @return The i18n domain holder
      */
-    @Bean
+    @Override
     public DomainHolder i18nDomainHolder() {
 
         I18nDomainHolder domainHolder = new I18nDomainHolder(esOperations);

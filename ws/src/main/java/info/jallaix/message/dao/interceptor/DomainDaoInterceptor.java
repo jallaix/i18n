@@ -1,7 +1,7 @@
 package info.jallaix.message.dao.interceptor;
 
+import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainHolder;
-import info.jallaix.message.dao.MessageDao;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Message;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -12,11 +12,16 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.GetQuery;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -24,27 +29,47 @@ import java.util.List;
  * This aspect intercepts Spring Data Elasticsearch operations to manage localized messages.
  * </p>
  * <p>
- * When creating entities, localized property values are replaced by message codes and original values are saved in the message index.
+ * When creating domains, localized property values are replaced by message codes and original values are saved in the message index.
+ * </p>
+ * <p>
+ * When updating domains, their descriptions are updated in the message index for the specified locale.
+ * </p>
+ * <p>
+ * When finding domains, their descriptions are found in the message index for the specified locale.
  * </p>
  */
 @Aspect
 @Component
 public class DomainDaoInterceptor {
 
+    /**
+     * Message type for the domain description
+     */
     public static final String DOMAIN_DESCRIPTION_TYPE = Domain.class.getName() + ".description";
 
+    /**
+     * Application's internationalization data
+     */
     @Autowired
     private DomainHolder i18nDomainHolder;
 
-    @Autowired
-    private MessageDao messageDao;
-
+    /**
+     * Elasticsearch operations
+     */
     @Autowired
     private ElasticsearchOperations esOperations;
 
+    /**
+     * Holder for accessing locale data
+     */
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
 
+    /**
+     * Serialization framework
+     */
+    @Autowired
+    private Kryo kryo;
 
     /**
      * Intercept entities before they are created to save localized messages in the index and replace matching property values by message codes.
@@ -53,7 +78,7 @@ public class DomainDaoInterceptor {
      * @param initialDomains The list of entities to create
      */
     @Around("execution(* org.springframework.data.elasticsearch.repository.ElasticsearchRepository+.save(Iterable,..)) && args(initialDomains,..)")
-    public Object aroundSaving(ProceedingJoinPoint joinPoint, Iterable<Domain> initialDomains) throws Throwable {
+    public Object aroundSaving(final ProceedingJoinPoint joinPoint, final Iterable<Domain> initialDomains) throws Throwable {
 
         // Execute the default process if there are no entities to save
         if (initialDomains == null)
@@ -61,11 +86,13 @@ public class DomainDaoInterceptor {
 
         // Replace the domain description's literal value for each domain to save
         List<Pair<Domain, String>> descriptions = new ArrayList<>();
+        Collection<Domain> domainsToSave = new ArrayList<>();
         for (Domain initialDomain : initialDomains) {
 
             if (initialDomain != null) {
                 // Replace the domain description's literal value by a message type
                 Pair<Domain, String> updatedDomainDescription = updateDescription(initialDomain);
+                domainsToSave.add(updatedDomainDescription.getLeft());
 
                 // Get the existing domain to update if it already exists
                 final Domain existingDomain = findExistingDomain(initialDomain);
@@ -73,11 +100,12 @@ public class DomainDaoInterceptor {
                         new MutablePair<>(
                                 existingDomain,
                                 updatedDomainDescription.getRight()));
-            }
+            } else
+                domainsToSave.add(null);
         }
 
         // Call the save method
-        Object result = joinPoint.proceed(new Object[]{initialDomains});
+        Object result = joinPoint.proceed(new Object[]{domainsToSave});
 
         // Store domain description's literal values in the Message index
         // Replace the domain description's UUIDs by their matching literal values
@@ -115,7 +143,7 @@ public class DomainDaoInterceptor {
      */
     @Around("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(initialDomain)"
             + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object)) && args(initialDomain)")
-    public Object aroundSaving(ProceedingJoinPoint joinPoint, Domain initialDomain) throws Throwable {
+    public Object aroundSaving(final ProceedingJoinPoint joinPoint, final Domain initialDomain) throws Throwable {
 
         // Execute the default process if there is no entity to save
         if (initialDomain == null)
@@ -149,7 +177,7 @@ public class DomainDaoInterceptor {
     /**
      * Intercept a domain finding operation after it is get to replace its message code by a description's value.
      *
-     * @param foundDomain The found domain
+     * @param foundDomain The found domain to update with the localized description
      */
     @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findOne(*))", returning = "foundDomain")
     public void afterFindOne(Domain foundDomain) {
@@ -157,7 +185,7 @@ public class DomainDaoInterceptor {
         if (foundDomain == null)
             return;
 
-        Message message = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(
+        Message message = searchMessage(
                 i18nDomainHolder.getDomain().getId(),
                 DOMAIN_DESCRIPTION_TYPE,
                 foundDomain.getId(),
@@ -169,7 +197,7 @@ public class DomainDaoInterceptor {
     /**
      * Intercept domains finding operation after there are get to replace their message codes by their description's values.
      *
-     * @param domains The list of found domains
+     * @param domains The list of found domains to update with the localized descriptions
      */
     @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findAll(*))"
             + " || execution(* info.jallaix.message.dao.DomainDao+.findAll())", returning = "domains")
@@ -182,21 +210,22 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Replace the domain description's literal value by a message type
+     * Replace the domain description's literal value by a message type.
      *
-     * @param domain Domain on which the description must be replaced
+     * @param domain Domain for which the description must be replaced
      * @return The updated domain and the extracted description
      */
-    private Pair<Domain, String> updateDescription(Domain domain) {
+    private Pair<Domain, String> updateDescription(final Domain domain) {
 
-        final String descriptionContent = domain.getDescription();
-        domain.setDescription(DOMAIN_DESCRIPTION_TYPE);
+        Domain domainToUpdate = kryo.copy(domain);
+        final String descriptionContent = domainToUpdate.getDescription();
+        domainToUpdate.setDescription(DOMAIN_DESCRIPTION_TYPE);
 
-        return new ImmutablePair<>(domain, descriptionContent);
+        return new ImmutablePair<>(domainToUpdate, descriptionContent);
     }
 
     /**
-     * Find the existing domain to update if it exists
+     * Find the existing domain to update if it exists.
      *
      * @param domainToSave The domain to save
      * @return The existing domain found or {@code null}
@@ -216,68 +245,69 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Insert new messages in the index for all supported languages of the I18n Messages application
+     * Insert new messages in the index for all supported languages of the I18n Messages application.
      *
      * @param domainId           The new domain the messages depend on
      * @param descriptionContent The description content to set on messages
      */
-    private void insertInitialMessages(String domainId, String descriptionContent) {
+    private void insertInitialMessages(final String domainId, final String descriptionContent) {
 
         i18nDomainHolder.getDomain().getAvailableLanguageTags().forEach(languageTag ->
-                messageDao.index(
+                indexMessage(
                         buildMessage(languageTag, domainId, descriptionContent)));
     }
 
     /**
-     * Update an existing message description for the current locale
+     * Update an existing message description for the current locale.
      *
      * @param domainId           The existing domain the message depends on
      * @param descriptionContent The description content to set on message
      */
-    private void updateExistingMessage(String domainId, String descriptionContent) {
+    private void updateExistingMessage(final String domainId, final String descriptionContent) {
 
-        Message messageToUpdate = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(
+        Message messageToUpdate = searchMessage(
                 i18nDomainHolder.getDomain().getId(),
                 DOMAIN_DESCRIPTION_TYPE,
                 domainId,
                 getInputLanguageTag());
 
         messageToUpdate.setContent(descriptionContent);
-        messageDao.index(messageToUpdate);
+        indexMessage(messageToUpdate);
     }
 
     /**
-     * Get the language tag for input data
+     * Get the language tag for input data.
      *
      * @return The language tag for input data
      */
     private String getInputLanguageTag() {
 
-        Domain i18nDomain = i18nDomainHolder.getDomain();
         return threadLocaleHolder.getInputLocale() == null ?
-                i18nDomain.getDefaultLanguageTag() :
+                i18nDomainHolder.getDomain().getDefaultLanguageTag() :
                 threadLocaleHolder.getInputLocale().toLanguageTag();
     }
 
     /**
-     * Get the language tag for output data
+     * Get the language tag for output data.
      *
      * @return The language tag for output data
      */
     private String getOutputLanguageTag() {
 
-        Domain i18nDomain = i18nDomainHolder.getDomain();
         return threadLocaleHolder.getInputLocale() == null ?
-                i18nDomain.getDefaultLanguageTag() :
+                i18nDomainHolder.getDomain().getDefaultLanguageTag() :
                 threadLocaleHolder.getOutputLocale().toLanguageTag();
     }
 
     /**
      * Build a message for the domain's description.
      *
+     * @param languageTag        The language tag of the message
+     * @param domainId           The domain identifier
+     * @param descriptionContent The description content
      * @return The built message
      */
-    private Message buildMessage(String languageTag, String descriptionId, String descriptionContent) {
+    private Message buildMessage(final String languageTag, final String domainId, final String descriptionContent) {
 
         Message message = new Message();
 
@@ -285,8 +315,8 @@ public class DomainDaoInterceptor {
         message.setDomainId(i18nDomainHolder.getDomain().getId());
         // Message type
         message.setType(DOMAIN_DESCRIPTION_TYPE);
-        // Entity identifier
-        message.setEntityId(descriptionId);
+        // Domain identifier
+        message.setEntityId(domainId);
         // Input language tag
         message.setLanguageTag(languageTag);
         // Localized content
@@ -295,53 +325,39 @@ public class DomainDaoInterceptor {
         return message;
     }
 
-    /*public class DomainIterable implements Iterable<Domain> {
+    /**
+     * Look for the message that matches the arguments.
+     *
+     * @param i18nDomainId    Identifier of this application domain
+     * @param descriptionType Type of the domain description
+     * @param domainId        Identifier of the domain
+     * @param languageTag     Language tag
+     * @return The found message or {@code null}
+     */
+    private Message searchMessage(final String i18nDomainId, final String descriptionType, final String domainId, final String languageTag) {
 
-        private Iterable<Domain> domains;
-        private Map<UUID, String> descriptions;
+        return esOperations.queryForObject(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainId)
+                                .and(new Criteria("type").is(descriptionType))
+                                .and(new Criteria("entityId").is(domainId))
+                                .and(new Criteria("languageTag").is(languageTag))),
+                Message.class);
+    }
 
-        public DomainIterable(Iterable<Domain> domains, Map<UUID, String> descriptions) {
-            this.domains = domains;
-            this.descriptions = descriptions;
-        }
+    /**
+     * Create or update a message.
+     *
+     * @param message the message to save
+     */
+    private void indexMessage(final Message message) {
 
-        @Override
-        public Iterator<Domain> iterator() {
-            return new DomainIterator(domains.iterator(), descriptions);
-        }
-    }*/
+        // Index the message
+        IndexQuery indexQuery = new IndexQuery();
+        indexQuery.setObject(message);
+        esOperations.index(indexQuery);
 
-    /*public class DomainIterator implements Iterator<Domain> {
-
-        private Iterator<Domain> domainIterator;
-        private Map<UUID, String> descriptions;
-
-        public DomainIterator(Iterator<Domain> domainIterator, Map<UUID, String> descriptions) {
-            this.domainIterator = domainIterator;
-            this.descriptions = descriptions;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return domainIterator.hasNext();
-        }
-
-        @Override
-        public Domain next() {
-
-            Domain resultDomain = domainIterator.next();
-
-            UUID descriptionUuid = UUID.fromString(resultDomain.getDescription());
-            String descriptionContent = descriptions.get(descriptionUuid);
-
-            // Create and save the domain description's message for each language supported by the Message application
-            messageDomain.getAvailableLanguageTags().forEach(languageTag ->
-                    messageDao.index(buildMessage(resultDomain.getCode(), languageTag, descriptionUuid, descriptionContent)));
-
-            // Set back the localized domain description
-            resultDomain.setDescription(descriptionContent);
-
-            return resultDomain;
-        }
-    }*/
+        // Refresh (make it available for search) the message
+        esOperations.refresh(Message.class.getDeclaredAnnotation(Document.class).indexName(), true);
+    }
 }

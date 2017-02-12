@@ -1,31 +1,30 @@
 package info.jallaix.message.config;
 
-import info.jallaix.message.dao.DomainDao;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.serializers.CollectionSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * Project configuration
  */
 @Configuration
-@PropertySource("classpath:/info/jallaix/message/config/project.properties}")
+//@PropertySource("classpath:/info/jallaix/message/config/project.properties}")
 public class ProjectConfiguration {
-
-    /**
-     * Repository for domain data
-     */
-    @Autowired
-    private DomainDao domainDao;
 
     @Autowired
     private ElasticsearchOperations esOperations;
 
     /**
-     * Property resource configurer that resolves ${} in @Value annotations
+     * Property resource configurer that resolves ${} in @Value annotations.
      *
      * @return The property resource configurer
      */
@@ -42,5 +41,32 @@ public class ProjectConfiguration {
     @Bean
     public DomainHolder i18nDomainHolder() {
         return new I18nDomainHolder(esOperations);
+    }
+
+    /**
+     * Access to the serialization framework.
+     *
+     * @return The access to the serialization framework
+     */
+    @Bean
+    public Kryo kryo() {
+
+        Kryo kryo = new Kryo();
+        kryo.register(Arrays.asList().getClass(), new AsListCollectionSerializer());
+
+        return kryo;
+    }
+
+    public class AsListCollectionSerializer extends CollectionSerializer {
+
+        @Override
+        protected Collection create(Kryo kryo, Input input, Class<Collection> type) {
+            return new ArrayList();
+        }
+
+        @Override
+        public Collection createCopy (Kryo kryo, Collection original) {
+            return new ArrayList();
+        }
     }
 }

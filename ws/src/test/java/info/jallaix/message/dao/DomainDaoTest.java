@@ -1,5 +1,6 @@
 package info.jallaix.message.dao;
 
+import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainDaoTestConfiguration;
 import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
@@ -60,6 +61,9 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
+
+    @Autowired
+    private Kryo kryo;
 
     @Before
     public void initMessageDomain() {
@@ -142,75 +146,15 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Get all internationalized typed documents from the index.
+     * Customize a list of typed documents.
      *
-     * @return All internationalized typed documents from the index
+     * @param fixture The list of typed documents to customize
+     * @return The list of customized typed documents
      */
     @Override
-    protected List<Domain> getFixtureForFindAll() {
-        return internationalizeDomains(super.getFixtureForFindAll());
+    protected List<Domain> customizeFixture(List<Domain> fixture) {
+        return internationalizeDomains(kryo.copy(fixture));
     }
-
-    /**
-     * Get some internationalized typed documents from the index depending of the default page size.
-     *
-     * @return Some internationalized typed documents from the index depending of the default page size
-     */
-    @Override
-    protected List<Domain> getFixtureForFindAllByIdentifier() {
-        return internationalizeDomains(super.getFixtureForFindAllByIdentifier());
-    }
-
-    /**
-     * Get all internationalized typed documents sorted from the index.
-     *
-     * @return All internationalized typed documents sorted from the index
-     */
-    @Override
-    protected List<Domain> getFixtureForFindAllSorted() {
-        return internationalizeDomains(super.getFixtureForFindAllSorted());
-    }
-
-    /**
-     * Get internationalized typed documents from the index for the first page
-     *
-     * @return Internationalized typed documents from the index for the first page
-     */
-    @Override
-    protected List<Domain> getFixtureForFindAllByPageForFirstPage() {
-        return internationalizeDomains(super.getFixtureForFindAllByPageForFirstPage());
-    }
-
-    /**
-     * Get internationalized typed documents from the index for the last page
-     *
-     * @return Internationalized typed documents internationalized from the index for the last page
-     */
-    @Override
-    protected List<Domain> getFixtureForFindAllByPageForLastPage() {
-        return internationalizeDomains(super.getFixtureForFindAllByPageForLastPage());
-    }
-
-    /**
-     * Get internationalized typed documents sorted from the index for the first page
-     *
-     * @return Internationalized typed documents sorted from the index for the first page
-     */
-    @Override
-    protected List<Domain> getFixtureForFindAllByPageSortedForFirstPage() {
-        return internationalizeDomains(super.getFixtureForFindAllByPageSortedForFirstPage());
-    }
-
-    /**
-     * Get internationalized typed documents sorted from the index for the last page
-     *
-     * @return Internationalized typed documents sorted from the index for the last page
-     */
-    @Override
-    protected List<Domain> getFixtureForFindAllByPageSortedForLastPage() {
-        return internationalizeDomains(super.getFixtureForFindAllByPageSortedForLastPage());
-    }
-
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                     Custom tests                                               */
