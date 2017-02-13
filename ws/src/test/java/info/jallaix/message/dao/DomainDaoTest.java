@@ -24,11 +24,9 @@ import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
@@ -168,7 +166,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * @return The initial list of messages
      */
     protected Object getCustomDataOnSaveExistingDocument(Domain toUpdate) {
-        return getMessages(toUpdate);
+        return getMessages(toUpdate.getId());
     }
 
     /**
@@ -188,13 +186,13 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Get custom data before saving to make it available to the {@link #customizeSaveDocuments(List, List, Object)} method
+     * Get the initial list of messages before saving some domains.
      *
      * @param toSave Documents to save
      * @return The custom data
      */
     protected Object getCustomDataOnSaveDocuments(List<Domain> toSave) {
-        return getMessages(newDocumentToUpdate());
+        return getMessages(newDocumentToUpdate().getId());
     }
 
     /**
@@ -215,14 +213,35 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Customize a list of typed documents used as fixture in the {@link #findAllDocuments()} and so on tests.
+     * Internationalize domain descriptions for the {@link #findAllDocuments()} and so on tests.
      *
-     * @param fixture The list of typed documents to customize
-     * @return The list of customized typed documents
+     * @param fixture The list of domains to internationalize
+     * @return The list of internationalized domains
      */
     @Override
-    protected List<Domain> customizeFixture(List<Domain> fixture) {
+    protected List<Domain> customizeFindAllFixture(final List<Domain> fixture) {
         return internationalizeDomains(kryo.copy(fixture));
+    }
+
+    /**
+     * Internationalize domain description for the {@link #findOneExistingDocument()} test.
+     *
+     * @param fixture The domain to internationalize
+     * @return The internationalized domain
+     */
+    protected Domain customizeFindOneFixture(final Domain fixture) {
+        return internationalizeDomain(kryo.copy(fixture));
+    }
+
+    /**
+     * Check the integrity of domain and messages.
+     * No message should reference the deleted domain.
+     *
+     * @param id  Identifier of the deleted domain
+     */
+    @Override
+    protected void customizeDeleteOne(String id) {
+        assertThat(getMessages(id), hasSize(0));
     }
 
     /**
@@ -258,7 +277,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         assertNotEquals(updated.getDescription(), savedDomain.getDescription());
 
         // Get all localized messages for a message and domain codes
-        List<Message> messages = getMessages(savedDomain);
+        List<Message> messages = getMessages(savedDomain.getId());
 
         // The domain description for the input locale must match the one expected by the update operation
         Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(locale.toLanguageTag())).findFirst();
@@ -271,17 +290,17 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Find messages linked to a domain
+     * Find messages linked to a domain.
      *
-     * @param domain The domain linked to the message
+     * @param domainId The identifier of the domain linked to the message
      * @return The set a messages
      */
-    private List<Message> getMessages(Domain domain) {
+    private List<Message> getMessages(String domainId) {
         return esOperations.queryForList(
                 new CriteriaQuery(
                         new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
                                 .and(new Criteria("type").is(Domain.class.getName() + ".description"))
-                                .and(new Criteria("entityId").is(domain.getId()))),
+                                .and(new Criteria("entityId").is(domainId))),
                 Message.class);
     }
 
@@ -320,21 +339,36 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Initialize each domain description with an internationalized message.
+     * Initialize all domain descriptions with internationalized messages.
      *
      * @param initialList The initial list of domains
      * @return The list of domains
      */
     private List<Domain> internationalizeDomains(List<Domain> initialList) {
 
-        for (Domain initial : initialList) {
+        List<Domain> results = new ArrayList<>();
+        initialList.forEach(initial -> results.add(internationalizeDomain(initial)));
 
-            Optional<Message> message = getMessages(initial).stream().filter(m -> m.getLanguageTag().equals(i18nDomainHolder.getDomain().getDefaultLanguageTag())).findFirst();
-            if (!message.isPresent())
-                fail("Invalid fixture: No domain message for " + i18nDomainHolder.getDomain().getDefaultLanguageTag());
-            initial.setDescription(message.get().getContent());
-        }
+        return results;
+    }
 
-        return initialList;
+    /**
+     * Initialize a domain description with an internationalized message.
+     *
+     * @param initial The initial domain
+     * @return The internationalized domain
+     */
+    private Domain internationalizeDomain(final Domain initial) {
+
+        Optional<Message> message = getMessages(initial.getId())
+                .stream()
+                .filter(m -> m.getLanguageTag().equals(i18nDomainHolder.getDomain().getDefaultLanguageTag())).findFirst();
+        if (!message.isPresent())
+            fail("Invalid fixture: No domain message for " + i18nDomainHolder.getDomain().getDefaultLanguageTag());
+
+        Domain result = kryo.copy(initial);
+        result.setDescription(message.get().getContent());
+
+        return result;
     }
 }

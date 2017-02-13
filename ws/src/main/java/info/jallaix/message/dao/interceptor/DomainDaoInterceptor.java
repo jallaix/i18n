@@ -11,13 +11,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
-import org.springframework.data.elasticsearch.core.query.GetQuery;
-import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.data.elasticsearch.core.query.*;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -210,6 +209,32 @@ public class DomainDaoInterceptor {
     }
 
     /**
+     * Intercept a domain deletion operation after the deletion occurs to remove its linked messages.
+     *
+     * @param arg The identifier of the deleted domain
+     */
+    @AfterReturning("execution(* info.jallaix.message.dao.DomainDao+.delete(*)) && args(arg)")
+    public void afterDeleteOneById(Object arg) {
+
+        if (arg == null)
+            return;
+
+        String id = null;
+        if (arg instanceof String)
+            id = String.class.cast(arg);
+        else if (arg instanceof Domain)
+            id = Domain.class.cast(arg).getId();
+
+        if (id != null)
+            deleteMessages(i18nDomainHolder.getDomain().getId(), id);
+        /*Message message = searchMessage(
+                i18nDomainHolder.getDomain().getId(),
+                DOMAIN_DESCRIPTION_TYPE,
+                (String)id,
+                getOutputLanguageTag());*/
+    }
+
+    /**
      * Replace the domain description's literal value by a message type.
      *
      * @param domain Domain for which the description must be replaced
@@ -358,7 +383,29 @@ public class DomainDaoInterceptor {
         indexQuery.setId(message.getId());
         esOperations.index(indexQuery);
 
-        // Refresh (make it available for search) the message
+        // Refresh the message (make it available for search)
         esOperations.refresh(Message.class.getDeclaredAnnotation(Document.class).indexName(), true);
+    }
+
+    /**
+     * Delete all messages belonging to a domain
+     *
+     * @param i18nDomainId Identifier of this application domain
+     * @param domainId     Identifier of the domain
+     */
+    private void deleteMessages(final String i18nDomainId, final String domainId) {
+
+        // Criteria for deletion
+        QueryBuilder queryBuilder = QueryBuilders
+                .boolQuery()
+                .must(QueryBuilders.matchQuery("domainId", i18nDomainId))
+                .must(QueryBuilders.matchQuery("entityId", domainId));
+
+        // Delete the messages
+        DeleteQuery deleteQuery = new DeleteQuery();
+        deleteQuery.setIndex(Message.class.getDeclaredAnnotation(Document.class).indexName());
+        deleteQuery.setType(Message.class.getDeclaredAnnotation(Document.class).type());
+        deleteQuery.setQuery(queryBuilder);
+        esOperations.delete(deleteQuery);
     }
 }
