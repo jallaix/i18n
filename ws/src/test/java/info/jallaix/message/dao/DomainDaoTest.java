@@ -145,8 +145,77 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         return 2;
     }
 
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                     Custom tests                                               */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
     /**
-     * Customize a list of typed documents.
+     * Check the integrity of domain and messages.
+     * Domains descriptions should be inserted in the message's index type for each Message domain's supported languages.
+     *
+     * @param toInsert Domain to insert
+     * @param inserted Inserted domain
+     */
+    @Override
+    protected void customizeSaveNewDocument(Domain toInsert, Domain inserted) {
+        checkNewDocumentMessages(inserted);
+    }
+
+    /**
+     * Get the initial list of messages before saving a domain.
+     *
+     * @param toUpdate Domain to update
+     * @return The initial list of messages
+     */
+    protected Object getCustomDataOnSaveExistingDocument(Domain toUpdate) {
+        return getMessages(toUpdate);
+    }
+
+    /**
+     * Check the integrity of domain and messages.
+     * Domain description for the default locale should be updated in the message's index type.
+     *
+     * @param toUpdate   Domain to update
+     * @param updated    Updated domain
+     * @param customData Custom data
+     */
+    protected void customizeSaveExistingDocument(Domain toUpdate, Domain updated, Object customData) {
+
+        @SuppressWarnings("unchecked")
+        final List<Message> originalMessages = (List<Message>) customData;
+
+        checkExistingDocumentMessages(updated, Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
+    }
+
+    /**
+     * Get custom data before saving to make it available to the {@link #customizeSaveDocuments(List, List, Object)} method
+     *
+     * @param toSave Documents to save
+     * @return The custom data
+     */
+    protected Object getCustomDataOnSaveDocuments(List<Domain> toSave) {
+        return getMessages(newDocumentToUpdate());
+    }
+
+    /**
+     * Check the integrity of domains and messages.
+     * On creation, it also inserts the domains descriptions in the message's index type for each Message domain's supported languages.
+     * On update, it also updates the domain description for the default locale in the message's index type.
+     *
+     * @param toSave Domains to save
+     * @param saved  Saved domains
+     */
+    protected void customizeSaveDocuments(List<Domain> toSave, List<Domain> saved, Object customData) {
+
+        @SuppressWarnings("unchecked")
+        final List<Message> originalMessages = (List<Message>) customData;
+
+        checkNewDocumentMessages(newDocumentToInsert());
+        checkExistingDocumentMessages(newDocumentToUpdate(), Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
+    }
+
+    /**
+     * Customize a list of typed documents used as fixture in the {@link #findAllDocuments()} and so on tests.
      *
      * @param fixture The list of typed documents to customize
      * @return The list of customized typed documents
@@ -155,10 +224,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     protected List<Domain> customizeFixture(List<Domain> fixture) {
         return internationalizeDomains(kryo.copy(fixture));
     }
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                                     Custom tests                                               */
-    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * Looking for a language in any domain is successful if the language code is used.
@@ -176,70 +241,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         assertThat(getRepository().isLanguageUsed("es-ES"), is(false));
     }
 
-    /**
-     * Saving a new domain inserts the domain in the index.
-     * It also inserts the domain description in the message's index type for each Message domain's supported languages.
-     */
-    @Test
-    @Override
-    public void saveNewDocument() {
-
-        // Insert a new document in the index
-        super.saveNewDocument();
-        checkNewDocumentMessages();
-    }
-
-    /**
-     * Indexing a new domain inserts the domain in the index.
-     * It also inserts the domain description in the message's index type for each Message domain's supported languages.
-     */
-    @Test
-    @Override
-    public void indexNewDocument() {
-
-        // Insert a new document in the index
-        super.indexNewDocument();
-        checkNewDocumentMessages();
-    }
-
-    /**
-     * Saving an existing document replaces the document in the index.
-     * It also updates the domain description for the default locale in the message's index type.
-     */
-    @Test
-    @Override
-    public void saveExistingDocument() {
-
-        // Find messages linked to the domain to update
-        List<Message> originalMessages = getMessages(newDocumentToUpdate());
-
-        // Update an existing document in the index
-        super.saveExistingDocument();
-
-        // Check the integrity of domain and messages
-        checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
-    }
-
-    /**
-     * Saving a list of documents inserts and updates the documents in the index.
-     * On creation, it also inserts the domains descriptions in the message's index type for each Message domain's supported languages.
-     * On update, it also updates the domain description for the default locale in the message's index type.
-     */
-    @Test
-    @Override
-    public void saveDocuments() {
-
-        // Find messages linked to the domain to update
-        List<Message> originalMessages = getMessages(newDocumentToUpdate());
-
-        // Insert and update documents in the index
-        super.saveDocuments();
-
-        // Check the integrity of domain and messages
-        checkNewDocumentMessages();
-        checkExistingDocumentMessages(Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
-    }
-
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                Private methods                                                 */
@@ -248,10 +249,9 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     /**
      * Check if an existing domain description is updated for the specified locale only.
      */
-    private void checkExistingDocumentMessages(Locale locale, List<Message> originalMessages) {
+    private void checkExistingDocumentMessages(Domain updated, Locale locale, List<Message> originalMessages) {
 
         // The domain description in the Elasticsearch index must contain a message code
-        Domain updated = newDocumentToUpdate();
         GetQuery getQuery = new GetQuery();
         getQuery.setId(updated.getId());
         Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
@@ -287,13 +287,14 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Check if a new domain description is indexed in the message type.
+     *
+     * @param inserted Inserted domain
      */
-    private void checkNewDocumentMessages() {
+    private void checkNewDocumentMessages(Domain inserted) {
 
         Domain i18nDomain = i18nDomainHolder.getDomain();
 
         // The domain description in the Elasticsearch index must contain a message code
-        Domain inserted = newDocumentToInsert();
         GetQuery getQuery = new GetQuery();
         getQuery.setId(inserted.getId());
         Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
@@ -319,7 +320,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Get the list of domains from the index. Each domain description is initialized with an internationalized message.
+     * Initialize each domain description with an internationalized message.
      *
      * @param initialList The initial list of domains
      * @return The list of domains
