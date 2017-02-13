@@ -355,6 +355,7 @@ public class DomainDaoInterceptor {
         // Index the message
         IndexQuery indexQuery = new IndexQuery();
         indexQuery.setObject(message);
+        indexQuery.setId(message.getId());
         esOperations.index(indexQuery);
 
         // Refresh (make it available for search) the message
