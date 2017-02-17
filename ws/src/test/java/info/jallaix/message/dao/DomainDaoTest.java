@@ -25,6 +25,7 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -235,9 +236,31 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Check the integrity of domain and messages.
+     * No message should reference any domain.
+     */
+    @Override
+    protected void customizeDeleteAll() {
+        assertThat(getMessages(), hasSize(0));
+    }
+
+    /**
+     * Check the integrity of domain and messages.
+     * No message should reference the deleted domains.
+     *
+     * @param toDelete List of domains to delete
+     */
+    @Override
+    protected void customizeDeleteSet(List<Domain> toDelete) {
+
+        List<String> domainIds = toDelete.stream().map(Domain::getId).collect(Collectors.toList());
+        assertThat(getMessages(domainIds), hasSize(0));
+    }
+
+    /**
+     * Check the integrity of domain and messages.
      * No message should reference the deleted domain.
      *
-     * @param id  Identifier of the deleted domain
+     * @param id Identifier of the deleted domain
      */
     @Override
     protected void customizeDeleteOne(String id) {
@@ -266,6 +289,49 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
+     * Find messages linked to a domain.
+     *
+     * @param domainId The identifier of the domain linked to the message
+     * @return The set a messages
+     */
+    private List<Message> getMessages(String domainId) {
+        return esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))
+                                .and(new Criteria("entityId").is(domainId))),
+                Message.class);
+    }
+
+    /**
+     * Find all messages linked to any domain.
+     *
+     * @return The set of messages
+     */
+    private List<Message> getMessages() {
+        return esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))),
+                Message.class);
+    }
+
+    /**
+     * Find messages linked to a list of domains.
+     *
+     * @param domainIds The list of domain identifiers linked to the messages
+     * @return The set a messages
+     */
+    private List<Message> getMessages(Iterable<String> domainIds) {
+        return esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))
+                                .and(new Criteria("entityId").in(domainIds))),
+                Message.class);
+    }
+
+    /**
      * Check if an existing domain description is updated for the specified locale only.
      */
     private void checkExistingDocumentMessages(Domain updated, Locale locale, List<Message> originalMessages) {
@@ -287,21 +353,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         // The domain descriptions for locales other than the input locale must match the original descriptions
         messages.stream().filter(m -> !m.getLanguageTag().equals(locale.toLanguageTag()))
                 .forEach(m -> assertTrue(originalMessages.contains(m)));
-    }
-
-    /**
-     * Find messages linked to a domain.
-     *
-     * @param domainId The identifier of the domain linked to the message
-     * @return The set a messages
-     */
-    private List<Message> getMessages(String domainId) {
-        return esOperations.queryForList(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
-                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))
-                                .and(new Criteria("entityId").is(domainId))),
-                Message.class);
     }
 
     /**

@@ -11,17 +11,19 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.*;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.GetQuery;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -214,24 +216,34 @@ public class DomainDaoInterceptor {
      * @param arg The identifier of the deleted domain
      */
     @AfterReturning("execution(* info.jallaix.message.dao.DomainDao+.delete(*)) && args(arg)")
-    public void afterDeleteOneById(Object arg) {
+    public void afterDelete(Object arg) {
 
         if (arg == null)
             return;
 
         String id = null;
+        List<String> domainIds = null;
         if (arg instanceof String)
             id = String.class.cast(arg);
         else if (arg instanceof Domain)
             id = Domain.class.cast(arg).getId();
+        else if (arg instanceof List) {
+            List<Domain> domains = (List<Domain>) arg;
+            domainIds = domains.stream().map(Domain::getId).collect(Collectors.toList());
+        }
 
         if (id != null)
             deleteMessages(i18nDomainHolder.getDomain().getId(), id);
-        /*Message message = searchMessage(
-                i18nDomainHolder.getDomain().getId(),
-                DOMAIN_DESCRIPTION_TYPE,
-                (String)id,
-                getOutputLanguageTag());*/
+        else if (domainIds != null)
+            deleteMessages(i18nDomainHolder.getDomain().getId(), domainIds);
+    }
+
+    /**
+     * Intercept an all domain deletion operation after the deletion occurs to remove all linked messages.
+     */
+    @AfterReturning("execution(* info.jallaix.message.dao.DomainDao+.deleteAll())")
+    public void afterDeleteAll() {
+        deleteMessages(i18nDomainHolder.getDomain().getId());
     }
 
     /**
@@ -388,24 +400,41 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Delete all messages belonging to a domain
+     * Delete all messages belonging to a domain.
      *
      * @param i18nDomainId Identifier of this application domain
      * @param domainId     Identifier of the domain
      */
     private void deleteMessages(final String i18nDomainId, final String domainId) {
 
-        // Criteria for deletion
-        QueryBuilder queryBuilder = QueryBuilders
-                .boolQuery()
-                .must(QueryBuilders.matchQuery("domainId", i18nDomainId))
-                .must(QueryBuilders.matchQuery("entityId", domainId));
+        esOperations.delete(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainId)
+                                .and(new Criteria("entityId").is(domainId))),
+                Message.class);
+    }
 
-        // Delete the messages
-        DeleteQuery deleteQuery = new DeleteQuery();
-        deleteQuery.setIndex(Message.class.getDeclaredAnnotation(Document.class).indexName());
-        deleteQuery.setType(Message.class.getDeclaredAnnotation(Document.class).type());
-        deleteQuery.setQuery(queryBuilder);
-        esOperations.delete(deleteQuery);
+    /**
+     * Delete all messages.
+     *
+     * @param i18nDomainId Identifier of this application domain
+     * @param domainIds    List of domain identifiers
+     */
+    private void deleteMessages(final String i18nDomainId, final Iterable<String> domainIds) {
+
+        esOperations.delete(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainId)
+                                .and(new Criteria("entityId").in(domainIds))),
+                Message.class);
+    }
+
+    /**
+     * Delete all messages belonging to a list of domains.
+     *
+     * @param i18nDomainId Identifier of this application domain
+     */
+    private void deleteMessages(final String i18nDomainId) {
+        esOperations.delete(new CriteriaQuery(new Criteria("domainId").is(i18nDomainId)), Message.class);
     }
 }
