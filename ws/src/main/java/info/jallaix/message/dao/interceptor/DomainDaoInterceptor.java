@@ -29,15 +29,20 @@ import java.util.stream.Collectors;
  * <p>
  * This aspect intercepts Spring Data Elasticsearch operations to manage localized messages.
  * </p>
- * <p>
+ * <ul>
+ * <li>
  * When creating domains, localized property values are replaced by message codes and original values are saved in the message index.
- * </p>
- * <p>
+ * </li>
+ * <li>
  * When updating domains, their descriptions are updated in the message index for the specified locale.
- * </p>
- * <p>
+ * </li>
+ * <li>
  * When finding domains, their descriptions are found in the message index for the specified locale.
- * </p>
+ * </li>
+ * <li>
+ * When deleting domains, their descriptions found in the message index are also deleted.
+ * </li>
+ * </ul>
  */
 @Aspect
 @Component
@@ -190,7 +195,7 @@ public class DomainDaoInterceptor {
                 i18nDomainHolder.getDomain().getId(),
                 DOMAIN_DESCRIPTION_TYPE,
                 foundDomain.getId(),
-                getOutputLanguageTag());
+                threadLocaleHolder.getOutputLocale().toLanguageTag());
 
         foundDomain.setDescription(message.getContent());
     }
@@ -228,6 +233,7 @@ public class DomainDaoInterceptor {
         else if (arg instanceof Domain)
             id = Domain.class.cast(arg).getId();
         else if (arg instanceof List) {
+            @SuppressWarnings("unchecked")
             List<Domain> domains = (List<Domain>) arg;
             domainIds = domains.stream().map(Domain::getId).collect(Collectors.toList());
         }
@@ -306,34 +312,10 @@ public class DomainDaoInterceptor {
                 i18nDomainHolder.getDomain().getId(),
                 DOMAIN_DESCRIPTION_TYPE,
                 domainId,
-                getInputLanguageTag());
+                threadLocaleHolder.getInputLocale().toLanguageTag());
 
         messageToUpdate.setContent(descriptionContent);
         indexMessage(messageToUpdate);
-    }
-
-    /**
-     * Get the language tag for input data.
-     *
-     * @return The language tag for input data
-     */
-    private String getInputLanguageTag() {
-
-        return threadLocaleHolder.getInputLocale() == null ?
-                i18nDomainHolder.getDomain().getDefaultLanguageTag() :
-                threadLocaleHolder.getInputLocale().toLanguageTag();
-    }
-
-    /**
-     * Get the language tag for output data.
-     *
-     * @return The language tag for output data
-     */
-    private String getOutputLanguageTag() {
-
-        return threadLocaleHolder.getInputLocale() == null ?
-                i18nDomainHolder.getDomain().getDefaultLanguageTag() :
-                threadLocaleHolder.getOutputLocale().toLanguageTag();
     }
 
     /**

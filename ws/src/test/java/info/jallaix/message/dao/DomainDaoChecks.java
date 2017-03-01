@@ -1,0 +1,174 @@
+package info.jallaix.message.dao;
+
+import com.esotericsoftware.kryo.Kryo;
+import info.jallaix.message.config.DomainHolder;
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
+import info.jallaix.message.dto.Domain;
+import info.jallaix.message.dto.Message;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.GetQuery;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import static org.junit.Assert.*;
+
+/**
+ * Operation checks performed by {@link DomainDao} tests.
+ */
+public class DomainDaoChecks {
+
+    private DomainHolder i18nDomainHolder;
+
+    private ElasticsearchOperations esOperations;
+
+    private Kryo kryo;
+
+    private ThreadLocaleHolder threadLocaleHolder;
+
+    public DomainDaoChecks(DomainHolder i18nDomainHolder, ElasticsearchOperations esOperations, Kryo kryo, ThreadLocaleHolder threadLocaleHolder) {
+        this.i18nDomainHolder = i18nDomainHolder;
+        this.esOperations = esOperations;
+        this.kryo = kryo;
+        this.threadLocaleHolder = threadLocaleHolder;
+    }
+
+    /**
+     * Find messages linked to a domain.
+     *
+     * @param domainId The identifier of the domain linked to the message
+     * @return The set a messages
+     */
+    public List<Message> getMessages(String domainId) {
+        return esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))
+                                .and(new Criteria("entityId").is(domainId))),
+                Message.class);
+    }
+
+    /**
+     * Find all messages linked to any domain.
+     *
+     * @return The set of messages
+     */
+    public List<Message> getMessages() {
+        return esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))),
+                Message.class);
+    }
+
+    /**
+     * Find messages linked to a list of domains.
+     *
+     * @param domainIds The list of domain identifiers linked to the messages
+     * @return The set a messages
+     */
+    public List<Message> getMessages(Iterable<String> domainIds) {
+        return esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
+                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))
+                                .and(new Criteria("entityId").in(domainIds))),
+                Message.class);
+    }
+
+    /**
+     * Check if an existing domain description is updated for the specified locale only.
+     */
+    public void checkExistingDocumentMessages(Domain updated, Locale locale, List<Message> originalMessages) {
+
+        // The domain description in the Elasticsearch index must contain a message code
+        GetQuery getQuery = new GetQuery();
+        getQuery.setId(updated.getId());
+        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+        assertNotEquals(updated.getDescription(), savedDomain.getDescription());
+
+        // Get all localized messages for a message and domain codes
+        List<Message> messages = getMessages(savedDomain.getId());
+
+        // The domain description for the input locale must match the one expected by the update operation
+        Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(locale.toLanguageTag())).findFirst();
+        assertTrue(message.isPresent());
+        assertEquals(updated.getDescription(), message.get().getContent());
+
+        // The domain descriptions for locales other than the input locale must match the original descriptions
+        messages.stream().filter(m -> !m.getLanguageTag().equals(locale.toLanguageTag()))
+                .forEach(m -> assertTrue(originalMessages.contains(m)));
+    }
+
+    /**
+     * Check if a new domain description is indexed in the message type.
+     *
+     * @param inserted Inserted domain
+     */
+    public void checkNewDocumentMessages(Domain inserted) {
+
+        Domain i18nDomain = i18nDomainHolder.getDomain();
+
+        // The domain description in the Elasticsearch index must contain a message code
+        GetQuery getQuery = new GetQuery();
+        getQuery.setId(inserted.getId());
+        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+        assertNotEquals(inserted.getDescription(), savedDomain.getDescription());
+
+        // Get all localized messages for a message and domain codes
+        List<Message> messages = esOperations.queryForList(
+                new CriteriaQuery(
+                        new Criteria("domainId").is(i18nDomain.getId())
+                                .and(new Criteria("type").is(savedDomain.getDescription()))
+                                .and(new Criteria("entityId").is(savedDomain.getId()))),
+                Message.class);
+
+        // Get the message domain to verify that all supported languages have a matching description
+        i18nDomain.getAvailableLanguageTags().forEach(languageTag -> {
+
+            // A message with the localized description must be linked to the message code
+            Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(languageTag)).findFirst();
+
+            assertTrue(message.isPresent());
+            assertEquals(inserted.getDescription(), message.get().getContent());
+        });
+    }
+
+    /**
+     * Initialize all domain descriptions with internationalized messages.
+     *
+     * @param initialList The initial list of domains
+     * @return The list of domains
+     */
+    public List<Domain> internationalizeDomains(List<Domain> initialList) {
+
+        List<Domain> results = new ArrayList<>();
+        initialList.forEach(initial -> results.add(internationalizeDomain(initial)));
+
+        return results;
+    }
+
+    /**
+     * Initialize a domain description with an internationalized message.
+     *
+     * @param initial The initial domain
+     * @return The internationalized domain
+     */
+    public Domain internationalizeDomain(final Domain initial) {
+
+        Optional<Message> message = getMessages(initial.getId())
+                .stream()
+                .filter(m -> m.getLanguageTag().equals(threadLocaleHolder.getOutputLocale().toLanguageTag())).findFirst();
+        if (!message.isPresent())
+            fail("Invalid fixture: No domain message for " + threadLocaleHolder.getOutputLocale().toLanguageTag());
+
+        Domain result = kryo.copy(initial);
+        result.setDescription(message.get().getContent());
+
+        return result;
+    }
+}

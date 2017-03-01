@@ -9,10 +9,7 @@ import info.jallaix.message.dto.Language;
 import info.jallaix.message.dto.Message;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -41,7 +38,7 @@ import static org.junit.Assert.assertThat;
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class)
 @EnableAspectJAutoProxy
 @ContextConfiguration(classes = DomainDaoTest.class)
-public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
+public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
 
     /**
      * Spring class rule
@@ -71,6 +68,13 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Before
     public void initMessageDomain() {
         domainDaoChecks = new DomainDaoChecks(i18nDomainHolder, esOperations, kryo, threadLocaleHolder);
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr-FR"));
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("fr-FR"));
+    }
+
+    @After
+    public void clearLocales() {
+        threadLocaleHolder.clear();
     }
 
 
@@ -81,7 +85,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     /**
      * Constructor that defines the tests to pass
      */
-    public DomainDaoTest() {
+    public DomainDaoLocalizedTest() {
         super(/*DaoTestedMethod.Exist.class*/);
     }
 
@@ -182,7 +186,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         @SuppressWarnings("unchecked")
         final List<Message> originalMessages = (List<Message>) customData;
 
-        domainDaoChecks.checkExistingDocumentMessages(updated, Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
+        domainDaoChecks.checkExistingDocumentMessages(updated, threadLocaleHolder.getInputLocale(), originalMessages);
     }
 
     /**
@@ -209,7 +213,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         final List<Message> originalMessages = (List<Message>) customData;
 
         domainDaoChecks.checkNewDocumentMessages(newDocumentToInsert());
-        domainDaoChecks.checkExistingDocumentMessages(newDocumentToUpdate(), Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
+        domainDaoChecks.checkExistingDocumentMessages(newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
     }
 
     /**

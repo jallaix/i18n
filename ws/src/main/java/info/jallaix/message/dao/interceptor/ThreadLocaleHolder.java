@@ -17,8 +17,8 @@ import java.util.Locale;
  * <p>
  * Locale data are :
  * <ul>
- *     <li>Input locale : used by {@link DomainDaoInterceptor} when saving a localized document</li>
- *     <li>Output locale : used by {@link DomainDaoInterceptor} when getting a localized document</li>
+ * <li>Input locale : used by {@link DomainDaoInterceptor} when saving a localized document</li>
+ * <li>Output locale : used by {@link DomainDaoInterceptor} when getting a localized document</li>
  * </ul>
  * </p>
  */
@@ -67,7 +67,7 @@ public class ThreadLocaleHolder {
      * @return The input locale
      */
     public Locale getInputLocale() {
-        return inputLocale.get();
+        return inputLocale.get() == null ? getDefaultLocale() : inputLocale.get();
     }
 
     /**
@@ -85,7 +85,7 @@ public class ThreadLocaleHolder {
      * @return The output locale
      */
     public Locale getOutputLocale() {
-        return outputLocale.get();
+        return outputLocale.get() == null ? getDefaultLocale() : outputLocale.get();
     }
 
     /**
@@ -98,7 +98,15 @@ public class ThreadLocaleHolder {
     }
 
     /**
+     * Get the domain's default locale
      *
+     * @return The domain's default locale
+     */
+    private Locale getDefaultLocale() {
+        return Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag());
+    }
+
+    /**
      * @param inputLocale
      * @throws UnsupportedLanguageException
      */
