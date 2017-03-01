@@ -2,7 +2,6 @@ package info.jallaix.message.dao;
 
 import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainHolder;
-import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Message;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -22,19 +21,26 @@ import static org.junit.Assert.*;
  */
 public class DomainDaoChecks {
 
+    /**
+     * I18n domain
+     */
     private DomainHolder i18nDomainHolder;
 
+    /**
+     * Elasticsearch operations
+     */
     private ElasticsearchOperations esOperations;
 
+    /**
+     * Serialization framework
+     */
     private Kryo kryo;
 
-    private ThreadLocaleHolder threadLocaleHolder;
 
-    public DomainDaoChecks(DomainHolder i18nDomainHolder, ElasticsearchOperations esOperations, Kryo kryo, ThreadLocaleHolder threadLocaleHolder) {
+    public DomainDaoChecks(DomainHolder i18nDomainHolder, ElasticsearchOperations esOperations, Kryo kryo) {
         this.i18nDomainHolder = i18nDomainHolder;
         this.esOperations = esOperations;
         this.kryo = kryo;
-        this.threadLocaleHolder = threadLocaleHolder;
     }
 
     /**
@@ -142,12 +148,13 @@ public class DomainDaoChecks {
      * Initialize all domain descriptions with internationalized messages.
      *
      * @param initialList The initial list of domains
+     * @param languageTag The language tag for the internationalized message
      * @return The list of domains
      */
-    public List<Domain> internationalizeDomains(List<Domain> initialList) {
+    public List<Domain> internationalizeDomains(List<Domain> initialList, final String languageTag) {
 
         List<Domain> results = new ArrayList<>();
-        initialList.forEach(initial -> results.add(internationalizeDomain(initial)));
+        initialList.forEach(initial -> results.add(internationalizeDomain(initial, languageTag)));
 
         return results;
     }
@@ -155,16 +162,17 @@ public class DomainDaoChecks {
     /**
      * Initialize a domain description with an internationalized message.
      *
-     * @param initial The initial domain
+     * @param initial     The initial domain
+     * @param languageTag The language tag for the internationalized message
      * @return The internationalized domain
      */
-    public Domain internationalizeDomain(final Domain initial) {
+    public Domain internationalizeDomain(final Domain initial, final String languageTag) {
 
         Optional<Message> message = getMessages(initial.getId())
                 .stream()
-                .filter(m -> m.getLanguageTag().equals(threadLocaleHolder.getOutputLocale().toLanguageTag())).findFirst();
+                .filter(m -> m.getLanguageTag().equals(languageTag)).findFirst();
         if (!message.isPresent())
-            fail("Invalid fixture: No domain message for " + threadLocaleHolder.getOutputLocale().toLanguageTag());
+            fail("Invalid fixture: No domain message for " + languageTag);
 
         Domain result = kryo.copy(initial);
         result.setDescription(message.get().getContent());

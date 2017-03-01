@@ -45,33 +45,60 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      */
     @ClassRule
     public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
+
     /**
      * Spring method rule
      */
     @Rule
     public final SpringMethodRule SPRING_METHOD_RULE = new SpringMethodRule();
 
+    /**
+     * I18n domain
+     */
     @Autowired
     private DomainHolder i18nDomainHolder;
 
+    /**
+     * Elasticsearch operations
+     */
     @Autowired
     private ElasticsearchOperations esOperations;
 
+    /**
+     * Serialization framework
+     */
     @Autowired
     private Kryo kryo;
 
+    /**
+     * Locale data holder
+     */
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
 
-    DomainDaoChecks domainDaoChecks;
+    /**
+     * Domain testing checks
+     */
+    private DomainDaoChecks domainDaoChecks;
 
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                   Tests lifecycle                                              */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Initialize locale data
+     */
     @Before
     public void initMessageDomain() {
-        domainDaoChecks = new DomainDaoChecks(i18nDomainHolder, esOperations, kryo, threadLocaleHolder);
-        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr-FR"));
-        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("fr-FR"));
+        domainDaoChecks = new DomainDaoChecks(i18nDomainHolder, esOperations, kryo);
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("fr"));
     }
 
+    /**
+     * Clear locale data
+     */
     @After
     public void clearLocales() {
         threadLocaleHolder.clear();
@@ -96,8 +123,7 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      */
     @Override
     protected Domain newDocumentToInsert() {
-
-        return new Domain("5", "test.project4", "Test project 4's description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("5", "test.project4", "Test project 4's description", "es", Arrays.asList("en", "fr", "es"));
     }
 
     /**
@@ -107,8 +133,7 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      */
     @Override
     protected Domain newDocumentToUpdate() {
-
-        return new Domain("3", "test.project2", "New project 2's description", "es-ES", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("3", "test.project2", "New project 2's description", "es", Arrays.asList("en", "fr", "es"));
     }
 
     /**
@@ -118,8 +143,7 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      */
     @Override
     protected Domain newExistingDocument() {
-
-        return new Domain("3", "test.project2", "Test project 2's description", "fr-FR", Arrays.asList("en-US", "fr-FR", "es-ES"));
+        return new Domain("3", "test.project2", "Test project 2's description", "fr", Arrays.asList("en", "fr", "es"));
     }
 
     /**
@@ -224,7 +248,7 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      */
     @Override
     protected List<Domain> customizeFindAllFixture(final List<Domain> fixture) {
-        return domainDaoChecks.internationalizeDomains(kryo.copy(fixture));
+        return domainDaoChecks.internationalizeDomains(kryo.copy(fixture), "fr");
     }
 
     /**
@@ -234,7 +258,7 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      * @return The internationalized domain
      */
     protected Domain customizeFindOneFixture(final Domain fixture) {
-        return domainDaoChecks.internationalizeDomain(kryo.copy(fixture));
+        return domainDaoChecks.internationalizeDomain(kryo.copy(fixture), "fr");
     }
 
     /**
@@ -275,7 +299,7 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      */
     @Test
     public void languageIsUsed() {
-        assertThat(getRepository().isLanguageUsed("en-US"), is(true));
+        assertThat(getRepository().isLanguageUsed("en"), is(true));
     }
 
     /**
@@ -283,6 +307,6 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
      */
     @Test
     public void languageIsNotUsed() {
-        assertThat(getRepository().isLanguageUsed("es-ES"), is(false));
+        assertThat(getRepository().isLanguageUsed("es"), is(false));
     }
 }
