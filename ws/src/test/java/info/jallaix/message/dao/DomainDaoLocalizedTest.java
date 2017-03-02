@@ -177,14 +177,14 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
 
     /**
      * Check the integrity of domain and messages.
-     * Domains descriptions should be inserted in the message's index type for each Message domain's supported languages.
+     * A domain description should be inserted in the message's index type for the Message domain's default language.
      *
      * @param toInsert Domain to insert
      * @param inserted Inserted domain
      */
     @Override
     protected void customizeSaveNewDocument(Domain toInsert, Domain inserted) {
-        domainDaoChecks.checkNewDocumentMessages(inserted);
+        domainDaoChecks.checkNewDocumentMessage(inserted);
     }
 
     /**
@@ -236,7 +236,7 @@ public class DomainDaoLocalizedTest extends BaseDaoElasticsearchTestCase<Domain,
         @SuppressWarnings("unchecked")
         final List<Message> originalMessages = (List<Message>) customData;
 
-        domainDaoChecks.checkNewDocumentMessages(newDocumentToInsert());
+        domainDaoChecks.checkNewDocumentMessage(newDocumentToInsert());
         domainDaoChecks.checkExistingDocumentMessages(newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
     }
 

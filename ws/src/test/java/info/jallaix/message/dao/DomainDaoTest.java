@@ -3,15 +3,13 @@ package info.jallaix.message.dao;
 import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainDaoTestConfiguration;
 import info.jallaix.message.config.DomainHolder;
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Language;
 import info.jallaix.message.dto.Message;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -73,6 +71,12 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     private Kryo kryo;
 
     /**
+     * Locale data holder
+     */
+    @Autowired
+    private ThreadLocaleHolder threadLocaleHolder;
+
+    /**
      * Domain testing checks
      */
     private DomainDaoChecks domainDaoChecks;
@@ -85,6 +89,14 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Before
     public void initMessageDomain() {
         domainDaoChecks = new DomainDaoChecks(i18nDomainHolder, esOperations, kryo);
+    }
+
+    /**
+     * Clear locale data
+     */
+    @After
+    public void clearLocales() {
+        threadLocaleHolder.clear();
     }
 
 
@@ -162,14 +174,14 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Check the integrity of domain and messages.
-     * Domains descriptions should be inserted in the message's index type for each Message domain's supported languages.
+     * A domain description should be inserted in the message's index type for the Message domain's default language.
      *
      * @param toInsert Domain to insert
      * @param inserted Inserted domain
      */
     @Override
     protected void customizeSaveNewDocument(Domain toInsert, Domain inserted) {
-        domainDaoChecks.checkNewDocumentMessages(inserted);
+        domainDaoChecks.checkNewDocumentMessage(inserted);
     }
 
     /**
@@ -221,8 +233,8 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         @SuppressWarnings("unchecked")
         final List<Message> originalMessages = (List<Message>) customData;
 
-        domainDaoChecks.checkNewDocumentMessages(newDocumentToInsert());
-        domainDaoChecks.checkExistingDocumentMessages(newDocumentToUpdate(), Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
+        domainDaoChecks.checkNewDocumentMessage(newDocumentToInsert());
+        domainDaoChecks.checkExistingDocumentMessages(newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
     }
 
     /**
@@ -293,5 +305,42 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Test
     public void languageIsNotUsed() {
         assertThat(getRepository().isLanguageUsed("es"), is(false));
+    }
+
+    /**
+     * Indexing a new domain inserts the document in the index.
+     * A domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     */
+    @Test
+    public void indexNewDomainWithInputLocale() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
+        indexNewDocument();
+    }
+
+    /**
+     * Saving a new domain inserts the document in the index.
+     * A domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     */
+    @Test
+    public void saveNewDomainWithInputLocale() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
+        saveNewDocument();
+    }
+
+    /**
+     * Saving a list of domains inserts and updates the documents in the index.
+     * For creation, a domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     * For update, a domain description should be modified in the message's index type for the input locale.
+     */
+    @Test
+    public void saveDomainsWithInputLocale() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
+        saveDocuments();
     }
 }

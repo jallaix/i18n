@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -115,7 +117,7 @@ public class DomainDaoChecks {
      *
      * @param inserted Inserted domain
      */
-    public void checkNewDocumentMessages(Domain inserted) {
+    public void checkNewDocumentMessage(Domain inserted) {
 
         Domain i18nDomain = i18nDomainHolder.getDomain();
 
@@ -125,7 +127,7 @@ public class DomainDaoChecks {
         Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
         assertNotEquals(inserted.getDescription(), savedDomain.getDescription());
 
-        // Get all localized messages for a message and domain codes
+        // Get all localized messages for message and domain codes
         List<Message> messages = esOperations.queryForList(
                 new CriteriaQuery(
                         new Criteria("domainId").is(i18nDomain.getId())
@@ -133,15 +135,10 @@ public class DomainDaoChecks {
                                 .and(new Criteria("entityId").is(savedDomain.getId()))),
                 Message.class);
 
-        // Get the message domain to verify that all supported languages have a matching description
-        i18nDomain.getAvailableLanguageTags().forEach(languageTag -> {
-
-            // A message with the localized description must be linked to the message code
-            Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(languageTag)).findFirst();
-
-            assertTrue(message.isPresent());
-            assertEquals(inserted.getDescription(), message.get().getContent());
-        });
+        // Only one message for the default language tag should exist
+        assertThat(messages, hasSize(1));
+        Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(i18nDomain.getDefaultLanguageTag())).findFirst();
+        assertThat(message.isPresent(), is(true));
     }
 
     /**

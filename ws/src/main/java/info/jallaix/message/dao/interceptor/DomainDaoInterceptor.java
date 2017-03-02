@@ -128,7 +128,7 @@ public class DomainDaoInterceptor {
                 // On creation, build and save the domain description's message for each language supported by the I18n Message domain
                 // On update, save the localized description only
                 if (description.getLeft() == null)
-                    insertInitialMessages(resultDomain.getId(), description.getRight());
+                    insertInitialMessage(resultDomain.getId(), description.getRight());
                 else
                     updateExistingMessage(resultDomain.getId(), description.getRight());
 
@@ -170,7 +170,7 @@ public class DomainDaoInterceptor {
         // On creation, build and save the domain description's message for each language supported by the I18n Message domain
         // On update, save the localized description only
         if (existingDomain == null)
-            insertInitialMessages(resultDomain.getId(), updatedDomainDescription.getRight());
+            insertInitialMessage(resultDomain.getId(), updatedDomainDescription.getRight());
         else
             updateExistingMessage(resultDomain.getId(), updatedDomainDescription.getRight());
 
@@ -293,11 +293,13 @@ public class DomainDaoInterceptor {
      * @param domainId           The new domain the messages depend on
      * @param descriptionContent The description content to set on messages
      */
-    private void insertInitialMessages(final String domainId, final String descriptionContent) {
+    private void insertInitialMessage(final String domainId, final String descriptionContent) {
 
-        i18nDomainHolder.getDomain().getAvailableLanguageTags().forEach(languageTag ->
-                indexMessage(
-                        buildMessage(languageTag, domainId, descriptionContent)));
+        indexMessage(
+                buildMessage(
+                        i18nDomainHolder.getDomain().getDefaultLanguageTag(),
+                        domainId,
+                        descriptionContent));
     }
 
     /**
