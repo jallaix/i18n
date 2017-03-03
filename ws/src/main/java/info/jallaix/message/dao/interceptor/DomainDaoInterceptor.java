@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -130,7 +131,7 @@ public class DomainDaoInterceptor {
                 if (description.getLeft() == null)
                     insertInitialMessage(resultDomain.getId(), description.getRight());
                 else
-                    updateExistingMessage(resultDomain.getId(), description.getRight());
+                    insertOrUpdateMessage(resultDomain.getId(), description.getRight());
 
                 // Set back the domain description's literal value
                 resultDomain.setDescription(description.getRight());
@@ -172,7 +173,7 @@ public class DomainDaoInterceptor {
         if (existingDomain == null)
             insertInitialMessage(resultDomain.getId(), updatedDomainDescription.getRight());
         else
-            updateExistingMessage(resultDomain.getId(), updatedDomainDescription.getRight());
+            insertOrUpdateMessage(resultDomain.getId(), updatedDomainDescription.getRight());
 
         // Set back the localized domain description
         resultDomain.setDescription(updatedDomainDescription.getRight());
@@ -303,21 +304,96 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Update an existing message description for the current locale.
+     * Insert a message if it doesn't exist for the input locale, else update the existing message.
+     * A complex input locale (with data other than language) may be inserted only if a message already exists
+     * for the simple language.
      *
      * @param domainId           The existing domain the message depends on
      * @param descriptionContent The description content to set on message
      */
-    private void updateExistingMessage(final String domainId, final String descriptionContent) {
+    private void insertOrUpdateMessage(final String domainId, final String descriptionContent) {
 
-        Message messageToUpdate = searchMessage(
+        // Check if the locale is supported by the domain
+        final Locale inputLocale = threadLocaleHolder.getInputLocale();
+        checkSupportedLocale(inputLocale);
+
+        // Get the message for the input locale
+        Message messageForInputLocale = getDomainDescriptionForInputLocale(domainId);
+
+        // No message for the input locale
+        if (messageForInputLocale == null) {
+
+            // Error when the input locale has a complex language tag and no message already exists for the simple language
+            if (!hasInputLocaleSimpleLanguage() && !existDomainDescriptionForSimpleLanguage(domainId))
+                throw new MissingSimpleMessageException(inputLocale, i18nDomainHolder.getDomain().getId());
+
+                // Insert a message for all other cases
+            else
+                indexMessage(
+                        buildMessage(
+                                inputLocale.toLanguageTag(),
+                                domainId,
+                                descriptionContent));
+        }
+        // Update message for the input locale
+        else {
+            messageForInputLocale.setContent(descriptionContent);
+            indexMessage(messageForInputLocale);
+        }
+    }
+
+    /**
+     * Check that a local is supported by the I18N domain.
+     *
+     * @param locale The locale to test
+     * @throws UnsupportedLanguageException In case the locale is not supported by the domain
+     */
+    private void checkSupportedLocale(Locale locale) throws UnsupportedLanguageException {
+
+        if (!i18nDomainHolder.getDomain().getAvailableLanguageTags().contains(locale.getLanguage()))
+            throw new UnsupportedLanguageException(locale, i18nDomainHolder.getDomain().getId());
+    }
+
+    /**
+     * Get the domain description's message for the input locale.
+     *
+     * @param domainId The domain identifier
+     * @return The found message for the domain description or {@code null}
+     */
+    private Message getDomainDescriptionForInputLocale(final String domainId) {
+
+        return searchMessage(
                 i18nDomainHolder.getDomain().getId(),
                 DOMAIN_DESCRIPTION_TYPE,
                 domainId,
                 threadLocaleHolder.getInputLocale().toLanguageTag());
+    }
 
-        messageToUpdate.setContent(descriptionContent);
-        indexMessage(messageToUpdate);
+    /**
+     * Indicate if the input locale just contains a language or also other data (country, script, ...).
+     *
+     * @return {@code true} if the input locale just contains a language else {@code false}
+     */
+    private boolean hasInputLocaleSimpleLanguage() {
+
+        final Locale inputLocale = threadLocaleHolder.getInputLocale();
+
+        return inputLocale.toLanguageTag().equals(inputLocale.getLanguage());
+    }
+
+    /**
+     * Check if a domain description exists for the language of the input locale
+     *
+     * @param domainId The domain identifier
+     * @return {@code true} if the domain description exists else {@code false}
+     */
+    private boolean existDomainDescriptionForSimpleLanguage(final String domainId) {
+
+        return searchMessage(
+                i18nDomainHolder.getDomain().getId(),
+                DOMAIN_DESCRIPTION_TYPE,
+                domainId,
+                threadLocaleHolder.getInputLocale().getLanguage()) != null;
     }
 
     /**

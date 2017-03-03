@@ -1,17 +1,24 @@
 package info.jallaix.message.dao.interceptor;
 
+import java.text.MessageFormat;
+import java.util.Locale;
+
 /**
  * This exception is thrown when a locale is not supported by a domain.
  */
 public class UnsupportedLanguageException extends RuntimeException {
 
     /**
-     * Constructor with language tag an domain code.
+     * Constructor with locale an domain identifier.
      *
-     * @param languageTag The unsupported language tag
-     * @param domainCode The code of the domain that doesn't support the language tag
+     * @param locale The unsupported locale
+     * @param domainId The identifier of the domain that doesn't support the locale
      */
-    public UnsupportedLanguageException(String languageTag, String domainCode) {
-        super("The " + languageTag + "is not supported by the " + domainCode + "domain.");
+    public UnsupportedLanguageException(Locale locale, String domainId) {
+        super();
+        MessageFormat.format(
+                "The '{0}' is not supported by the domain (id={1}).",
+                locale.getLanguage(),
+                domainId);
     }
 }

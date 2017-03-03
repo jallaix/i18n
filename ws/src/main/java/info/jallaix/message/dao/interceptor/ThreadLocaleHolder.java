@@ -2,7 +2,6 @@ package info.jallaix.message.dao.interceptor;
 
 import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.dao.DomainDao;
-import info.jallaix.message.dto.Domain;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -104,16 +103,5 @@ public class ThreadLocaleHolder {
      */
     private Locale getDefaultLocale() {
         return Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag());
-    }
-
-    /**
-     * @param inputLocale
-     * @throws UnsupportedLanguageException
-     */
-    private void checkInputLocale(Locale inputLocale) throws UnsupportedLanguageException {
-
-        Domain i18nDomain = i18nDomainHolder.getDomain();
-        if (!i18nDomain.getAvailableLanguageTags().contains(inputLocale.getLanguage()))
-            throw new UnsupportedLanguageException(inputLocale.getLanguage(), i18nDomain.getCode());
     }
 }

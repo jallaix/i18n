@@ -3,7 +3,9 @@ package info.jallaix.message.dao;
 import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainDaoTestConfiguration;
 import info.jallaix.message.config.DomainHolder;
+import info.jallaix.message.dao.interceptor.MissingSimpleMessageException;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
+import info.jallaix.message.dao.interceptor.UnsupportedLanguageException;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Language;
 import info.jallaix.message.dto.Message;
@@ -207,7 +209,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         @SuppressWarnings("unchecked")
         final List<Message> originalMessages = (List<Message>) customData;
 
-        domainDaoChecks.checkExistingDocumentMessages(updated, Locale.forLanguageTag(i18nDomainHolder.getDomain().getDefaultLanguageTag()), originalMessages);
+        domainDaoChecks.checkExistingDocumentMessages(updated, threadLocaleHolder.getInputLocale(), originalMessages);
     }
 
     /**
@@ -313,7 +315,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * even if the input locale is defined with a different language.
      */
     @Test
-    public void indexNewDomainWithInputLocale() {
+    public void indexNewDomainWithLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
         indexNewDocument();
@@ -325,10 +327,126 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * even if the input locale is defined with a different language.
      */
     @Test
-    public void saveNewDomainWithInputLocale() {
+    public void saveNewDomainWithLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
         saveNewDocument();
+    }
+
+    /**
+     * Indexing an existing domain replaces the document in the index.
+     * A domain description should be modified in the message's index type for an existing supported language.
+     */
+    @Test
+    public void indexExistingDomainWithExistingSupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
+        indexExistingDocument();
+    }
+
+    /**
+     * Indexing an existing domain replaces the document in the index.
+     * A domain description should be inserted in the message's index type for a missing supported language.
+     */
+    @Test
+    public void indexExistingDomainWithMissingSupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es"));
+        indexExistingDocument();
+    }
+
+    /**
+     * Indexing an existing domain replaces the document in the index.
+     * A domain description should be inserted in the message's index type for a missing complex language tag
+     * when a message already exists for its simple language tag.
+     */
+    @Test
+    public void indexExistingDomainWithComplexLanguageWithSimpleLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr-BE"));
+        indexExistingDocument();
+    }
+
+    /**
+     * Indexing an existing domain replaces the document in the index.
+     * An error should occur when trying to insert a domain description for a missing complex language tag
+     * when a message doesn't already exist for its simple language tag.
+     */
+    @Test(expected = MissingSimpleMessageException.class)
+    public void indexExistingDomainWithComplexLanguageWithoutSimpleLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es-ES"));
+        indexExistingDocument();
+    }
+
+    /**
+     * Indexing an existing domain replaces the document in the index.
+     * An error should occur when trying to insert a domain description for a missing language tag
+     * when this language tag is not supported by the I18N domain.
+     */
+    @Test(expected = UnsupportedLanguageException.class)
+    public void indexExistingDomainWithUnsupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("de-DE"));
+        indexExistingDocument();
+    }
+
+    /**
+     * Saving an existing domain replaces the document in the index.
+     * A domain description should be modified in the message's index type for an existing supported language.
+     */
+    @Test
+    public void saveExistingDomainWithExistingSupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
+        saveExistingDocument();
+    }
+
+    /**
+     * Saving an existing domain replaces the document in the index.
+     * A domain description should be inserted in the message's index type for a missing supported language.
+     */
+    @Test
+    public void saveExistingDomainWithMissingSupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es"));
+        saveExistingDocument();
+    }
+
+    /**
+     * Saving an existing domain replaces the document in the index.
+     * A domain description should be inserted in the message's index type for a missing complex language tag
+     * when a message already exists for its simple language tag.
+     */
+    @Test
+    public void saveExistingDomainWithComplexLanguageWithSimpleLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr-BE"));
+        saveExistingDocument();
+    }
+
+    /**
+     * Saving an existing domain replaces the document in the index.
+     * An error should occur when trying to insert a domain description for a missing complex language tag
+     * when a message doesn't already exist for its simple language tag.
+     */
+    @Test(expected = MissingSimpleMessageException.class)
+    public void saveExistingDomainWithComplexLanguageWithoutSimpleLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es-ES"));
+        saveExistingDocument();
+    }
+
+    /**
+     * Saving an existing domain replaces the document in the index.
+     * An error should occur when trying to insert a domain description for a missing language tag
+     * when this language tag is not supported by the I18N domain.
+     */
+    @Test(expected = UnsupportedLanguageException.class)
+    public void saveExistingDomainWithUnsupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("de-DE"));
+        saveExistingDocument();
     }
 
     /**
@@ -338,7 +456,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * For update, a domain description should be modified in the message's index type for the input locale.
      */
     @Test
-    public void saveDomainsWithInputLocale() {
+    public void saveDomainsWithLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
         saveDocuments();

@@ -90,6 +90,7 @@ public class DomainDaoChecks {
 
     /**
      * Check if an existing domain description is updated for the specified locale only.
+     * An error occurs if no domain description exists for a basic language whereas a regionalized language is provided.
      */
     public void checkExistingDocumentMessages(Domain updated, Locale locale, List<Message> originalMessages) {
 
@@ -99,7 +100,7 @@ public class DomainDaoChecks {
         Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
         assertNotEquals(updated.getDescription(), savedDomain.getDescription());
 
-        // Get all localized messages for a message and domain codes
+        // Get all localized messages for message and domain codes
         List<Message> messages = getMessages(savedDomain.getId());
 
         // The domain description for the input locale must match the one expected by the update operation
