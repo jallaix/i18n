@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 /**
@@ -140,6 +139,38 @@ public class DomainDaoChecks {
         assertThat(messages, hasSize(1));
         Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(i18nDomain.getDefaultLanguageTag())).findFirst();
         assertThat(message.isPresent(), is(true));
+    }
+
+    /**
+     * Check that an existing domain has not been modified in the Elasticsearch index.
+     *
+     * @param domain The existing domain to check
+     */
+    public void checkDomainUnmodified(final Domain domain) {
+
+        GetQuery getQuery = new GetQuery();
+        getQuery.setId(domain.getId());
+        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+
+        // Domain description is a message code in the index => do not compare them
+        Domain originalDomain = kryo.copy(domain);
+        originalDomain.setDescription(savedDomain.getDescription());
+
+        assertThat(savedDomain, is(originalDomain));
+    }
+
+    /**
+     * Check that a domain doesn't exist in the Elasticsearch index.
+     *
+     * @param domain The domain that should not exist
+     */
+    public void checkDomainNotExist(final Domain domain) {
+
+        GetQuery getQuery = new GetQuery();
+        getQuery.setId(domain.getId());
+        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+
+        assertThat(savedDomain, is(nullValue()));
     }
 
     /**

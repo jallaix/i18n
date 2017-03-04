@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
@@ -430,11 +431,19 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * An error should occur when trying to insert a domain description for a missing complex language tag
      * when a message doesn't already exist for its simple language tag.
      */
-    @Test(expected = MissingSimpleMessageException.class)
+    @Test
     public void saveExistingDomainWithComplexLanguageWithoutSimpleLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es-ES"));
-        saveExistingDocument();
+        try {
+            saveExistingDocument();
+            fail("MissingSimpleMessageException should be thrown.");
+        }
+        catch (MissingSimpleMessageException e) {
+
+            // Check the domain to update has not been updated
+            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+        }
     }
 
     /**
@@ -442,23 +451,106 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * An error should occur when trying to insert a domain description for a missing language tag
      * when this language tag is not supported by the I18N domain.
      */
-    @Test(expected = UnsupportedLanguageException.class)
+    @Test
     public void saveExistingDomainWithUnsupportedLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("de-DE"));
-        saveExistingDocument();
+        try {
+            saveExistingDocument();
+            fail("UnsupportedLanguageException should be thrown.");
+        }
+        catch (UnsupportedLanguageException e) {
+
+            // Check the domain to update has not been updated
+            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+        }
     }
 
     /**
      * Saving a list of domains inserts and updates the documents in the index.
      * For creation, a domain description should be inserted in the message's index type for the I18N domain's default language,
      * even if the input locale is defined with a different language.
-     * For update, a domain description should be modified in the message's index type for the input locale.
+     * For update, a domain description should be modified in the message's index type for an existing supported language.
      */
     @Test
-    public void saveDomainsWithLanguage() {
+    public void saveDomainsWithExistingSupportedLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
         saveDocuments();
+    }
+
+    /**
+     * Saving a list of domains inserts and updates the documents in the index.
+     * For creation, a domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     * For update, a domain description should be inserted in the message's index type for a missing supported language.
+     */
+    @Test
+    public void saveDomainsWithMissingSupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es"));
+        saveDocuments();
+    }
+
+    /**
+     * Saving a list of domains inserts and updates the documents in the index.
+     * For creation, a domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     * For update, a domain description should be inserted in the message's index type for a missing complex language tag
+     * when a message already exists for its simple language tag.
+     */
+    @Test
+    public void saveDomainsWithComplexLanguageWithSimpleLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr-BE"));
+        saveDocuments();
+    }
+
+    /**
+     * Saving a list of domains inserts and updates the documents in the index.
+     * For creation, a domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     * For update, an error should occur when trying to insert a domain description for a missing complex language tag
+     * when a message doesn't already exist for its simple language tag.
+     */
+    @Test
+    public void saveDomainsWithComplexLanguageWithoutSimpleLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es-ES"));
+        try {
+            saveDocuments();
+            fail("MissingSimpleMessageException should be thrown.");
+        }
+        catch (MissingSimpleMessageException e) {
+
+            // Check no new domain was inserted
+            domainDaoChecks.checkDomainNotExist(newDocumentToInsert());
+            // Check the domain to update has not been updated
+            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+        }
+    }
+
+    /**
+     * Saving a list of domains inserts and updates the documents in the index.
+     * For creation, a domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     * For update, an error should occur when trying to insert a domain description for a missing language tag
+     * when this language tag is not supported by the I18N domain.
+     */
+    @Test
+    public void saveDomainsWithUnsupportedLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("de-DE"));
+        try {
+            saveDocuments();
+            fail("UnsupportedLanguageException should be thrown.");
+        }
+        catch (UnsupportedLanguageException e) {
+
+            // Check no new domain was inserted
+            domainDaoChecks.checkDomainNotExist(newDocumentToInsert());
+            // Check the domain to update has not been updated
+            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+        }
     }
 }

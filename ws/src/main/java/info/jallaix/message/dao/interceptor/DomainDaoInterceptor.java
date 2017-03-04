@@ -103,6 +103,10 @@ public class DomainDaoInterceptor {
 
                 // Get the existing domain to update if it already exists
                 final Domain existingDomain = findExistingDomain(initialDomain);
+
+                // Detect locale errors on a domain update
+                checkLocaleForDomainUpdate(existingDomain);
+
                 descriptions.add(
                         new MutablePair<>(
                                 existingDomain,
@@ -161,6 +165,9 @@ public class DomainDaoInterceptor {
 
         // Get the existing domain to update if it already exists
         final Domain existingDomain = findExistingDomain(initialDomain);
+
+        // Detect locale errors on a domain update
+        checkLocaleForDomainUpdate(existingDomain);
 
         // Call the save method and get the saved domain
         Object resultEntity = joinPoint.proceed(new Object[]{updatedDomainDescription.getLeft()});
@@ -313,32 +320,46 @@ public class DomainDaoInterceptor {
      */
     private void insertOrUpdateMessage(final String domainId, final String descriptionContent) {
 
-        // Check if the locale is supported by the domain
-        final Locale inputLocale = threadLocaleHolder.getInputLocale();
-        checkSupportedLocale(inputLocale);
-
         // Get the message for the input locale
         Message messageForInputLocale = getDomainDescriptionForInputLocale(domainId);
 
-        // No message for the input locale
+        // Insert a message for the input locale
         if (messageForInputLocale == null) {
-
-            // Error when the input locale has a complex language tag and no message already exists for the simple language
-            if (!hasInputLocaleSimpleLanguage() && !existDomainDescriptionForSimpleLanguage(domainId))
-                throw new MissingSimpleMessageException(inputLocale, i18nDomainHolder.getDomain().getId());
-
-                // Insert a message for all other cases
-            else
-                indexMessage(
-                        buildMessage(
-                                inputLocale.toLanguageTag(),
-                                domainId,
-                                descriptionContent));
+            indexMessage(
+                    buildMessage(
+                            threadLocaleHolder.getInputLocale().toLanguageTag(),
+                            domainId,
+                            descriptionContent));
         }
         // Update message for the input locale
         else {
             messageForInputLocale.setContent(descriptionContent);
             indexMessage(messageForInputLocale);
+        }
+    }
+
+    /**
+     * <p>Check an input locale is supported by the I18N domain.</p>
+     * <p>Check a message already exists for a simple language if an input locale has a complex language tag.</p>
+     *
+     * @param domain The domain to update
+     */
+    private void checkLocaleForDomainUpdate(Domain domain) {
+
+        // Nothing to check on a null domain
+        if (domain == null)
+            return;
+
+        // Check the locale is supported by the I18N domain
+        Locale inputLocale = threadLocaleHolder.getInputLocale();
+        checkSupportedLocale(inputLocale);
+
+        // No message for the input locale
+        if (getDomainDescriptionForInputLocale(domain.getId()) == null) {
+
+            // Error when the input locale has a complex language tag and no message already exists for the simple language
+            if (!hasInputLocaleSimpleLanguage() && !existDomainDescriptionForSimpleLanguage(domain.getId()))
+                throw new MissingSimpleMessageException(inputLocale, i18nDomainHolder.getDomain().getId());
         }
     }
 
