@@ -5,6 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldIndex;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 /**
  * This bean contains persistent data related to a message:
@@ -35,25 +38,30 @@ public class Message {
     /**
      * Domain identifier
      */
+    @Field(type = FieldType.String, index = FieldIndex.not_analyzed)
     private String domainId;
 
     /**
      * Message type
      */
+    @Field(type = FieldType.String, index = FieldIndex.not_analyzed)
     private String type;
 
     /**
      * Entity identifier
      */
+    @Field(type = FieldType.String, index = FieldIndex.not_analyzed)
     private String entityId;
 
     /**
      * Language tag
      */
+    @Field(type = FieldType.String, index = FieldIndex.not_analyzed)
     private String languageTag;
 
     /**
      * Message content
      */
+    @Field(type = FieldType.String, index = FieldIndex.analyzed)
     private String content;
 }

@@ -29,7 +29,7 @@ public class DomainDaoTestConfiguration extends ProjectConfiguration {
     public DomainHolder i18nDomainHolder() {
 
         I18nDomainHolder domainHolder = new I18nDomainHolder(esOperations);
-        domainHolder.setDomainAvailableLanguageTags(Arrays.asList("en-US", "fr-FR"));
+        domainHolder.setDomainAvailableLanguageTags(Arrays.asList("en", "fr", "es"));
 
         return domainHolder;
     }

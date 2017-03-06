@@ -2,14 +2,18 @@ package info.jallaix.message.config;
 
 import info.jallaix.message.dto.Domain;
 import lombok.Setter;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.GetQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
  * The i18n domain holder gets the application domain from the ES index or create the domain if it doesn't exist.
@@ -30,10 +34,10 @@ public class I18nDomainHolder implements DomainHolder {
     protected String domainCode = DOMAIN_CODE;
 
     @Setter
-    protected String domainDefaultLanguageTag = "en-US";
+    protected String domainDefaultLanguageTag = "en";
 
     @Setter
-    protected Collection<String> domainAvailableLanguageTags = Collections.singleton("en-US");
+    protected Collection<String> domainAvailableLanguageTags = Collections.singleton("en");
 
     /**
      * Get the internationalized domain of the application from the ES index.
@@ -47,6 +51,16 @@ public class I18nDomainHolder implements DomainHolder {
         if (messageDomain != null)
             return messageDomain;
 
+        loadI18nDomain();
+
+        return messageDomain;
+    }
+
+    /**
+     * Load the I18N domain.
+     */
+    private synchronized void loadI18nDomain() {
+
         // Get the message domain
         if (esOperations.indexExists(Domain.class))
             messageDomain = esOperations.queryForObject(new CriteriaQuery(new Criteria("code").is(DOMAIN_CODE)), Domain.class);
@@ -54,15 +68,92 @@ public class I18nDomainHolder implements DomainHolder {
         // Index the message domain if it's unavailable in the ES index
         if (messageDomain == null) {
 
+            // Define domain and message mappings
+            putDomainMapping();
+            putMessageMapping();
+
+            // Insert the I18N domain
             IndexQuery indexQuery = new IndexQuery();
             indexQuery.setObject(new Domain(null, domainCode, DOMAIN_DESCRIPTION_TYPE, domainDefaultLanguageTag, domainAvailableLanguageTags));
             String messageDomainId = esOperations.index(indexQuery);
 
+            // Get the inserted I18N domain
             GetQuery getQuery = new GetQuery();
             getQuery.setId(messageDomainId);
             messageDomain = esOperations.queryForObject(getQuery, Domain.class);
         }
+    }
 
-        return messageDomain;
+    /**
+     * Define the mapping for the Domain entity.
+     */
+    private void putDomainMapping() {
+
+        final XContentBuilder mapping;
+        try {
+            mapping = jsonBuilder()
+                    .startObject()
+                    .startObject("properties")
+                        /**/.startObject("code")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                        /**/.startObject("description")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                        /**/.startObject("defaultLanguageTag")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                        /**/.startObject("availableLanguageTags")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                    .endObject()
+                    .endObject();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        esOperations.putMapping(Domain.class, mapping);
+    }
+
+    /**
+     * Define the mapping for the Message entity.
+     */
+    private void putMessageMapping() {
+
+        final XContentBuilder mapping;
+        try {
+            mapping = jsonBuilder()
+                    .startObject()
+                    .startObject("properties")
+                        /**/.startObject("domainId")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                        /**/.startObject("type")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                        /**/.startObject("entityId")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                        /**/.startObject("languageTag")
+                        /*    */.field("type", "string")
+                        /*    */.field("index", "not_analyzed")
+                        /**/.endObject()
+                        /**/.startObject("content")
+                        /*    */.field("type", "string")
+                        /**/.endObject()
+                    .endObject()
+                    .endObject();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        esOperations.putMapping(Domain.class, mapping);
     }
 }

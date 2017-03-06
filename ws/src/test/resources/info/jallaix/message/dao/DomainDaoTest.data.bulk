@@ -3,6 +3,8 @@
 { "create" : { "_index" : "message", "_type" : "message" } }
 { "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "1", "languageTag" : "en", "content" : "Internationalized messages" }
 { "create" : { "_index" : "message", "_type" : "message" } }
+{ "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "1", "languageTag" : "en-US", "content" : "Internationalized messages (US)" }
+{ "create" : { "_index" : "message", "_type" : "message" } }
 { "domainId" : "1", "type" : "info.jallaix.message.dto.Domain.description", "entityId" : "1", "languageTag" : "fr", "content" : "Messages internationalisés" }
 { "create" : { "_index" : "message", "_type" : "domain", "_id" : "2" } }
 { "code" : "test.project1", "description" : "info.jallaix.message.dto.Domain.description", "defaultLanguageTag" : "en", "availableLanguageTags" : [ "en", "fr", "es" ] }
