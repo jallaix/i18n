@@ -103,6 +103,36 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
         return 2;
     }
 
+    /**
+     * Return a set of domains and messages that are sorted in the Elasticsearch index.
+     *
+     * @return A set of domains and messages
+     */
+    @Override
+    protected List<?> getStoredDocuments() {
+
+        List<Object> storedDocuments = new ArrayList<>(13);
+
+        storedDocuments.add(new Domain("1", "i18n.message", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en", "Internationalized messages"));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en-US", "Internationalized messages (US)"));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "fr", "Messages internationalisés"));
+
+        storedDocuments.add(new Domain("2", "test.project1", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "2", "en", "Test project 1's description"));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "2", "fr", "Description du projet de test 1"));
+
+        storedDocuments.add(new Domain("3", "test.project2", "info.jallaix.message.dto.Domain.description", "fr", Arrays.asList("en", "fr", "es")));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "3", "en", "Test project 2's description"));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "3", "fr", "Description du projet de test 2"));
+
+        storedDocuments.add(new Domain("4", "test.project3", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "4", "en", "Test project 3's description"));
+        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "4", "fr", "Description du projet de test 3"));
+
+        return storedDocuments;
+    }
+
     @Override
     protected TypeReferences.ResourceType<Domain> getResourceType() {
         return new TypeReferences.ResourceType<Domain>() {
