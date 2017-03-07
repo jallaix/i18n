@@ -14,6 +14,7 @@ import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * The Language DAO must verify some tests provided by BaseDaoElasticsearchTestCase.
@@ -80,4 +81,9 @@ public class LanguageDaoTest extends BaseDaoElasticsearchTestCase<Language, Stri
 
     @Override
     protected int getPageSize() { return 2; }
+
+    @Override
+    protected List<?> getStoredDocuments() {
+        return null;
+    }
 }

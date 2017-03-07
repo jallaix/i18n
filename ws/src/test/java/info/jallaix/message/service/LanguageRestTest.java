@@ -108,6 +108,11 @@ public class LanguageRestTest extends BaseRestElasticsearchTestCase<Language, St
     }
 
     @Override
+    protected List<?> getStoredDocuments() {
+        return null;
+    }
+
+    @Override
     protected TypeReferences.ResourceType<Language> getResourceType() {
         return new TypeReferences.ResourceType<Language>() {
         };
