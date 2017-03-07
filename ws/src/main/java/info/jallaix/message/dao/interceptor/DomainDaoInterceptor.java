@@ -11,13 +11,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
-import org.springframework.data.elasticsearch.core.query.GetQuery;
-import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.data.elasticsearch.core.query.*;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -77,6 +76,11 @@ public class DomainDaoInterceptor {
      */
     @Autowired
     private Kryo kryo;
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                     Interceptors                                               */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * Intercept entities before they are created to save localized messages in the index and replace matching property values by message codes.
@@ -194,18 +198,16 @@ public class DomainDaoInterceptor {
      * @param foundDomain The found domain to update with the localized description
      */
     @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findOne(*))", returning = "foundDomain")
-    public void afterFindOne(Domain foundDomain) {
+    public void afterFindOne(final Domain foundDomain) {
 
         if (foundDomain == null)
             return;
 
-        Message message = searchMessage(
-                i18nDomainHolder.getDomain().getId(),
-                DOMAIN_DESCRIPTION_TYPE,
+        final Message message = findMessage(
                 foundDomain.getId(),
                 threadLocaleHolder.getOutputLocale().toLanguageTag());
 
-        foundDomain.setDescription(message.getContent());
+        foundDomain.setDescription(message == null ? null : message.getContent());
     }
 
     /**
@@ -236,29 +238,44 @@ public class DomainDaoInterceptor {
 
         String id = null;
         List<String> domainIds = null;
-        if (arg instanceof String)
+
+        // Case of a String argument => map to an identifier
+        if (arg instanceof String) {
             id = String.class.cast(arg);
-        else if (arg instanceof Domain)
+        }
+        // Case of a Domain argument => get identifier from the domain
+        else if (arg instanceof Domain) {
             id = Domain.class.cast(arg).getId();
+        }
+        // Case of a List argument => get identifiers from the set of domains
         else if (arg instanceof List) {
             @SuppressWarnings("unchecked")
             List<Domain> domains = (List<Domain>) arg;
             domainIds = domains.stream().map(Domain::getId).collect(Collectors.toList());
         }
 
-        if (id != null)
-            deleteMessages(i18nDomainHolder.getDomain().getId(), id);
-        else if (domainIds != null)
-            deleteMessages(i18nDomainHolder.getDomain().getId(), domainIds);
+        // Delete messages by a domain identifier
+        if (id != null) {
+            deleteMessages(id);
+        }
+        // Delete messages by a set of domain identifiers
+        else if (domainIds != null) {
+            deleteMessages(domainIds);
+        }
     }
 
     /**
-     * Intercept an all domain deletion operation after the deletion occurs to remove all linked messages.
+     * Intercept a deletion operation for all domains after the deletion occurs to remove all linked messages.
      */
     @AfterReturning("execution(* info.jallaix.message.dao.DomainDao+.deleteAll())")
     public void afterDeleteAll() {
-        deleteMessages(i18nDomainHolder.getDomain().getId());
+        deleteMessages();
     }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                   Private methods                                              */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * Replace the domain description's literal value by a message type.
@@ -276,19 +293,19 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Find the existing domain to update if it exists.
+     * Find an existing domain.
      *
-     * @param domainToSave The domain to save
+     * @param domain The domain with an identifier
      * @return The existing domain found or {@code null}
      */
-    private Domain findExistingDomain(final Domain domainToSave) {
+    private Domain findExistingDomain(final Domain domain) {
 
         final Domain existingDomain;
-        if (domainToSave.getId() == null)
+        if (domain.getId() == null)
             existingDomain = null;
         else {
             GetQuery getQuery = new GetQuery();
-            getQuery.setId(domainToSave.getId());
+            getQuery.setId(domain.getId());
             existingDomain = esOperations.queryForObject(getQuery, Domain.class);
         }
 
@@ -296,10 +313,10 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Insert new messages in the index for all supported languages of the I18n Messages application.
+     * Insert a new message in the index for the default language of the I18N domain.
      *
-     * @param domainId           The new domain the messages depend on
-     * @param descriptionContent The description content to set on messages
+     * @param domainId           The domain identifier the message depend on
+     * @param descriptionContent The description content to set on the message
      */
     private void insertInitialMessage(final String domainId, final String descriptionContent) {
 
@@ -311,12 +328,12 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Insert a message if it doesn't exist for the input locale, else update the existing message.
-     * A complex input locale (with data other than language) may be inserted only if a message already exists
-     * for the simple language.
+     * <p>Insert a message if it doesn't exist for the input locale, else update the existing message.</p>
+     * <p>A complex input locale (with data other than language) may be inserted only if a message already exists
+     * for the simple language.</p>
      *
-     * @param domainId           The existing domain the message depends on
-     * @param descriptionContent The description content to set on message
+     * @param domainId           The existing domain identifier the message depends on
+     * @param descriptionContent The description content to set on the message
      */
     private void insertOrUpdateMessage(final String domainId, final String descriptionContent) {
 
@@ -383,9 +400,7 @@ public class DomainDaoInterceptor {
      */
     private Message getDomainDescriptionForInputLocale(final String domainId) {
 
-        return searchMessage(
-                i18nDomainHolder.getDomain().getId(),
-                DOMAIN_DESCRIPTION_TYPE,
+        return findMessage(
                 domainId,
                 threadLocaleHolder.getInputLocale().toLanguageTag());
     }
@@ -403,16 +418,14 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Check if a domain description exists for the language of the input locale
+     * Check if a domain description exists for the language of the input locale.
      *
      * @param domainId The domain identifier
      * @return {@code true} if the domain description exists else {@code false}
      */
     private boolean existDomainDescriptionForSimpleLanguage(final String domainId) {
 
-        return searchMessage(
-                i18nDomainHolder.getDomain().getId(),
-                DOMAIN_DESCRIPTION_TYPE,
+        return findMessage(
                 domainId,
                 threadLocaleHolder.getInputLocale().getLanguage()) != null;
     }
@@ -444,23 +457,33 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Look for the message that matches the arguments.
+     * Find the message for a domain description that matches the arguments.
      *
-     * @param i18nDomainId    Identifier of this application domain
-     * @param descriptionType Type of the domain description
-     * @param domainId        Identifier of the domain
-     * @param languageTag     Language tag
+     * @param domainId    Identifier of the domain
+     * @param languageTag Language tag
      * @return The found message or {@code null}
      */
-    private Message searchMessage(final String i18nDomainId, final String descriptionType, final String domainId, final String languageTag) {
+    private Message findMessage(final String domainId, final String languageTag) {
 
-        return esOperations.queryForObject(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainId)
-                                .and(new Criteria("type").is(descriptionType))
-                                .and(new Criteria("entityId").is(domainId))
-                                .and(new Criteria("languageTag").is(languageTag))),
-                Message.class);
+        final List<Message> messages = esOperations.queryForList(
+                new NativeSearchQueryBuilder()
+                        .withIndices("message")
+                        .withTypes("message")
+                        .withQuery(
+                                QueryBuilders.constantScoreQuery(
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
+                                                .must(QueryBuilders.matchQuery("type", DOMAIN_DESCRIPTION_TYPE))
+                                                .must(QueryBuilders.termQuery("entityId", domainId))
+                                                .must(QueryBuilders.termQuery("languageTag", languageTag))))
+                        .build(), Message.class);
+
+        if (messages.isEmpty())
+            return null;
+        else if (messages.size() > 1)
+            throw new RuntimeException("At most one message should be found given the criteria.");
+        else
+            return messages.get(0);
     }
 
     /**
@@ -476,46 +499,53 @@ public class DomainDaoInterceptor {
         indexQuery.setId(message.getId());
         esOperations.index(indexQuery);
 
-        // Refresh the message (make it available for search)
+        // Refresh the message (make it available for search). Write down that the refresh(Class<?>) version doesn't work.
         esOperations.refresh(Message.class.getDeclaredAnnotation(Document.class).indexName(), true);
     }
 
     /**
      * Delete all messages belonging to a domain.
      *
-     * @param i18nDomainId Identifier of this application domain
-     * @param domainId     Identifier of the domain
+     * @param domainId Identifier of the domain
      */
-    private void deleteMessages(final String i18nDomainId, final String domainId) {
+    private void deleteMessages(final String domainId) {
 
-        esOperations.delete(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainId)
-                                .and(new Criteria("entityId").is(domainId))),
-                Message.class);
+        deleteMessages(
+                QueryBuilders.constantScoreQuery(
+                        QueryBuilders.boolQuery()
+                                .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
+                                .must(QueryBuilders.termQuery("entityId", domainId))));
     }
 
     /**
-     * Delete all messages.
+     * Delete all messages belonging to a set of domains.
      *
-     * @param i18nDomainId Identifier of this application domain
-     * @param domainIds    List of domain identifiers
+     * @param domainIds Collection of domain identifiers
      */
-    private void deleteMessages(final String i18nDomainId, final Iterable<String> domainIds) {
+    private void deleteMessages(final Collection<String> domainIds) {
 
-        esOperations.delete(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainId)
-                                .and(new Criteria("entityId").in(domainIds))),
-                Message.class);
+        deleteMessages(
+                QueryBuilders.constantScoreQuery(
+                        QueryBuilders.boolQuery()
+                                .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
+                                .must(QueryBuilders.termsQuery("entityId", domainIds))));
     }
 
     /**
-     * Delete all messages belonging to a list of domains.
-     *
-     * @param i18nDomainId Identifier of this application domain
+     * Delete all domain messages.
      */
-    private void deleteMessages(final String i18nDomainId) {
-        esOperations.delete(new CriteriaQuery(new Criteria("domainId").is(i18nDomainId)), Message.class);
+    private void deleteMessages() {
+
+        deleteMessages(
+                QueryBuilders.constantScoreQuery(
+                        QueryBuilders.boolQuery()
+                                .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))));
+    }
+
+    private void deleteMessages(QueryBuilder queryBuilder) {
+
+        DeleteQuery deleteQuery = new DeleteQuery();
+        deleteQuery.setQuery(queryBuilder);
+        esOperations.delete(deleteQuery, Message.class);
     }
 }
