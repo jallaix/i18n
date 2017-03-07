@@ -316,22 +316,10 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * even if the input locale is defined with a different language.
      */
     @Test
-    public void indexNewDomainWithLanguage() {
+    public void indexNewDomainWithAnyLanguage() {
 
-        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("de-DE"));
         indexNewDocument();
-    }
-
-    /**
-     * Saving a new domain inserts the document in the index.
-     * A domain description should be inserted in the message's index type for the I18N domain's default language,
-     * even if the input locale is defined with a different language.
-     */
-    @Test
-    public void saveNewDomainWithLanguage() {
-
-        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
-        saveNewDocument();
     }
 
     /**
@@ -373,11 +361,18 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * An error should occur when trying to insert a domain description for a missing complex language tag
      * when a message doesn't already exist for its simple language tag.
      */
-    @Test(expected = MissingSimpleMessageException.class)
+    @Test
     public void indexExistingDomainWithComplexLanguageWithoutSimpleLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("es-ES"));
-        indexExistingDocument();
+        try {
+            indexExistingDocument();
+            fail("MissingSimpleMessageException should be thrown.");
+        } catch (MissingSimpleMessageException e) {
+
+            // Check the domain to update has not been updated
+            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+        }
     }
 
     /**
@@ -385,11 +380,30 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * An error should occur when trying to insert a domain description for a missing language tag
      * when this language tag is not supported by the I18N domain.
      */
-    @Test(expected = UnsupportedLanguageException.class)
+    @Test
     public void indexExistingDomainWithUnsupportedLanguage() {
 
         threadLocaleHolder.setInputLocale(Locale.forLanguageTag("de-DE"));
-        indexExistingDocument();
+        try {
+            indexExistingDocument();
+            fail("UnsupportedLanguageException should be thrown.");
+        } catch (UnsupportedLanguageException e) {
+
+            // Check the domain to update has not been updated
+            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+        }
+    }
+
+    /**
+     * Saving a new domain inserts the document in the index.
+     * A domain description should be inserted in the message's index type for the I18N domain's default language,
+     * even if the input locale is defined with a different language.
+     */
+    @Test
+    public void saveNewDomainWithAnyLanguage() {
+
+        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("de-DE"));
+        saveNewDocument();
     }
 
     /**
