@@ -49,11 +49,6 @@ import java.util.stream.Collectors;
 public class DomainDaoInterceptor {
 
     /**
-     * Message type for the domain description
-     */
-    public static final String DOMAIN_DESCRIPTION_TYPE = Domain.class.getName() + ".description";
-
-    /**
      * Application's internationalization data
      */
     @Autowired
@@ -287,7 +282,7 @@ public class DomainDaoInterceptor {
 
         Domain domainToUpdate = kryo.copy(domain);
         final String descriptionContent = domainToUpdate.getDescription();
-        domainToUpdate.setDescription(DOMAIN_DESCRIPTION_TYPE);
+        domainToUpdate.setDescription(Domain.DOMAIN_DESCRIPTION_TYPE);
 
         return new ImmutablePair<>(domainToUpdate, descriptionContent);
     }
@@ -445,7 +440,7 @@ public class DomainDaoInterceptor {
         // I18n message domain identifier
         message.setDomainId(i18nDomainHolder.getDomain().getId());
         // Message type
-        message.setType(DOMAIN_DESCRIPTION_TYPE);
+        message.setType(Domain.DOMAIN_DESCRIPTION_TYPE);
         // Domain identifier
         message.setEntityId(domainId);
         // Input language tag
@@ -467,13 +462,11 @@ public class DomainDaoInterceptor {
 
         final List<Message> messages = esOperations.queryForList(
                 new NativeSearchQueryBuilder()
-                        .withIndices("message")
-                        .withTypes("message")
                         .withQuery(
                                 QueryBuilders.constantScoreQuery(
                                         QueryBuilders.boolQuery()
                                                 .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
-                                                .must(QueryBuilders.matchQuery("type", DOMAIN_DESCRIPTION_TYPE))
+                                                .must(QueryBuilders.matchQuery("type", Domain.DOMAIN_DESCRIPTION_TYPE))
                                                 .must(QueryBuilders.termQuery("entityId", domainId))
                                                 .must(QueryBuilders.termQuery("languageTag", languageTag))))
                         .build(), Message.class);
@@ -542,6 +535,11 @@ public class DomainDaoInterceptor {
                                 .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))));
     }
 
+    /**
+     * Delete messages depending on a query builder.
+     *
+     * @param queryBuilder The query builder
+     */
     private void deleteMessages(QueryBuilder queryBuilder) {
 
         DeleteQuery deleteQuery = new DeleteQuery();

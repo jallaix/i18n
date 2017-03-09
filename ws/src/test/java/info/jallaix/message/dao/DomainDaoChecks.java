@@ -4,15 +4,13 @@ import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.dto.Domain;
 import info.jallaix.message.dto.Message;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.GetQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -51,12 +49,16 @@ public class DomainDaoChecks {
      * @return The set a messages
      */
     public List<Message> getMessages(String domainId) {
+
         return esOperations.queryForList(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
-                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))
-                                .and(new Criteria("entityId").is(domainId))),
-                Message.class);
+                new NativeSearchQueryBuilder()
+                        .withQuery(
+                                QueryBuilders.constantScoreQuery(
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
+                                                .must(QueryBuilders.matchQuery("type", Domain.DOMAIN_DESCRIPTION_TYPE))
+                                                .must(QueryBuilders.termQuery("entityId", domainId))))
+                        .build(), Message.class);
     }
 
     /**
@@ -65,11 +67,15 @@ public class DomainDaoChecks {
      * @return The set of messages
      */
     public List<Message> getMessages() {
+
         return esOperations.queryForList(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
-                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))),
-                Message.class);
+                new NativeSearchQueryBuilder()
+                        .withQuery(
+                                QueryBuilders.constantScoreQuery(
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
+                                                .must(QueryBuilders.matchQuery("type", Domain.DOMAIN_DESCRIPTION_TYPE))))
+                        .build(), Message.class);
     }
 
     /**
@@ -78,13 +84,17 @@ public class DomainDaoChecks {
      * @param domainIds The list of domain identifiers linked to the messages
      * @return The set a messages
      */
-    public List<Message> getMessages(Iterable<String> domainIds) {
+    public List<Message> getMessages(Collection<String> domainIds) {
+
         return esOperations.queryForList(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomainHolder.getDomain().getId())
-                                .and(new Criteria("type").is(Domain.class.getName() + ".description"))
-                                .and(new Criteria("entityId").in(domainIds))),
-                Message.class);
+                new NativeSearchQueryBuilder()
+                        .withQuery(
+                                QueryBuilders.constantScoreQuery(
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
+                                                .must(QueryBuilders.matchQuery("type", Domain.DOMAIN_DESCRIPTION_TYPE))
+                                                .must(QueryBuilders.termsQuery("entityId", domainIds))))
+                        .build(), Message.class);
     }
 
     /**
@@ -94,9 +104,7 @@ public class DomainDaoChecks {
     public void checkExistingDocumentMessages(Domain updated, Locale locale, List<Message> originalMessages) {
 
         // The domain description in the Elasticsearch index must contain a message code
-        GetQuery getQuery = new GetQuery();
-        getQuery.setId(updated.getId());
-        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+        final Domain savedDomain = findDomain(updated.getId());
         assertNotEquals(updated.getDescription(), savedDomain.getDescription());
 
         // Get all localized messages for message and domain codes
@@ -119,24 +127,16 @@ public class DomainDaoChecks {
      */
     public void checkNewDocumentMessage(Domain inserted) {
 
-        Domain i18nDomain = i18nDomainHolder.getDomain();
-
         // The domain description in the Elasticsearch index must contain a message code
-        GetQuery getQuery = new GetQuery();
-        getQuery.setId(inserted.getId());
-        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+        final Domain savedDomain = findDomain(inserted.getId());
         assertNotEquals(inserted.getDescription(), savedDomain.getDescription());
 
         // Get all localized messages for message and domain codes
-        List<Message> messages = esOperations.queryForList(
-                new CriteriaQuery(
-                        new Criteria("domainId").is(i18nDomain.getId())
-                                .and(new Criteria("type").is(savedDomain.getDescription()))
-                                .and(new Criteria("entityId").is(savedDomain.getId()))),
-                Message.class);
+        final List<Message> messages = getMessages(savedDomain.getId());
 
         // Only one message for the default language tag should exist
         assertThat(messages, hasSize(1));
+        final Domain i18nDomain = i18nDomainHolder.getDomain();
         Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(i18nDomain.getDefaultLanguageTag())).findFirst();
         assertThat(message.isPresent(), is(true));
     }
@@ -148,9 +148,8 @@ public class DomainDaoChecks {
      */
     public void checkDomainUnmodified(final Domain domain) {
 
-        GetQuery getQuery = new GetQuery();
-        getQuery.setId(domain.getId());
-        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
+        // Get the domain from the Elasticsearch index
+        final Domain savedDomain = findDomain(domain.getId());
 
         // Domain description is a message code in the index => do not compare them
         Domain originalDomain = kryo.copy(domain);
@@ -165,12 +164,7 @@ public class DomainDaoChecks {
      * @param domain The domain that should not exist
      */
     public void checkDomainNotExist(final Domain domain) {
-
-        GetQuery getQuery = new GetQuery();
-        getQuery.setId(domain.getId());
-        Domain savedDomain = esOperations.queryForObject(getQuery, Domain.class);
-
-        assertThat(savedDomain, is(nullValue()));
+        assertThat(findDomain(domain.getId()), is(nullValue()));
     }
 
     /**
@@ -182,10 +176,10 @@ public class DomainDaoChecks {
      */
     public List<Domain> internationalizeDomains(List<Domain> initialList, final String languageTag) {
 
-        List<Domain> results = new ArrayList<>();
-        initialList.forEach(initial -> results.add(internationalizeDomain(initial, languageTag)));
-
-        return results;
+        // Replace the description code by its localized value for each domain in the list
+        return initialList.stream()
+                .map(initial -> internationalizeDomain(initial, languageTag))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -197,15 +191,31 @@ public class DomainDaoChecks {
      */
     public Domain internationalizeDomain(final Domain initial, final String languageTag) {
 
+        // Find the message for the domain description with the specified language tag
         Optional<Message> message = getMessages(initial.getId())
                 .stream()
                 .filter(m -> m.getLanguageTag().equals(languageTag)).findFirst();
         if (!message.isPresent())
             fail("Invalid fixture: No domain message for " + languageTag);
 
+        // Set the domain description found
         Domain result = kryo.copy(initial);
         result.setDescription(message.get().getContent());
 
         return result;
+    }
+
+    /**
+     * Find a domain in the Elasticsearch index matching an identifier.
+     *
+     * @param domainId The domain identifier
+     * @return The found domain
+     */
+    private Domain findDomain(String domainId) {
+
+        GetQuery getQuery = new GetQuery();
+        getQuery.setId(domainId);
+
+        return esOperations.queryForObject(getQuery, Domain.class);
     }
 }

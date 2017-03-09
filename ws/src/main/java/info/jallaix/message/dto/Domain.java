@@ -1,8 +1,6 @@
 package info.jallaix.message.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -25,6 +23,13 @@ import java.util.Collection;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Domain {
+
+    /**
+     * Message type for the domain description
+     */
+    @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE)
+    public static final String DOMAIN_DESCRIPTION_TYPE = Domain.class.getName() + ".description";
 
     /**
      * Identifier
