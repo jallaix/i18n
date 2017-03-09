@@ -15,7 +15,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 
 /**
  * <p>
- *     This is a mock for the Spring Boot application class for running tests that send HTTP requests to the Message REST service.
+ *     This is a mock for the Spring Boot application class for running tests that send HTTP requests to the I18N REST service.
  * <p>
  *     It enables the automatic discovery of Elasticsearch repositories and loads Elasticsearch test configuration.
  *     Spring MVC controllers are also loaded to handle HTTP requests, as well as other required configurations.

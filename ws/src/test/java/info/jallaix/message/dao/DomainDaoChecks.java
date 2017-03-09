@@ -3,7 +3,7 @@ package info.jallaix.message.dao;
 import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.dto.Domain;
-import info.jallaix.message.dto.Message;
+import info.jallaix.message.dto.EntityMessage;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.GetQuery;
@@ -48,7 +48,7 @@ public class DomainDaoChecks {
      * @param domainId The identifier of the domain linked to the message
      * @return The set a messages
      */
-    public List<Message> getMessages(String domainId) {
+    public List<EntityMessage> getMessages(String domainId) {
 
         return esOperations.queryForList(
                 new NativeSearchQueryBuilder()
@@ -58,7 +58,7 @@ public class DomainDaoChecks {
                                                 .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
                                                 .must(QueryBuilders.matchQuery("type", Domain.DOMAIN_DESCRIPTION_TYPE))
                                                 .must(QueryBuilders.termQuery("entityId", domainId))))
-                        .build(), Message.class);
+                        .build(), EntityMessage.class);
     }
 
     /**
@@ -66,7 +66,7 @@ public class DomainDaoChecks {
      *
      * @return The set of messages
      */
-    public List<Message> getMessages() {
+    public List<EntityMessage> getMessages() {
 
         return esOperations.queryForList(
                 new NativeSearchQueryBuilder()
@@ -75,7 +75,7 @@ public class DomainDaoChecks {
                                         QueryBuilders.boolQuery()
                                                 .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
                                                 .must(QueryBuilders.matchQuery("type", Domain.DOMAIN_DESCRIPTION_TYPE))))
-                        .build(), Message.class);
+                        .build(), EntityMessage.class);
     }
 
     /**
@@ -84,7 +84,7 @@ public class DomainDaoChecks {
      * @param domainIds The list of domain identifiers linked to the messages
      * @return The set a messages
      */
-    public List<Message> getMessages(Collection<String> domainIds) {
+    public List<EntityMessage> getMessages(Collection<String> domainIds) {
 
         return esOperations.queryForList(
                 new NativeSearchQueryBuilder()
@@ -94,24 +94,24 @@ public class DomainDaoChecks {
                                                 .must(QueryBuilders.termQuery("domainId", i18nDomainHolder.getDomain().getId()))
                                                 .must(QueryBuilders.matchQuery("type", Domain.DOMAIN_DESCRIPTION_TYPE))
                                                 .must(QueryBuilders.termsQuery("entityId", domainIds))))
-                        .build(), Message.class);
+                        .build(), EntityMessage.class);
     }
 
     /**
      * Check if an existing domain description is updated for the specified locale only.
      * An error occurs if no domain description exists for a basic language whereas a regionalized language is provided.
      */
-    public void checkExistingDocumentMessages(Domain updated, Locale locale, List<Message> originalMessages) {
+    public void checkExistingDocumentMessages(Domain updated, Locale locale, List<EntityMessage> originalMessages) {
 
         // The domain description in the Elasticsearch index must contain a message code
         final Domain savedDomain = findDomain(updated.getId());
         assertNotEquals(updated.getDescription(), savedDomain.getDescription());
 
         // Get all localized messages for message and domain codes
-        List<Message> messages = getMessages(savedDomain.getId());
+        List<EntityMessage> messages = getMessages(savedDomain.getId());
 
         // The domain description for the input locale must match the one expected by the update operation
-        Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(locale.toLanguageTag())).findFirst();
+        Optional<EntityMessage> message = messages.stream().filter(m -> m.getLanguageTag().equals(locale.toLanguageTag())).findFirst();
         assertTrue(message.isPresent());
         assertEquals(updated.getDescription(), message.get().getContent());
 
@@ -132,12 +132,12 @@ public class DomainDaoChecks {
         assertNotEquals(inserted.getDescription(), savedDomain.getDescription());
 
         // Get all localized messages for message and domain codes
-        final List<Message> messages = getMessages(savedDomain.getId());
+        final List<EntityMessage> messages = getMessages(savedDomain.getId());
 
         // Only one message for the default language tag should exist
         assertThat(messages, hasSize(1));
         final Domain i18nDomain = i18nDomainHolder.getDomain();
-        Optional<Message> message = messages.stream().filter(m -> m.getLanguageTag().equals(i18nDomain.getDefaultLanguageTag())).findFirst();
+        Optional<EntityMessage> message = messages.stream().filter(m -> m.getLanguageTag().equals(i18nDomain.getDefaultLanguageTag())).findFirst();
         assertThat(message.isPresent(), is(true));
     }
 
@@ -192,7 +192,7 @@ public class DomainDaoChecks {
     public Domain internationalizeDomain(final Domain initial, final String languageTag) {
 
         // Find the message for the domain description with the specified language tag
-        Optional<Message> message = getMessages(initial.getId())
+        Optional<EntityMessage> message = getMessages(initial.getId())
                 .stream()
                 .filter(m -> m.getLanguageTag().equals(languageTag)).findFirst();
         if (!message.isPresent())

@@ -5,7 +5,7 @@ import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.MessageDao;
 import info.jallaix.message.dto.Domain;
-import info.jallaix.message.dto.Message;
+import info.jallaix.message.dto.EntityMessage;
 import info.jallaix.spring.data.es.test.bean.ValidationError;
 import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
 import org.junit.runner.RunWith;
@@ -114,21 +114,21 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
         List<Object> storedDocuments = new ArrayList<>(13);
 
         storedDocuments.add(new Domain("1", "i18n.message", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en", "Internationalized messages"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en-US", "Internationalized messages (US)"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "fr", "Messages internationalisés"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en", "Internationalized messages"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en-US", "Internationalized messages (US)"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "fr", "Messages internationalisés"));
 
         storedDocuments.add(new Domain("2", "test.project1", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "2", "en", "Test project 1's description"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "2", "fr", "Description du projet de test 1"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "2", "en", "Test project 1's description"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "2", "fr", "Description du projet de test 1"));
 
         storedDocuments.add(new Domain("3", "test.project2", "info.jallaix.message.dto.Domain.description", "fr", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "3", "en", "Test project 2's description"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "3", "fr", "Description du projet de test 2"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "3", "en", "Test project 2's description"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "3", "fr", "Description du projet de test 2"));
 
         storedDocuments.add(new Domain("4", "test.project3", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "4", "en", "Test project 3's description"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "4", "fr", "Description du projet de test 3"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "4", "en", "Test project 3's description"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "4", "fr", "Description du projet de test 3"));
 
         return storedDocuments;
     }
@@ -317,7 +317,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
         String languageTag = savedDomain.getDefaultLanguageTag();
         String messageType = savedDomain.getDescription();
 
-        Message message = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(messageDomain.getId(), messageType, savedDomain.getId(), languageTag);
+        EntityMessage message = messageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(messageDomain.getId(), messageType, savedDomain.getId(), languageTag);
         assertThat(message, is(notNullValue()));
     }
 }

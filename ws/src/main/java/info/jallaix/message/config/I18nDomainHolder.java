@@ -1,6 +1,7 @@
 package info.jallaix.message.config;
 
 import info.jallaix.message.dto.Domain;
+import info.jallaix.message.dto.EntityMessage;
 import lombok.Setter;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -120,7 +121,7 @@ public class I18nDomainHolder implements DomainHolder {
     }
 
     /**
-     * Define the mapping for the Message entity.
+     * Define the mapping for the EntityMessage entity.
      */
     private void putMessageMapping() {
 
@@ -129,23 +130,23 @@ public class I18nDomainHolder implements DomainHolder {
             mapping = jsonBuilder()
                     .startObject()
                     .startObject("properties")
-                        /**/.startObject("domainId")
+                        /**/.startObject(EntityMessage.FIELD_DOMAIN_ID.getName())
                         /*    */.field("type", "string")
                         /*    */.field("index", "not_analyzed")
                         /**/.endObject()
-                        /**/.startObject("type")
+                        /**/.startObject(EntityMessage.FIELD_TYPE.getName())
                         /*    */.field("type", "string")
                         /*    */.field("index", "not_analyzed")
                         /**/.endObject()
-                        /**/.startObject("entityId")
+                        /**/.startObject(EntityMessage.FIELD_ENTITY_ID.getName())
                         /*    */.field("type", "string")
                         /*    */.field("index", "not_analyzed")
                         /**/.endObject()
-                        /**/.startObject("languageTag")
+                        /**/.startObject(EntityMessage.FIELD_LANGUAGE_TAG.getName())
                         /*    */.field("type", "string")
                         /*    */.field("index", "not_analyzed")
                         /**/.endObject()
-                        /**/.startObject("content")
+                        /**/.startObject(EntityMessage.FIELD_CONTENT.getName())
                         /*    */.field("type", "string")
                         /**/.endObject()
                     .endObject()

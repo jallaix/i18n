@@ -1,6 +1,6 @@
 package info.jallaix.message.dao;
 
-import info.jallaix.message.dto.Message;
+import info.jallaix.message.dto.EntityMessage;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 import java.util.Collection;
@@ -8,7 +8,7 @@ import java.util.Collection;
 /**
  * This interface manages all datasource accesses related to a message.
  */
-public interface MessageDao extends ElasticsearchRepository<Message, String>, MessageDaoCustom {
+public interface MessageDao extends ElasticsearchRepository<EntityMessage, String>, MessageDaoCustom {
 
     /**
      * Find a message for the given code, language and domain.
@@ -19,7 +19,7 @@ public interface MessageDao extends ElasticsearchRepository<Message, String>, Me
      * @return The message found
      */
     @SuppressWarnings("unused")
-    Message findByDomainIdAndTypeAndEntityIdAndLanguageTag(String domainId, String type, String entityId, String languageTag);
+    EntityMessage findByDomainIdAndTypeAndEntityIdAndLanguageTag(String domainId, String type, String entityId, String languageTag);
 
     /**
      * Find all messages that belong to a domain.
@@ -28,5 +28,5 @@ public interface MessageDao extends ElasticsearchRepository<Message, String>, Me
      * @return The collection of messages that belong to the domain
      */
     @SuppressWarnings("unused")
-    Collection<Message> findByDomainId(String domainId);
+    Collection<EntityMessage> findByDomainId(String domainId);
 }

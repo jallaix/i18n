@@ -27,8 +27,7 @@ public class Domain {
     /**
      * Message type for the domain description
      */
-    @Setter(AccessLevel.NONE)
-    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE) @Getter(AccessLevel.NONE)
     public static final String DOMAIN_DESCRIPTION_TYPE = Domain.class.getName() + ".description";
 
     /**

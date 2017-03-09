@@ -7,8 +7,8 @@ import info.jallaix.message.dao.interceptor.MissingSimpleMessageException;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.message.dao.interceptor.UnsupportedLanguageException;
 import info.jallaix.message.dto.Domain;
+import info.jallaix.message.dto.EntityMessage;
 import info.jallaix.message.dto.Language;
-import info.jallaix.message.dto.Message;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
 import org.junit.*;
@@ -183,21 +183,21 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         List<Object> storedDocuments = new ArrayList<>(13);
 
         storedDocuments.add(new Domain("1", "i18n.message", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en", "Internationalized messages"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en-US", "Internationalized messages (US)"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "1", "fr", "Messages internationalisés"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en", "Internationalized messages"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en-US", "Internationalized messages (US)"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "fr", "Messages internationalisés"));
 
         storedDocuments.add(new Domain("2", "test.project1", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "2", "en", "Test project 1's description"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "2", "fr", "Description du projet de test 1"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "2", "en", "Test project 1's description"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "2", "fr", "Description du projet de test 1"));
 
         storedDocuments.add(new Domain("3", "test.project2", "info.jallaix.message.dto.Domain.description", "fr", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "3", "en", "Test project 2's description"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "3", "fr", "Description du projet de test 2"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "3", "en", "Test project 2's description"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "3", "fr", "Description du projet de test 2"));
 
         storedDocuments.add(new Domain("4", "test.project3", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "4", "en", "Test project 3's description"));
-        storedDocuments.add(new Message(null, "1", "info.jallaix.message.dto.Domain.description", "4", "fr", "Description du projet de test 3"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "4", "en", "Test project 3's description"));
+        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "4", "fr", "Description du projet de test 3"));
 
         return storedDocuments;
     }
@@ -208,7 +208,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Check the integrity of domain and messages.
-     * A domain description should be inserted in the message's index type for the Message domain's default language.
+     * A domain description should be inserted in the message's index type for the I18N domain's default language.
      *
      * @param toInsert Domain to insert
      * @param inserted Inserted domain
@@ -239,7 +239,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     protected void customizeSaveExistingDocument(Domain toUpdate, Domain updated, Object customData) {
 
         @SuppressWarnings("unchecked")
-        final List<Message> originalMessages = (List<Message>) customData;
+        final List<EntityMessage> originalMessages = (List<EntityMessage>) customData;
 
         domainDaoChecks.checkExistingDocumentMessages(updated, threadLocaleHolder.getInputLocale(), originalMessages);
     }
@@ -256,7 +256,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
     /**
      * Check the integrity of domains and messages.
-     * On creation, it also inserts the domains descriptions in the message's index type for each Message domain's supported languages.
+     * On creation, it also inserts the domains descriptions in the message's index type for each I18N domain's supported languages.
      * On update, it also updates the domain description for the default locale in the message's index type.
      *
      * @param toSave Domains to save
@@ -265,7 +265,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     protected void customizeSaveDocuments(List<Domain> toSave, List<Domain> saved, Object customData) {
 
         @SuppressWarnings("unchecked")
-        final List<Message> originalMessages = (List<Message>) customData;
+        final List<EntityMessage> originalMessages = (List<EntityMessage>) customData;
 
         domainDaoChecks.checkNewDocumentMessage(newDocumentToInsert());
         domainDaoChecks.checkExistingDocumentMessages(newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
