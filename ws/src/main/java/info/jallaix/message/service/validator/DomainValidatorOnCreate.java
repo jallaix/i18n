@@ -1,6 +1,6 @@
 package info.jallaix.message.service.validator;
 
-import info.jallaix.message.dto.Domain;
+import info.jallaix.message.bean.Domain;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;

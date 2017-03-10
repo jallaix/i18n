@@ -2,8 +2,8 @@ package info.jallaix.message.dao;
 
 import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainHolder;
-import info.jallaix.message.dto.Domain;
-import info.jallaix.message.dto.EntityMessage;
+import info.jallaix.message.bean.Domain;
+import info.jallaix.message.bean.EntityMessage;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.GetQuery;

@@ -25,11 +25,9 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 @Import({DomainController.class,
         DomainValidatorOnCreate.class,
         DomainValidatorOnUpdate.class,
-        LanguageController.class,
         SpringDataEsTestConfiguration.class,
         GenericExceptionHandler.class,
         DomainResourceAssembler.class,
-        LanguageResourceAssembler.class,
         RepositoryRestConfiguration.class,
         ProjectConfiguration.class,
         WebMvcConfiguration.class})

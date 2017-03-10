@@ -1,7 +1,7 @@
 package info.jallaix.message.service;
 
 import info.jallaix.message.dao.DomainDao;
-import info.jallaix.message.dto.Domain;
+import info.jallaix.message.bean.Domain;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.core.event.BeforeCreateEvent;
@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class DomainController {
 
     /**
-     * DAO to perform database operations with the Language entity
+     * DAO to perform database operations with the Domain entity
      */
     @Autowired
     private DomainDao repository;

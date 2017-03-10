@@ -6,10 +6,11 @@ import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.dao.interceptor.MissingSimpleMessageException;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.message.dao.interceptor.UnsupportedLanguageException;
-import info.jallaix.message.dto.Domain;
-import info.jallaix.message.dto.EntityMessage;
-import info.jallaix.message.dto.Language;
+import info.jallaix.message.bean.Domain;
+import info.jallaix.message.bean.DomainTestFixture;
+import info.jallaix.message.bean.EntityMessage;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
+import info.jallaix.spring.data.es.test.bean.BaseElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +23,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -105,101 +103,12 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                                   Overriden methods                                            */
+    /*                                                  Overridden methods                                            */
     /*----------------------------------------------------------------------------------------------------------------*/
 
-    /**
-     * Constructor that defines the tests to pass
-     */
-    public DomainDaoTest() {
-        super(/*DaoTestedMethod.Exist.class*/);
-    }
-
-    /**
-     * Return a new document for insertion.
-     *
-     * @return A document that will be inserted
-     */
     @Override
-    protected Domain newDocumentToInsert() {
-        return new Domain("5", "test.project4", "Test project 4's description", "es", Arrays.asList("en", "fr", "es"));
-    }
-
-    /**
-     * Return a new document for update.
-     *
-     * @return A document that will update an existing one
-     */
-    @Override
-    protected Domain newDocumentToUpdate() {
-
-        return new Domain("3", "test.project2", "New project 2's description", "es", Arrays.asList("en", "fr", "es"));
-    }
-
-    /**
-     * Return a new existing document.
-     *
-     * @return A document that exists
-     */
-    @Override
-    protected Domain newExistingDocument() {
-
-        return new Domain("3", "test.project2", "Test project 2's description", "fr", Arrays.asList("en", "fr", "es"));
-    }
-
-    /**
-     * Return the sort field
-     *
-     * @return The sort field
-     */
-    @Override
-    protected Field getSortField() {
-
-        try {
-            return Language.class.getDeclaredField("code");
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Return the size of a page to get
-     *
-     * @return The size of a page to get
-     */
-    @Override
-    protected int getPageSize() {
-        return 2;
-    }
-
-    /**
-     * Return a set of domains and messages that are sorted in the Elasticsearch index.
-     *
-     * @return A set of domains and messages
-     */
-    @Override
-    protected List<?> getStoredDocuments() {
-
-        List<Object> storedDocuments = new ArrayList<>(13);
-
-        storedDocuments.add(new Domain("1", "i18n.message", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en", "Internationalized messages"));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "en-US", "Internationalized messages (US)"));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "1", "fr", "Messages internationalisés"));
-
-        storedDocuments.add(new Domain("2", "test.project1", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "2", "en", "Test project 1's description"));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "2", "fr", "Description du projet de test 1"));
-
-        storedDocuments.add(new Domain("3", "test.project2", "info.jallaix.message.dto.Domain.description", "fr", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "3", "en", "Test project 2's description"));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "3", "fr", "Description du projet de test 2"));
-
-        storedDocuments.add(new Domain("4", "test.project3", "info.jallaix.message.dto.Domain.description", "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "4", "en", "Test project 3's description"));
-        storedDocuments.add(new EntityMessage(null, "1", "info.jallaix.message.dto.Domain.description", "4", "fr", "Description du projet de test 3"));
-
-        return storedDocuments;
+    protected BaseElasticsearchTestFixture<Domain> getTestFixture() {
+        return new DomainTestFixture();
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -251,7 +160,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * @return The custom data
      */
     protected Object getCustomDataOnSaveDocuments(List<Domain> toSave) {
-        return domainDaoChecks.getMessages(newDocumentToUpdate().getId());
+        return domainDaoChecks.getMessages(getTestFixture().newDocumentToUpdate().getId());
     }
 
     /**
@@ -267,8 +176,8 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         @SuppressWarnings("unchecked")
         final List<EntityMessage> originalMessages = (List<EntityMessage>) customData;
 
-        domainDaoChecks.checkNewDocumentMessage(newDocumentToInsert());
-        domainDaoChecks.checkExistingDocumentMessages(newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
+        domainDaoChecks.checkNewDocumentMessage(getTestFixture().newDocumentToInsert());
+        domainDaoChecks.checkExistingDocumentMessages(getTestFixture().newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
     }
 
     /**
@@ -323,22 +232,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected void customizeDeleteOne(String id) {
         assertThat(domainDaoChecks.getMessages(id), hasSize(0));
-    }
-
-    /**
-     * Looking for a language in any domain is successful if the language code is used.
-     */
-    @Test
-    public void languageIsUsed() {
-        assertThat(getRepository().isLanguageUsed("en"), is(true));
-    }
-
-    /**
-     * Looking for a language in any domain fails if the language code doesn't exist.
-     */
-    @Test
-    public void languageIsNotUsed() {
-        assertThat(getRepository().isLanguageUsed("es"), is(false));
     }
 
     /**
@@ -402,7 +295,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         } catch (MissingSimpleMessageException e) {
 
             // Check the domain to update has not been updated
-            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+            domainDaoChecks.checkDomainUnmodified(getTestFixture().newExistingDocument());
         }
     }
 
@@ -421,7 +314,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         } catch (UnsupportedLanguageException e) {
 
             // Check the domain to update has not been updated
-            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+            domainDaoChecks.checkDomainUnmodified(getTestFixture().newExistingDocument());
         }
     }
 
@@ -487,7 +380,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         catch (MissingSimpleMessageException e) {
 
             // Check the domain to update has not been updated
-            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+            domainDaoChecks.checkDomainUnmodified(getTestFixture().newExistingDocument());
         }
     }
 
@@ -507,7 +400,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         catch (UnsupportedLanguageException e) {
 
             // Check the domain to update has not been updated
-            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+            domainDaoChecks.checkDomainUnmodified(getTestFixture().newExistingDocument());
         }
     }
 
@@ -569,9 +462,9 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         catch (MissingSimpleMessageException e) {
 
             // Check no new domain was inserted
-            domainDaoChecks.checkDomainNotExist(newDocumentToInsert());
+            domainDaoChecks.checkDomainNotExist(getTestFixture().newDocumentToInsert());
             // Check the domain to update has not been updated
-            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+            domainDaoChecks.checkDomainUnmodified(getTestFixture().newExistingDocument());
         }
     }
 
@@ -593,9 +486,9 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
         catch (UnsupportedLanguageException e) {
 
             // Check no new domain was inserted
-            domainDaoChecks.checkDomainNotExist(newDocumentToInsert());
+            domainDaoChecks.checkDomainNotExist(getTestFixture().newDocumentToInsert());
             // Check the domain to update has not been updated
-            domainDaoChecks.checkDomainUnmodified(newExistingDocument());
+            domainDaoChecks.checkDomainUnmodified(getTestFixture().newExistingDocument());
         }
     }
 }

@@ -1,6 +1,6 @@
 package info.jallaix.message.dao;
 
-import info.jallaix.message.dto.EntityMessage;
+import info.jallaix.message.bean.EntityMessage;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 import java.util.Collection;
@@ -8,7 +8,7 @@ import java.util.Collection;
 /**
  * This interface manages all datasource accesses related to a message.
  */
-public interface MessageDao extends ElasticsearchRepository<EntityMessage, String>, MessageDaoCustom {
+public interface EntityMessageDao extends ElasticsearchRepository<EntityMessage, String>, EntityMessageDaoCustom {
 
     /**
      * Find a message for the given code, language and domain.

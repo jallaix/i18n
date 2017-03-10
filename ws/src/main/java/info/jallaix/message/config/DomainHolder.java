@@ -1,6 +1,6 @@
 package info.jallaix.message.config;
 
-import info.jallaix.message.dto.Domain;
+import info.jallaix.message.bean.Domain;
 
 /**
  * An domain holder defines a way to get the internationalized domain matching the application.

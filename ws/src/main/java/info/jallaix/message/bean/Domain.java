@@ -1,4 +1,4 @@
-package info.jallaix.message.dto;
+package info.jallaix.message.bean;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -29,6 +29,51 @@ public class Domain {
      */
     @Setter(AccessLevel.NONE) @Getter(AccessLevel.NONE)
     public static final String DOMAIN_DESCRIPTION_TYPE = Domain.class.getName() + ".description";
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                 Fields introspection                                           */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Field for domain code
+     */
+    @Setter(AccessLevel.NONE) @Getter(AccessLevel.NONE)
+    public final static java.lang.reflect.Field FIELD_CODE;
+
+    /**
+     * Field for domain description
+     */
+    @Setter(AccessLevel.NONE) @Getter(AccessLevel.NONE)
+    public final static java.lang.reflect.Field FIELD_DESCRIPTION;
+
+    /**
+     * Field for default language tag
+     */
+    @Setter(AccessLevel.NONE) @Getter(AccessLevel.NONE)
+    public final static java.lang.reflect.Field FIELD_DEFAULT_LANGUAGE_TAG;
+
+    /**
+     * Field for available language tags
+     */
+    @Setter(AccessLevel.NONE) @Getter(AccessLevel.NONE)
+    public final static java.lang.reflect.Field FIELD_AVAILABLE_LANGUAGE_TAGS;
+
+    // Get the class fields
+    static {
+        try {
+            FIELD_CODE = Domain.class.getDeclaredField("code");
+            FIELD_DESCRIPTION = Domain.class.getDeclaredField("description");
+            FIELD_DEFAULT_LANGUAGE_TAG = Domain.class.getDeclaredField("defaultLanguageTag");
+            FIELD_AVAILABLE_LANGUAGE_TAGS = Domain.class.getDeclaredField("availableLanguageTags");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                   Document fields                                              */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * Identifier

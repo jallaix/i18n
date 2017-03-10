@@ -1,6 +1,0 @@
-{ "create" : { "_index" : "message", "_type" : "language", "_id" : "1" } }
-{ "code" : "eng", "label" : "English", "englishLabel" : "English" }
-{ "create" : { "_index" : "message", "_type" : "language", "_id" : "2" } }
-{ "code" : "fra", "label" : "Français", "englishLabel" : "French" }
-{ "create" : { "_index" : "message", "_type" : "language", "_id" : "3" } }
-{ "code" : "ger", "label" : "Deutsch", "englishLabel" : "German" }

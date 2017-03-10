@@ -2,8 +2,8 @@ package info.jallaix.message.dao.interceptor;
 
 import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainHolder;
-import info.jallaix.message.dto.Domain;
-import info.jallaix.message.dto.EntityMessage;
+import info.jallaix.message.bean.Domain;
+import info.jallaix.message.bean.EntityMessage;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;

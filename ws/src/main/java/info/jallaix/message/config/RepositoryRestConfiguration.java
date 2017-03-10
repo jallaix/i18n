@@ -1,12 +1,10 @@
 package info.jallaix.message.config;
 
 import info.jallaix.message.dao.DomainDao;
-import info.jallaix.message.dao.MessageDao;
-import info.jallaix.message.dto.Domain;
+import info.jallaix.message.dao.EntityMessageDao;
+import info.jallaix.message.bean.Domain;
 import info.jallaix.message.service.validator.DomainValidatorOnCreate;
 import info.jallaix.message.service.validator.DomainValidatorOnUpdate;
-import info.jallaix.message.service.validator.LanguageValidatorOnCreateOrUpdate;
-import info.jallaix.message.service.validator.LanguageValidatorOnDelete;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +22,7 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
     @Autowired
     private DomainDao domainDao;
     @Autowired
-    private MessageDao messageDao;
+    private EntityMessageDao entityMessageDao;
 
     @Autowired
     private DomainValidatorOnCreate domainValidatorOnCreate;
@@ -39,11 +37,8 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
     @Override
     public void configureValidatingRepositoryEventListener(ValidatingRepositoryEventListener validatingRepositoryEventListener) {
 
-        validatingRepositoryEventListener.addValidator("beforeCreate", new LanguageValidatorOnCreateOrUpdate());
-        validatingRepositoryEventListener.addValidator("beforeSave", new LanguageValidatorOnCreateOrUpdate());
         validatingRepositoryEventListener.addValidator("beforeCreate", domainValidatorOnCreate);
         validatingRepositoryEventListener.addValidator("beforeSave", domainValidatorOnUpdate);
-        validatingRepositoryEventListener.addValidator("beforeDelete", new LanguageValidatorOnDelete(domainDao));
     }
 
     /**
@@ -58,7 +53,7 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
             @Override
             public Resource<Domain> process(Resource<Domain> resource) {
 
-                //messageDao.findByCodeAndLanguageId(resource.getContent().getCode(), "");
+                //entityMessageDao.findByCodeAndLanguageId(resource.getContent().getCode(), "");
                 //TODO Find required message
                 return resource;
             }

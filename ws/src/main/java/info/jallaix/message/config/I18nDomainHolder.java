@@ -1,7 +1,7 @@
 package info.jallaix.message.config;
 
-import info.jallaix.message.dto.Domain;
-import info.jallaix.message.dto.EntityMessage;
+import info.jallaix.message.bean.Domain;
+import info.jallaix.message.bean.EntityMessage;
 import lombok.Setter;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;

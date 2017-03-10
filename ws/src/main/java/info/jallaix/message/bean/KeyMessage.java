@@ -1,4 +1,4 @@
-package info.jallaix.message.dto;
+package info.jallaix.message.bean;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -12,7 +12,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
  * <ul>
  * <li>{@code id} - {@link String} - Unique identifier of the message
  * <li>{@code domainId} - {@link String} - Identifier of the domain linked to the message, see {@link Domain}
- * <li>{@code key} - {@link String} - Key of the message, for example: "/info/jallaix/message/dto/Domain/description"
+ * <li>{@code key} - {@link String} - Key of the message, for example: "/info/jallaix/message/bean/Domain/description"
  * <li>{@code languageTag} - {@link String} - Language tag of the message
  * <li>{@code content} - {@link String} - Content of the message
  * </ul>
