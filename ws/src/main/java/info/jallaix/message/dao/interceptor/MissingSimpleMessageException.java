@@ -18,7 +18,7 @@ public class MissingSimpleMessageException extends RuntimeException {
     public MissingSimpleMessageException(Locale complexLocale, String domainId) {
         super(
                 MessageFormat.format(
-                        "As no message is defined in the domain (id={0}) for the '{1}' language tag, it's not possible to insert a message for the '{2}' language tag.",
+                        "As no message is defined in the domain (id={0}) for the \"{1}\" language, it''s not possible to insert a message for the \"{2}\" language tag.",
                         domainId,
                         complexLocale.getLanguage(),
                         complexLocale.toLanguageTag()));

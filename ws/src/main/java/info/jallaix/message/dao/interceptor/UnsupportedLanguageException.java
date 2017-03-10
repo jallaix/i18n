@@ -17,7 +17,7 @@ public class UnsupportedLanguageException extends RuntimeException {
     public UnsupportedLanguageException(Locale locale, String domainId) {
         super();
         MessageFormat.format(
-                "The '{0}' is not supported by the domain (id={1}).",
+                "The \"{0}\" language is not supported by the domain (id={1}).",
                 locale.getLanguage(),
                 domainId);
     }

@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 /**
  * Operation checks performed by {@link DomainDao} tests.
  */
-public class DomainDaoChecks {
+public class DomainDaoChecker {
 
     /**
      * I18n domain
@@ -36,7 +36,7 @@ public class DomainDaoChecks {
     private Kryo kryo;
 
 
-    public DomainDaoChecks(DomainHolder i18nDomainHolder, ElasticsearchOperations esOperations, Kryo kryo) {
+    public DomainDaoChecker(DomainHolder i18nDomainHolder, ElasticsearchOperations esOperations, Kryo kryo) {
         this.i18nDomainHolder = i18nDomainHolder;
         this.esOperations = esOperations;
         this.kryo = kryo;

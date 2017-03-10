@@ -371,7 +371,7 @@ public class DomainDaoInterceptor {
 
             // Error when the input locale has a complex language tag and no message already exists for the simple language
             if (!hasInputLocaleSimpleLanguage() && !existDomainDescriptionForSimpleLanguage(domain.getId()))
-                throw new MissingSimpleMessageException(inputLocale, i18nDomainHolder.getDomain().getId());
+                throw new MissingSimpleMessageException(inputLocale, domain.getId());
         }
     }
 

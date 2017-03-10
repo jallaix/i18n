@@ -7,8 +7,8 @@ import info.jallaix.message.bean.DomainTestFixture;
 import info.jallaix.message.bean.EntityMessage;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.EntityMessageDao;
-import info.jallaix.spring.data.es.test.bean.BaseElasticsearchTestFixture;
-import info.jallaix.spring.data.es.test.bean.BaseRestElasticsearchTestFixture;
+import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
+import info.jallaix.spring.data.es.test.fixture.RestElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,12 +53,12 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     }
 
     @Override
-    protected BaseElasticsearchTestFixture<Domain> getTestFixture() {
+    protected ElasticsearchTestFixture<Domain> getTestFixture() {
         return new DomainTestFixture();
     }
 
     @Override
-    protected BaseRestElasticsearchTestFixture<Domain> getRestTestFixture() {
+    protected RestElasticsearchTestFixture<Domain> getRestTestFixture() {
         return new DomainRestTestFixture();
     }
 
