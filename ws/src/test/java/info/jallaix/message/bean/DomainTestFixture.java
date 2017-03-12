@@ -89,6 +89,7 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
 
         storedDocuments.add(new Domain("3", "test.project2", Domain.DOMAIN_DESCRIPTION_TYPE, "fr", Arrays.asList("en", "fr", "es")));
         storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en", DomainDaoTest.DOMAIN3_EN_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en-US", DomainDaoTest.DOMAIN3_EN_US_DESCRIPTION));
         storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "fr", DomainDaoTest.DOMAIN3_FR_DESCRIPTION));
 
         storedDocuments.add(new Domain("4", "test.project3", Domain.DOMAIN_DESCRIPTION_TYPE, "en", Arrays.asList("en", "fr", "es")));

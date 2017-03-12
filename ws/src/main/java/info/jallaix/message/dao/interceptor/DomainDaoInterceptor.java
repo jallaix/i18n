@@ -11,6 +11,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -199,19 +200,20 @@ public class DomainDaoInterceptor {
         final List<EntityMessage> messages = findMessages(foundDomain.getId());
 
         // Get the list of available language tags in the message list
-        Collection<String> languageTags = messages.stream()
+        Collection<Locale> existingLocales = messages.stream()
                 .map(EntityMessage::getLanguageTag)
+                .map(Locale::forLanguageTag)
                 .collect(Collectors.toList());
 
         // Get the best matching language tag
         // TODO threadLocaleHolder.getOutputLocale() should return a List<LanguageRange> type
         final Locale.LanguageRange languageRange = new Locale.LanguageRange(threadLocaleHolder.getOutputLocale().toLanguageTag());
         final Locale.LanguageRange defaultLanguageRange = new Locale.LanguageRange(i18nDomainHolder.getDomain().getDefaultLanguageTag());
-        final String lookupTag = Locale.lookupTag(Arrays.asList(languageRange, defaultLanguageRange), languageTags);
+        final Locale lookupTag = Locale.lookup(Arrays.asList(languageRange, defaultLanguageRange), existingLocales);
 
         // Set the domain description for the lookup language tag
         final Optional<EntityMessage> message = messages.stream()
-                .filter(m -> lookupTag.equals(m.getLanguageTag()))
+                .filter(m -> lookupTag.equals(Locale.forLanguageTag(m.getLanguageTag())))
                 .findFirst();
         foundDomain.setDescription(message.isPresent() ? message.get().getContent() : null);
     }
@@ -219,11 +221,26 @@ public class DomainDaoInterceptor {
     /**
      * Intercept a domain finding operation by code after it is get to replace its message code by a description's value.
      *
-     * @param foundDomain The found domain to update with the localized description
+     * @param joinPoint Joint point for the targeted operation
+     * @param code      Code of the domain to find
      */
-    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findByCode(*))", returning = "foundDomain")
-    public void afterFindByCode(Domain foundDomain) {
+    @Around("execution(* info.jallaix.message.dao.DomainDao+.findByCode(String)) && args(code)")
+    public Object aroundFindByCode(final ProceedingJoinPoint joinPoint, final String code) throws Throwable {
+
+        // Check the code is not null
+        if (code == null) {
+            ActionRequestValidationException e = new ActionRequestValidationException();
+            e.addValidationError("code can't be null");
+            throw e;
+        }
+
+        // Call the find operation
+        Domain foundDomain = Domain.class.cast(joinPoint.proceed());
+
+        // Replace the domain's message code by a description's value.
         afterFindOne(foundDomain);
+
+        return foundDomain;
     }
 
     /**

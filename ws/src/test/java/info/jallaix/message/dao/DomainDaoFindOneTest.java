@@ -10,10 +10,7 @@ import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
 import info.jallaix.spring.data.es.test.testcase.DaoTestedMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
+import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -24,6 +21,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
+import java.util.Locale;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 /**
  * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
  */
@@ -31,13 +33,8 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
 @Import({SpringDataEsTestConfiguration.class, DomainDaoTestConfiguration.class})
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class)
 @EnableAspectJAutoProxy
-@ContextConfiguration(classes = DomainDaoTest.class)
-public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
-
-    /**
-     * Domain 3's english description (for use by find tests)
-     */
-    public static final String DOMAIN3_EN_DESCRIPTION = "Test project 2's description";
+@ContextConfiguration(classes = DomainDaoFindOneTest.class)
+public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
 
     /**
      * Domain 3's english US description (for use by find tests)
@@ -85,43 +82,31 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
 
-    /**
-     * Domain testing checks
-     */
-    private DomainDaoChecker domainDaoChecker;
-
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                   Tests lifecycle                                              */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Constructor defining some basic tests
+     * Constructor defining the "find one" tests
      */
-    public DomainDaoTest() {
-        super(
-                DaoTestedMethod.FindAll.class,
-                DaoTestedMethod.FindAllById.class,
-                DaoTestedMethod.FindAllPageable.class,
-                DaoTestedMethod.FindAllSorted.class,
-                DaoTestedMethod.Exist.class,
-                DaoTestedMethod.Count.class,
-                DaoTestedMethod.DeleteAll.class,
-                DaoTestedMethod.DeleteAllById.class,
-                DaoTestedMethod.Delete.class,
-                DaoTestedMethod.DeleteById.class);
+    public DomainDaoFindOneTest() {
+        super(DaoTestedMethod.FindOne.class);
     }
+
     /**
      * Initialize custom testing objects.
      */
     @Before
     public void initTest() {
 
-        // Utility object that performs DAO checks
-        domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
-
         // Domain customizer for default DAO tests
-        setCustomizer(new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo));
+        setCustomizer(
+                new DomainDaoTestsCustomizer(
+                        new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
+                        threadLocaleHolder,
+                        getTestFixture(),
+                        kryo));
     }
 
     /**
@@ -147,7 +132,87 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     /*                                                     Custom tests                                               */
     /*----------------------------------------------------------------------------------------------------------------*/
 
+    /**
+     * Finding an existing domain for an existing supported language returns this domain.
+     * Its description is localized for the specified supported language.
+     */
+    @Test
+    public void findOneExistingDomainWithExistingSupportedLanguage() {
+        assertFindOne("fr", DOMAIN3_FR_DESCRIPTION);
+    }
 
-    // TODO Other find* tests
-    // TODO threadLocaleHolder.getOutputLocale() should return a List<LanguageRange> type
+    /**
+     * Finding an existing domain for a missing supported language returns this domain.
+     * Its description is localized for the default I18N domain's language.
+     */
+    @Test
+    public void findOneExistingDomainWithMissingSupportedLanguage() {
+        assertFindOne("es");
+    }
+
+    /**
+     * Finding an existing domain for a missing complex language (with an existing message for the simple language) returns this domain.
+     * Its description is localized for the linked simple language.
+     */
+    @Test
+    public void findOneExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
+        assertFindOne("fr-BE", DOMAIN3_FR_DESCRIPTION);
+    }
+
+    /**
+     * Finding an existing domain for an existing complex language returns this domain.
+     * Its description is localized for the linked complex language.
+     */
+    @Test
+    public void findOneExistingDomainWithExistingComplexLanguage() {
+        assertFindOne("en-US", DOMAIN3_EN_US_DESCRIPTION);
+    }
+
+    /**
+     * Finding an existing domain for a missing complex language (without an existing message for the simple language) returns this domain.
+     * Its description is localized for the default I18N domain's language.
+     */
+    @Test
+    public void findOneExistingDomainWithMissingComplexAndSimpleLanguage() {
+        assertFindOne("es-ES");
+    }
+
+    /**
+     * Finding an existing domain for an unsupported language returns this domain.
+     * Its description is localized for the default I18N domain's language.
+     */
+    @Test
+    public void findOneExistingDomainWithUnsupportedLanguage() {
+        assertFindOne("de-DE");
+    }
+
+
+    /**
+     * Assert that a domain found by identifier matches the expected one.
+     * The domain description must be returned in the default domain's language whatever the provided language tag is.
+     *
+     * @param languageTag Language tag that doesn't involve a matching description in this language
+     */
+    private void assertFindOne(String languageTag) {
+        assertFindOne(languageTag, null);
+    }
+
+    /**
+     * Assert that a domain found by identifier matches the expected one.
+     * The domain description must be returned in a localized language depending on the provided language tag.
+     *
+     * @param languageTag        The language tag that involves a localized description
+     * @param descriptionFixture The localized description matching the provided language tag
+     */
+    private void assertFindOne(String languageTag, String descriptionFixture) {
+
+        // Get domain fixture for the language tag
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
+        Domain domain = getTestFixture().newExistingDocument();
+        if (descriptionFixture != null)
+            domain.setDescription(descriptionFixture);
+
+        // Assert the found domain matches the expected one
+        assertThat(getRepository().findOne(domain.getId()), is(domain));
+    }
 }
