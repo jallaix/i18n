@@ -19,10 +19,7 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.*;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -193,16 +190,40 @@ public class DomainDaoInterceptor {
      * @param foundDomain The found domain to update with the localized description
      */
     @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findOne(*))", returning = "foundDomain")
-    public void afterFindOne(final Domain foundDomain) {
+    public void afterFindOne(Domain foundDomain) {
 
         if (foundDomain == null)
             return;
 
-        final EntityMessage message = findMessage(
-                foundDomain.getId(),
-                threadLocaleHolder.getOutputLocale().toLanguageTag());
+        // Find the list of description messages for the found domain
+        final List<EntityMessage> messages = findMessages(foundDomain.getId());
 
-        foundDomain.setDescription(message == null ? null : message.getContent());
+        // Get the list of available language tags in the message list
+        Collection<String> languageTags = messages.stream()
+                .map(EntityMessage::getLanguageTag)
+                .collect(Collectors.toList());
+
+        // Get the best matching language tag
+        // TODO threadLocaleHolder.getOutputLocale() should return a List<LanguageRange> type
+        final Locale.LanguageRange languageRange = new Locale.LanguageRange(threadLocaleHolder.getOutputLocale().toLanguageTag());
+        final Locale.LanguageRange defaultLanguageRange = new Locale.LanguageRange(i18nDomainHolder.getDomain().getDefaultLanguageTag());
+        final String lookupTag = Locale.lookupTag(Arrays.asList(languageRange, defaultLanguageRange), languageTags);
+
+        // Set the domain description for the lookup language tag
+        final Optional<EntityMessage> message = messages.stream()
+                .filter(m -> lookupTag.equals(m.getLanguageTag()))
+                .findFirst();
+        foundDomain.setDescription(message.isPresent() ? message.get().getContent() : null);
+    }
+
+    /**
+     * Intercept a domain finding operation by code after it is get to replace its message code by a description's value.
+     *
+     * @param foundDomain The found domain to update with the localized description
+     */
+    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findByCode(*))", returning = "foundDomain")
+    public void afterFindByCode(Domain foundDomain) {
+        afterFindOne(foundDomain);
     }
 
     /**
@@ -452,7 +473,7 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Find the message for a domain description that matches the arguments.
+     * Find the message for a domain description that matches a domain identifier and a language tag.
      *
      * @param domainId    Identifier of the domain
      * @param languageTag Language tag
@@ -477,6 +498,25 @@ public class DomainDaoInterceptor {
             throw new RuntimeException("At most one message should be found given the criteria.");
         else
             return messages.get(0);
+    }
+
+    /**
+     * Find the list of messages for a domain description that matches a domain identifier.
+     *
+     * @param domainId Identifier of the domain
+     * @return The found list of messages
+     */
+    private List<EntityMessage> findMessages(final String domainId) {
+
+        return esOperations.queryForList(
+                new NativeSearchQueryBuilder()
+                        .withQuery(
+                                QueryBuilders.constantScoreQuery(
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_DOMAIN_ID.getName(), i18nDomainHolder.getDomain().getId()))
+                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_TYPE.getName(), Domain.DOMAIN_DESCRIPTION_TYPE))
+                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_ENTITY_ID.getName(), domainId))))
+                        .build(), EntityMessage.class);
     }
 
     /**

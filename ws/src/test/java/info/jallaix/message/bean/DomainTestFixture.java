@@ -1,5 +1,6 @@
 package info.jallaix.message.bean;
 
+import info.jallaix.message.dao.DomainDaoTest;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 
 import java.lang.reflect.Field;
@@ -29,7 +30,6 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
      */
     @Override
     public Domain newDocumentToUpdate() {
-
         return new Domain("3", "test.project2", "New project 2's description", "es", Arrays.asList("en", "fr", "es"));
     }
 
@@ -40,8 +40,7 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
      */
     @Override
     public Domain newExistingDocument() {
-
-        return new Domain("3", "test.project2", "Test project 2's description", "fr", Arrays.asList("en", "fr", "es"));
+        return new Domain("3", "test.project2", DomainDaoTest.DOMAIN3_EN_DESCRIPTION, "fr", Arrays.asList("en", "fr", "es"));
     }
 
     /**
@@ -89,8 +88,8 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
         storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "2", "fr", "Description du projet de test 1"));
 
         storedDocuments.add(new Domain("3", "test.project2", Domain.DOMAIN_DESCRIPTION_TYPE, "fr", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en", "Test project 2's description"));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "fr", "Description du projet de test 2"));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en", DomainDaoTest.DOMAIN3_EN_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "fr", DomainDaoTest.DOMAIN3_FR_DESCRIPTION));
 
         storedDocuments.add(new Domain("4", "test.project3", Domain.DOMAIN_DESCRIPTION_TYPE, "en", Arrays.asList("en", "fr", "es")));
         storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "4", "en", "Test project 3's description"));

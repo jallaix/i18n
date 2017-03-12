@@ -38,6 +38,17 @@ import static org.junit.Assert.fail;
 @ContextConfiguration(classes = DomainDaoTest.class)
 public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
 
+
+    /**
+     * Domain 3's english description (for use by find tests)
+     */
+    public static final String DOMAIN3_EN_DESCRIPTION = "Test project 2's description";
+
+    /**
+     * Domain 3's french description (for use by find tests)
+     */
+    public static final String DOMAIN3_FR_DESCRIPTION = "Description du projet de test 2";
+
     /**
      * Spring class rule
      */
@@ -378,18 +389,104 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
     /**
-     * Check that finding an existing domain by code returns this domain.
-     */
-    @Test
-    public void findExistingDomainByCode() {
-        assertThat(getRepository().findByCode(getTestFixture().newExistingDocument().getCode()), is(notNullValue()));
-    }
-
-    /**
-     * Check that finding a missing domain by code returns {@code null}.
+     * Finding a missing domain by code returns {@code null}.
      */
     @Test
     public void findMissingDomainByCode() {
         assertThat(getRepository().findByCode(getTestFixture().newDocumentToInsert().getCode()), is(nullValue()));
     }
+
+    /**
+     * Finding an existing domain by code returns this domain.
+     * Its description is localized for the default I18N domain's language.
+     */
+    @Test
+    public void findExistingDomainByCode() {
+
+        // Get domain fixture
+        Domain domain = getTestFixture().newExistingDocument();
+
+        Domain foundDomain = getRepository().findByCode(domain.getCode());
+        assertThat(foundDomain, is(domain));
+    }
+
+    /**
+     * Finding an existing domain by code for an existing supported language returns this domain.
+     * Its description is localized for the specified supported language.
+     */
+    @Test
+    public void findExistingDomainByCodeWithExistingSupportedLanguage() {
+
+        // Get domain fixture with "fr" language
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("fr"));
+        Domain domain = getTestFixture().newExistingDocument();
+        domain.setDescription(DOMAIN3_FR_DESCRIPTION);
+
+        Domain foundDomain = getRepository().findByCode(domain.getCode());
+        assertThat(foundDomain, is(domain));
+    }
+
+    /**
+     * Finding an existing domain by code for a missing supported language returns this domain.
+     * Its description is localized for the default I18N domain's language.
+     */
+    @Test
+    public void findExistingDomainByCodeWithMissingSupportedLanguage() {
+
+        // Get domain fixture with "es" language
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("es"));
+        Domain domain = getTestFixture().newExistingDocument();
+
+        Domain foundDomain = getRepository().findByCode(domain.getCode());
+        assertThat(foundDomain, is(domain));
+    }
+
+    /**
+     * Finding an existing domain by code for a missing complex language (with an existing message for the simple language) returns this domain.
+     * Its description is localized for the linked simple language.
+     */
+    @Test
+    public void findExistingDomainByCodeWithComplexLanguageWithSimpleLanguage() {
+
+        // Get domain fixture with "fr-BE" language
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("fr-BE"));
+        Domain domain = getTestFixture().newExistingDocument();
+        domain.setDescription(DOMAIN3_FR_DESCRIPTION);
+
+        Domain foundDomain = getRepository().findByCode(domain.getCode());
+        assertThat(foundDomain, is(domain));
+    }
+
+    /**
+     * Finding an existing domain by code for a missing complex language (without an existing message for the simple language) returns this domain.
+     * Its description is localized for the default I18N domain's language.
+     */
+    @Test
+    public void findExistingDomainByCodeWithComplexLanguageWithoutSimpleLanguage() {
+
+        // Get domain fixture with "fr-BE" language
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("es-ES"));
+        Domain domain = getTestFixture().newExistingDocument();
+
+        Domain foundDomain = getRepository().findByCode(domain.getCode());
+        assertThat(foundDomain, is(domain));
+    }
+
+    /**
+     * Finding an existing domain by code for an unsupported language returns this domain.
+     * Its description is localized for the default I18N domain's language.
+     */
+    @Test
+    public void findExistingDomainByCodeWithUnsupportedLanguage() {
+
+        // Get domain fixture with "de-DE" language
+        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag("de-DE"));
+        Domain domain = getTestFixture().newExistingDocument();
+
+        Domain foundDomain = getRepository().findByCode(domain.getCode());
+        assertThat(foundDomain, is(domain));
+    }
+
+    // TODO en-US case for many tests
+    // TODO Other find* tests
 }
