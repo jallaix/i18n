@@ -37,16 +37,6 @@ import static org.junit.Assert.assertThat;
 public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
 
     /**
-     * Domain 3's english US description (for use by find tests)
-     */
-    public static final String DOMAIN3_EN_US_DESCRIPTION = "Test project 2's description (US)";
-
-    /**
-     * Domain 3's french description (for use by find tests)
-     */
-    public static final String DOMAIN3_FR_DESCRIPTION = "Description du projet de test 2";
-
-    /**
      * Spring class rule
      */
     @ClassRule
@@ -138,7 +128,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithExistingSupportedLanguage() {
-        assertFindOne("fr", DOMAIN3_FR_DESCRIPTION);
+        assertFindOne("fr", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
     }
 
     /**
@@ -156,7 +146,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
-        assertFindOne("fr-BE", DOMAIN3_FR_DESCRIPTION);
+        assertFindOne("fr-BE", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
     }
 
     /**
@@ -165,7 +155,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithExistingComplexLanguage() {
-        assertFindOne("en-US", DOMAIN3_EN_US_DESCRIPTION);
+        assertFindOne("en-US", DomainTestFixture.DOMAIN3_EN_US_DESCRIPTION);
     }
 
     /**
@@ -189,7 +179,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
 
     /**
      * Assert that a domain found by identifier matches the expected one.
-     * The domain description must be returned in the default domain's language whatever the provided language tag is.
+     * The domain description is returned in the default domain's language whatever the provided language tag is.
      *
      * @param languageTag Language tag that doesn't involve a matching description in this language
      */
@@ -199,7 +189,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
 
     /**
      * Assert that a domain found by identifier matches the expected one.
-     * The domain description must be returned in a localized language depending on the provided language tag.
+     * The domain description is returned in a localized language depending on the provided language tag.
      *
      * @param languageTag        The language tag that involves a localized description
      * @param descriptionFixture The localized description matching the provided language tag

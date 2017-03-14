@@ -1,12 +1,8 @@
 package info.jallaix.message.dao.interceptor;
 
 import info.jallaix.message.config.DomainHolder;
-import info.jallaix.message.dao.DomainDao;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.Locale;
 
 /**
@@ -21,24 +17,22 @@ import java.util.Locale;
  * </ul>
  * </p>
  */
-@Component
 @NoArgsConstructor
 public class ThreadLocaleHolder {
 
     /**
      * The message domain
      */
-    @Autowired
     private DomainHolder i18nDomainHolder;
 
-    @Autowired
-    private DomainDao domainDao;
 
     /**
-     * Domain's available locales
+     *
+     * @param i18nDomainHolder
      */
-    private Collection<Locale> domainLocales;
-
+    public ThreadLocaleHolder(DomainHolder i18nDomainHolder) {
+        this.i18nDomainHolder = i18nDomainHolder;
+    }
 
     /**
      * Locale used when storing data

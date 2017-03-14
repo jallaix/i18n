@@ -183,6 +183,38 @@ public class DomainDaoChecker {
     }
 
     /**
+     * Initialize all domain descriptions with internationalized messages.
+     *
+     * @param initialList  The initial list of domains
+     * @param descriptions The descriptions by domain identifier
+     * @return The list of internationalized domains
+     */
+    public List<Domain> internationalizeDomains(List<Domain> initialList, final Map<String, String> descriptions) {
+
+        return initialList
+                .stream()
+                .map(d -> internationalizeDomain2(d, descriptions.get(d.getId())))
+                .collect(Collectors.toList());
+
+    }
+
+    /**
+     * Initialize a domain description with an internationalized message.
+     *
+     * @param initial     The initial domain
+     * @param description The description to set
+     * @return The internationalized domain
+     */
+    public Domain internationalizeDomain2(final Domain initial, final String description) {
+
+        // Set the domain description found
+        Domain result = kryo.copy(initial);
+        result.setDescription(description);
+
+        return result;
+    }
+
+    /**
      * Initialize a domain description with an internationalized message.
      *
      * @param initial     The initial domain

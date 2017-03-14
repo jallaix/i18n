@@ -35,21 +35,6 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
 public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
 
     /**
-     * Domain 3's english description (for use by find tests)
-     */
-    public static final String DOMAIN3_EN_DESCRIPTION = "Test project 2's description";
-
-    /**
-     * Domain 3's english US description (for use by find tests)
-     */
-    public static final String DOMAIN3_EN_US_DESCRIPTION = "Test project 2's description (US)";
-
-    /**
-     * Domain 3's french description (for use by find tests)
-     */
-    public static final String DOMAIN3_FR_DESCRIPTION = "Description du projet de test 2";
-
-    /**
      * Spring class rule
      */
     @ClassRule
@@ -100,8 +85,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      */
     public DomainDaoTest() {
         super(
-                DaoTestedMethod.FindAll.class,
-                DaoTestedMethod.FindAllById.class,
                 DaoTestedMethod.FindAllPageable.class,
                 DaoTestedMethod.FindAllSorted.class,
                 DaoTestedMethod.Exist.class,

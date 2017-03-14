@@ -1,6 +1,5 @@
 package info.jallaix.message.bean;
 
-import info.jallaix.message.dao.DomainDaoTest;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 
 import java.lang.reflect.Field;
@@ -12,6 +11,57 @@ import java.util.List;
  * Fixture for domain-related tests.
  */
 public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
+
+    /**
+     * Domain 1's english description
+     */
+    public static final String DOMAIN1_EN_DESCRIPTION = "Internationalized messages";
+
+    /**
+     * Domain 1's english US description
+     */
+    public static final String DOMAIN1_EN_US_DESCRIPTION = "Internationalized messages (US)";
+
+    /**
+     * Domain 1's french description
+     */
+    public static final String DOMAIN1_FR_DESCRIPTION = "Messages internationalisés";
+
+    /**
+     * Domain 2's english description
+     */
+    public static final String DOMAIN2_EN_DESCRIPTION = "Test project 1's description";
+
+    /**
+     * Domain 2's french description
+     */
+    public static final String DOMAIN2_FR_DESCRIPTION = "Description du projet de test 1";
+
+    /**
+     * Domain 3's english description
+     */
+    public static final String DOMAIN3_EN_DESCRIPTION = "Test project 2's description";
+
+    /**
+     * Domain 3's english US description
+     */
+    public static final String DOMAIN3_EN_US_DESCRIPTION = "Test project 2's description (US)";
+
+    /**
+     * Domain 3's french description
+     */
+    public static final String DOMAIN3_FR_DESCRIPTION = "Description du projet de test 2";
+
+    /**
+     * Domain 4's english description
+     */
+    public static final String DOMAIN4_EN_DESCRIPTION = "Test project 3's description";
+
+    /**
+     * Domain 4's french description
+     */
+    public static final String DOMAIN4_FR_DESCRIPTION = "Description du projet de test 3";
+
 
     /**
      * Return a new document for insertion.
@@ -40,7 +90,7 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
      */
     @Override
     public Domain newExistingDocument() {
-        return new Domain("3", "test.project2", DomainDaoTest.DOMAIN3_EN_DESCRIPTION, "fr", Arrays.asList("en", "fr", "es"));
+        return new Domain("3", "test.project2", DOMAIN3_EN_DESCRIPTION, "fr", Arrays.asList("en", "fr", "es"));
     }
 
     /**
@@ -79,22 +129,22 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
         List<Object> storedDocuments = new ArrayList<>(13);
 
         storedDocuments.add(new Domain("1", "i18n.message", Domain.DOMAIN_DESCRIPTION_TYPE, "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "1", "en", "Internationalized messages"));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "1", "en-US", "Internationalized messages (US)"));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "1", "fr", "Messages internationalisés"));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "1", "en", DOMAIN1_EN_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "1", "en-US", DOMAIN1_EN_US_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "1", "fr", DOMAIN1_FR_DESCRIPTION));
 
         storedDocuments.add(new Domain("2", "test.project1", Domain.DOMAIN_DESCRIPTION_TYPE, "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "2", "en", "Test project 1's description"));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "2", "fr", "Description du projet de test 1"));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "2", "en", DOMAIN2_EN_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "2", "fr", DOMAIN2_FR_DESCRIPTION));
 
         storedDocuments.add(new Domain("3", "test.project2", Domain.DOMAIN_DESCRIPTION_TYPE, "fr", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en", DomainDaoTest.DOMAIN3_EN_DESCRIPTION));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en-US", DomainDaoTest.DOMAIN3_EN_US_DESCRIPTION));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "fr", DomainDaoTest.DOMAIN3_FR_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en", DOMAIN3_EN_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "en-US", DOMAIN3_EN_US_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "3", "fr", DOMAIN3_FR_DESCRIPTION));
 
         storedDocuments.add(new Domain("4", "test.project3", Domain.DOMAIN_DESCRIPTION_TYPE, "en", Arrays.asList("en", "fr", "es")));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "4", "en", "Test project 3's description"));
-        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "4", "fr", "Description du projet de test 3"));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "4", "en", DOMAIN4_EN_DESCRIPTION));
+        storedDocuments.add(new EntityMessage(null, "1", Domain.DOMAIN_DESCRIPTION_TYPE, "4", "fr", DOMAIN4_FR_DESCRIPTION));
 
         return storedDocuments;
     }

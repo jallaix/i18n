@@ -3,6 +3,7 @@ package info.jallaix.message.config;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.serializers.CollectionSerializer;
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +42,16 @@ public class ProjectConfiguration {
     @Bean
     public DomainHolder i18nDomainHolder() {
         return new I18nDomainHolder(esOperations);
+    }
+
+    /**
+     * This bean holds locale data linked to the current thread.
+     *
+     * @return The thread locale holder
+     */
+    @Bean
+    public ThreadLocaleHolder threadLocaleHolder() {
+        return new ThreadLocaleHolder(i18nDomainHolder());
     }
 
     /**
