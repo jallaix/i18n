@@ -70,11 +70,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
 
-    /**
-     * Domain testing checks
-     */
-    private DomainDaoChecker domainDaoChecker;
-
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                   Tests lifecycle                                              */
@@ -85,8 +80,6 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      */
     public DomainDaoTest() {
         super(
-                DaoTestedMethod.FindAllPageable.class,
-                DaoTestedMethod.FindAllSorted.class,
                 DaoTestedMethod.Exist.class,
                 DaoTestedMethod.Count.class,
                 DaoTestedMethod.DeleteAll.class,
@@ -100,11 +93,13 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Before
     public void initTest() {
 
-        // Utility object that performs DAO checks
-        domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
-
         // Domain customizer for default DAO tests
-        setCustomizer(new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo));
+        setCustomizer(
+                new DomainDaoTestsCustomizer(
+                        new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
+                        threadLocaleHolder,
+                        getTestFixture(),
+                        kryo));
     }
 
     /**
@@ -126,11 +121,5 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     }
 
 
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                                     Custom tests                                               */
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-
-    // TODO Other find* tests
     // TODO threadLocaleHolder.getOutputLocale() should return a List<LanguageRange> type
 }

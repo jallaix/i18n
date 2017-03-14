@@ -87,7 +87,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Constructor defining the "find one" tests
+     * Constructor defining the "find all by identifier" tests
      */
     public DomainDaoFindAllByIdTest() {
         super(DaoTestedMethod.FindAllById.class);

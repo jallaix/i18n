@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
@@ -37,8 +38,8 @@ import static org.junit.Assert.assertArrayEquals;
 @Import({SpringDataEsTestConfiguration.class, DomainDaoTestConfiguration.class})
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class)
 @EnableAspectJAutoProxy
-@ContextConfiguration(classes = DomainDaoFindAllTest.class)
-public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
+@ContextConfiguration(classes = DomainDaoFindAllPageableTest.class)
+public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<Domain, String, DomainDao> {
 
     /**
      * Spring class rule
@@ -87,10 +88,10 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Constructor defining the "find all" tests
+     * Constructor defining the "find all by page" tests
      */
-    public DomainDaoFindAllTest() {
-        super(DaoTestedMethod.FindAll.class, DaoTestedMethod.FindAllSorted.class);
+    public DomainDaoFindAllPageableTest() {
+        super(DaoTestedMethod.FindAllPageable.class);
     }
 
     /**
@@ -131,187 +132,238 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Finding a list of all existing domains returns an iterable with all these domains.
+     * Finding a list of all existing domains by page returns an iterable with all these domains.
      * Their descriptions are localized for the specified supported language.
      */
     @Test
-    public void findAllWithExistingSupportedLanguage() {
-        assertFindAll("fr", DomainDaoTestUtils.getFrenchDescriptions());
+    public void findAllPageableWithExistingSupportedLanguage() {
+        assertFindAllPageable("fr", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
-     * Finding a sorted list of all existing domains returns an iterable with all these domains.
+     * Finding a sorted list of all existing domains by page returns an iterable with all these domains.
      * Their descriptions are localized for the specified supported language.
      */
     @Test
-    public void findAllSortedWithExistingSupportedLanguage() {
-        assertFindAllSorted("fr", DomainDaoTestUtils.getFrenchDescriptions());
+    public void findAllPageableSortedWithExistingSupportedLanguage() {
+        assertFindAllPageableSorted("fr", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
-     * Finding a list of all existing domains for a missing supported language returns an iterable with all these domains.
+     * Finding a list of all existing domains by page for a missing supported language returns an iterable with all these domains.
      * Their descriptions are localized for the default I18N domain's language.
      */
     @Test
-    public void findAllExistingDomainWithMissingSupportedLanguage() {
-        assertFindAll("es");
+    public void findAllPageableExistingDomainWithMissingSupportedLanguage() {
+        assertFindAllPageable("es");
     }
 
     /**
-     * Finding a sorted list of all existing domains for a missing supported language returns an iterable with all these domains.
+     * Finding a sorted list of all existing domains by page for a missing supported language returns an iterable with all these domains.
      * Their descriptions are localized for the default I18N domain's language.
      */
     @Test
-    public void findAllSortedExistingDomainWithMissingSupportedLanguage() {
-        assertFindAllSorted("es");
+    public void findAllPageableSortedExistingDomainWithMissingSupportedLanguage() {
+        assertFindAllPageableSorted("es");
     }
 
     /**
-     * Finding a list of all existing domains for a missing complex language (with existing messages for the simple language) returns an iterable with all these domains.
+     * Finding a list of all existing domains by page for a missing complex language (with existing messages for the simple language) returns an iterable with all these domains.
      * Their descriptions are localized for the linked simple language.
      */
     @Test
-    public void findAllExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
-        assertFindAll("fr-BE", DomainDaoTestUtils.getFrenchDescriptions());
+    public void findAllPageableExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
+        assertFindAllPageable("fr-BE", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
-     * Finding a sorted list of all existing domains for a missing complex language (with existing messages for the simple language) returns an iterable with all these domains.
+     * Finding a sorted list of all existing domains by page for a missing complex language (with existing messages for the simple language) returns an iterable with all these domains.
      * Their descriptions are localized for the linked simple language.
      */
     @Test
-    public void findAllSortedExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
-        assertFindAllSorted("fr-BE", DomainDaoTestUtils.getFrenchDescriptions());
+    public void findAllPageableSortedExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
+        assertFindAllPageableSorted("fr-BE", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
-     * Finding a list of all existing domains for an existing complex language returns an iterable with all these domains.
+     * Finding a list of all existing domains by page for an existing complex language returns an iterable with all these domains.
      * Their descriptions are localized for the complex language if available, else the linked simple language is used.
      */
     @Test
-    public void findAllExistingDomainWithExistingComplexLanguage() {
-        assertFindAll("en-US", DomainDaoTestUtils.getEnglishUsDescriptions());
+    public void findAllPageableExistingDomainWithExistingComplexLanguage() {
+        assertFindAllPageable("en-US", DomainDaoTestUtils.getEnglishUsDescriptions());
     }
 
     /**
-     * Finding a sorted list of all existing domains for an existing complex language returns an iterable with all these domains.
+     * Finding a list of all existing domains by page for an existing complex language returns an iterable with all these domains.
      * Their descriptions are localized for the complex language if available, else the linked simple language is used.
      */
     @Test
-    public void findAllSortedExistingDomainWithExistingComplexLanguage() {
-        assertFindAllSorted("en-US", DomainDaoTestUtils.getEnglishUsDescriptions());
+    public void findAllPageableSortedExistingDomainWithExistingComplexLanguage() {
+        assertFindAllPageableSorted("en-US", DomainDaoTestUtils.getEnglishUsDescriptions());
     }
 
     /**
-     * Finding a list of all existing domains for a missing complex language (without any existing message for the simple language) returns an iterable with all these domains.
+     * Finding a list of all existing domains by page for a missing complex language (without any existing message for the simple language) returns an iterable with all these domains.
      * Their descriptions are localized for the default I18N domain's language.
      */
     @Test
-    public void findAllExistingDomainWithMissingComplexAndSimpleLanguage() {
-        assertFindAll("es-ES");
+    public void findAllPageableExistingDomainWithMissingComplexAndSimpleLanguage() {
+        assertFindAllPageable("es-ES");
     }
 
     /**
-     * Finding a sorted list of all existing domains for a missing complex language (without any existing message for the simple language) returns an iterable with all these domains.
+     * Finding a sorted list of all existing domains by page for a missing complex language (without any existing message for the simple language) returns an iterable with all these domains.
      * Their descriptions are localized for the default I18N domain's language.
      */
     @Test
-    public void findAllSortedExistingDomainWithMissingComplexAndSimpleLanguage() {
-        assertFindAllSorted("es-ES");
+    public void findAllPageableSortedExistingDomainWithMissingComplexAndSimpleLanguage() {
+        assertFindAllPageableSorted("es-ES");
     }
 
     /**
-     * Finding a list of all existing domains for an unsupported language returns an iterable with all these domains.
+     * Finding a list of all existing domains by page for an unsupported language returns an iterable with all these domains.
      * Their descriptions are localized for the default I18N domain's language.
      */
     @Test
-    public void findAllExistingDomainWithUnsupportedLanguage() {
-        assertFindAll("de-DE");
+    public void findAllPageableExistingDomainWithUnsupportedLanguage() {
+        assertFindAllPageable("de-DE");
     }
 
     /**
-     * Finding a sorted list of all existing domains for an unsupported language returns an iterable with all these domains.
+     * Finding a sorted list of all existing domains by page for an unsupported language returns an iterable with all these domains.
      * Their descriptions are localized for the default I18N domain's language.
      */
     @Test
-    public void findAllSortedExistingDomainWithUnsupportedLanguage() {
-        assertFindAllSorted("de-DE");
+    public void findAllPageableSortedExistingDomainWithUnsupportedLanguage() {
+        assertFindAllPageableSorted("de-DE");
     }
 
 
     /**
-     * Assert that all domains found match the expected ones.
+     * Assert that all domains by page found match the expected ones.
      * The domain descriptions are returned in a localized language depending on the provided language tag.
      * The expected domain descriptions are localized for the default I18N language.
      *
      * @param languageTag The language tag that involves a localized description
      */
-    private void assertFindAll(String languageTag) {
-        assertFindAll(languageTag, DomainDaoTestUtils.getEnglishDescriptions());
+    private void assertFindAllPageable(String languageTag) {
+        assertFindAllPageable(languageTag, DomainDaoTestUtils.getEnglishDescriptions());
     }
 
     /**
-     * Assert that all domains found match the expected ones.
+     * Assert that all domains by page found match the expected ones.
      * The domain descriptions must be returned in a localized language depending on the provided language tag.
      *
      * @param languageTag         The language tag that involves a localized description
      * @param descriptionsFixture The localized descriptions matching the provided language tag
      */
-    private void assertFindAll(String languageTag, Map<String, String> descriptionsFixture) {
+    private void assertFindAllPageable(String languageTag, Map<String, String> descriptionsFixture) {
 
+        // Define the page parameters
+        long documentsCount = testClientOperations.countDocuments(getDocumentMetadata());
+        org.springframework.util.Assert.isTrue(documentsCount > 0, "No document loaded");
+        int pageSize = getTestFixture().getPageSize();
+        org.springframework.util.Assert.isTrue(pageSize > 0, "Page size must be positive");
+        int nbPages = (int) documentsCount / pageSize + (documentsCount % pageSize == 0 ? 0 : 1);
+
+        // Get typed documents from the index for the first page
         // Get all domains from the index with specified descriptions
-        final List<Domain> initialList = domainDaoChecker.internationalizeDomains(
+        List<Domain> initialList = domainDaoChecker.internationalizeDomains(
                 testClientOperations.findAllDocumentsPaged(
                         getDocumentMetadata(),
                         0,
-                        (int) this.getTestDocumentsLoader().getLoadedDocumentCount()),
+                        getTestFixture().getPageSize()),
                 descriptionsFixture);
 
         // Repository search for the specified language
         threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
-        final List<Domain> foundList =
+        List<Domain> foundList =
                 StreamSupport.stream(
-                        getRepository().findAll().spliterator(), false)
+                        getRepository().findAll(new PageRequest(0, pageSize)).spliterator(), false)
+                        .collect(Collectors.toList());
+
+        assertArrayEquals(initialList.toArray(), foundList.toArray());
+
+        // Get typed documents from the index for the last page
+        initialList = domainDaoChecker.internationalizeDomains(
+                testClientOperations.findAllDocumentsPaged(
+                        getDocumentMetadata(),
+                        nbPages - 1,
+                        getTestFixture().getPageSize()),
+                descriptionsFixture);
+
+        // Repository search for the specified language
+        foundList.clear();
+        foundList =
+                StreamSupport.stream(
+                        getRepository().findAll(new PageRequest(nbPages - 1, pageSize)).spliterator(), false)
                         .collect(Collectors.toList());
 
         assertArrayEquals(initialList.toArray(), foundList.toArray());
     }
 
     /**
-     * Assert that all domains found match the expected ones.
+     * Assert that all sorted domains by page found match the expected ones.
      * The domain descriptions are returned in a localized language depending on the provided language tag.
      * The expected domain descriptions are localized for the default I18N language.
      *
      * @param languageTag The language tag that involves a localized description
      */
-    private void assertFindAllSorted(String languageTag) {
-        assertFindAllSorted(languageTag, DomainDaoTestUtils.getEnglishDescriptions());
+    private void assertFindAllPageableSorted(String languageTag) {
+        assertFindAllPageableSorted(languageTag, DomainDaoTestUtils.getEnglishDescriptions());
     }
 
     /**
-     * Assert that all domains found match the expected ones.
+     * Assert that all sorted domains by page found match the expected ones.
      * The domain descriptions must be returned in a localized language depending on the provided language tag.
      *
      * @param languageTag         The language tag that involves a localized description
      * @param descriptionsFixture The localized descriptions matching the provided language tag
      */
-    private void assertFindAllSorted(String languageTag, Map<String, String> descriptionsFixture) {
+    private void assertFindAllPageableSorted(String languageTag, Map<String, String> descriptionsFixture) {
 
+        // Define the page parameters
+        long documentsCount = testClientOperations.countDocuments(getDocumentMetadata());
+        org.springframework.util.Assert.isTrue(documentsCount > 0, "No document loaded");
+        int pageSize = getTestFixture().getPageSize();
+        org.springframework.util.Assert.isTrue(pageSize > 0, "Page size must be positive");
+        int nbPages = (int) documentsCount / pageSize + (documentsCount % pageSize == 0 ? 0 : 1);
+
+        // Get typed documents from the index for the first page
         // Get all domains from the index with specified descriptions
-        final List<Domain> initialList = domainDaoChecker.internationalizeDomains(
+        List<Domain> initialList = domainDaoChecker.internationalizeDomains(
                 testClientOperations.findAllDocumentsPagedSorted(
                         getDocumentMetadata(),
                         getTestFixture().getSortField(),
                         0,
-                        (int) this.getTestDocumentsLoader().getLoadedDocumentCount()),
+                        getTestFixture().getPageSize()),
                 descriptionsFixture);
 
         // Repository search for the specified language
         threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
         Sort sorting = new Sort(Sort.Direction.DESC, getTestFixture().getSortField().getName());
-        final List<Domain> foundList =
+        List<Domain> foundList =
                 StreamSupport.stream(
-                        getRepository().findAll(sorting).spliterator(), false)
+                        getRepository().findAll(new PageRequest(0, pageSize, sorting)).spliterator(), false)
+                        .collect(Collectors.toList());
+
+        assertArrayEquals(initialList.toArray(), foundList.toArray());
+
+        // Get typed documents from the index for the last page
+        initialList = domainDaoChecker.internationalizeDomains(
+                testClientOperations.findAllDocumentsPagedSorted(
+                        getDocumentMetadata(),
+                        getTestFixture().getSortField(),
+                        nbPages - 1,
+                        getTestFixture().getPageSize()),
+                descriptionsFixture);
+
+        // Repository search for the specified language
+        foundList.clear();
+        foundList =
+                StreamSupport.stream(
+                        getRepository().findAll(new PageRequest(nbPages - 1, pageSize, sorting)).spliterator(), false)
                         .collect(Collectors.toList());
 
         assertArrayEquals(initialList.toArray(), foundList.toArray());
