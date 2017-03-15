@@ -137,7 +137,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableWithExistingSupportedLanguage() {
-        assertFindAllPageable("fr", DomainDaoTestUtils.getFrenchDescriptions());
+        assertFindAllPageable("fr;q=1", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
@@ -146,7 +146,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableSortedWithExistingSupportedLanguage() {
-        assertFindAllPageableSorted("fr", DomainDaoTestUtils.getFrenchDescriptions());
+        assertFindAllPageableSorted("fr;q=1", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
@@ -173,7 +173,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
-        assertFindAllPageable("fr-BE", DomainDaoTestUtils.getFrenchDescriptions());
+        assertFindAllPageable("fr;q=0.5,fr-BE;q=1,en;q=0.1", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
@@ -182,7 +182,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableSortedExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
-        assertFindAllPageableSorted("fr-BE", DomainDaoTestUtils.getFrenchDescriptions());
+        assertFindAllPageableSorted("fr;q=0.5,fr-BE;q=1,en;q=0.1", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
@@ -191,7 +191,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableExistingDomainWithExistingComplexLanguage() {
-        assertFindAllPageable("en-US", DomainDaoTestUtils.getEnglishUsDescriptions());
+        assertFindAllPageable("en;q=0.5,en-US;q=1", DomainDaoTestUtils.getEnglishUsDescriptions());
     }
 
     /**
@@ -200,7 +200,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableSortedExistingDomainWithExistingComplexLanguage() {
-        assertFindAllPageableSorted("en-US", DomainDaoTestUtils.getEnglishUsDescriptions());
+        assertFindAllPageableSorted("en;q=0.5,en-US;q=1", DomainDaoTestUtils.getEnglishUsDescriptions());
     }
 
     /**
@@ -209,7 +209,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableExistingDomainWithMissingComplexAndSimpleLanguage() {
-        assertFindAllPageable("es-ES");
+        assertFindAllPageable("es-ES,es");
     }
 
     /**
@@ -218,7 +218,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableSortedExistingDomainWithMissingComplexAndSimpleLanguage() {
-        assertFindAllPageableSorted("es-ES");
+        assertFindAllPageableSorted("es-ES,es");
     }
 
     /**
@@ -227,7 +227,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
      */
     @Test
     public void findAllPageableExistingDomainWithUnsupportedLanguage() {
-        assertFindAllPageable("de-DE");
+        assertFindAllPageable("de-DE,de");
     }
 
     /**
@@ -277,7 +277,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
                 descriptionsFixture);
 
         // Repository search for the specified language
-        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
+        threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
         List<Domain> foundList =
                 StreamSupport.stream(
                         getRepository().findAll(new PageRequest(0, pageSize)).spliterator(), false)
@@ -341,7 +341,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
                 descriptionsFixture);
 
         // Repository search for the specified language
-        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
+        threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
         Sort sorting = new Sort(Sort.Direction.DESC, getTestFixture().getSortField().getName());
         List<Domain> foundList =
                 StreamSupport.stream(

@@ -206,14 +206,15 @@ public class DomainDaoInterceptor {
                 .collect(Collectors.toList());
 
         // Get the best matching language tag
-        // TODO threadLocaleHolder.getOutputLocale() should return a List<LanguageRange> type
-        final Locale.LanguageRange languageRange = new Locale.LanguageRange(threadLocaleHolder.getOutputLocale().toLanguageTag());
-        final Locale.LanguageRange defaultLanguageRange = new Locale.LanguageRange(i18nDomainHolder.getDomain().getDefaultLanguageTag());
-        final Locale lookupTag = Locale.lookup(Arrays.asList(languageRange, defaultLanguageRange), existingLocales);
+        final Locale lookupLocale = Locale.lookup(threadLocaleHolder.getOutputLocales(), existingLocales);
+        final String lookupTag =
+                (lookupLocale == null) ?
+                        i18nDomainHolder.getDomain().getDefaultLanguageTag() :
+                        lookupLocale.toLanguageTag();
 
         // Set the domain description for the lookup language tag
         final Optional<EntityMessage> message = messages.stream()
-                .filter(m -> lookupTag.equals(Locale.forLanguageTag(m.getLanguageTag())))
+                .filter(m -> lookupTag.equals(m.getLanguageTag()))
                 .findFirst();
         foundDomain.setDescription(message.isPresent() ? message.get().getContent() : null);
     }

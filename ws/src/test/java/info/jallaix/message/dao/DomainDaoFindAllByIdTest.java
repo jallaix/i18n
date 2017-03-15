@@ -21,7 +21,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -136,15 +135,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
      */
     @Test
     public void findAllByIdWithExistingSupportedLanguage() {
-
-        // Expected descriptions for all domains
-        Map<String, String> descriptions = new HashMap<>();
-        descriptions.put("1", DomainTestFixture.DOMAIN1_FR_DESCRIPTION);
-        descriptions.put("2", DomainTestFixture.DOMAIN2_FR_DESCRIPTION);
-        descriptions.put("3", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
-        descriptions.put("4", DomainTestFixture.DOMAIN4_FR_DESCRIPTION);
-
-        assertFindAllById("fr", descriptions);
+        assertFindAllById("fr;q=1", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
@@ -162,15 +153,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
      */
     @Test
     public void findAllByIdExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
-
-        // Expected descriptions for all domains
-        Map<String, String> descriptions = new HashMap<>();
-        descriptions.put("1", DomainTestFixture.DOMAIN1_FR_DESCRIPTION);
-        descriptions.put("2", DomainTestFixture.DOMAIN2_FR_DESCRIPTION);
-        descriptions.put("3", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
-        descriptions.put("4", DomainTestFixture.DOMAIN4_FR_DESCRIPTION);
-
-        assertFindAllById("fr-BE", descriptions);
+        assertFindAllById("fr;q=0.5,fr-BE;q=1,en;q=0.1", DomainDaoTestUtils.getFrenchDescriptions());
     }
 
     /**
@@ -179,15 +162,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
      */
     @Test
     public void findAllByIdExistingDomainWithExistingComplexLanguage() {
-
-        // Expected descriptions for all domains
-        Map<String, String> descriptions = new HashMap<>();
-        descriptions.put("1", DomainTestFixture.DOMAIN1_EN_US_DESCRIPTION);
-        descriptions.put("2", DomainTestFixture.DOMAIN2_EN_DESCRIPTION);
-        descriptions.put("3", DomainTestFixture.DOMAIN3_EN_US_DESCRIPTION);
-        descriptions.put("4", DomainTestFixture.DOMAIN4_EN_DESCRIPTION);
-
-        assertFindAllById("en-US", descriptions);
+        assertFindAllById("en;q=0.5,en-US;q=1", DomainDaoTestUtils.getEnglishUsDescriptions());
     }
 
     /**
@@ -196,7 +171,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
      */
     @Test
     public void findAllByIdExistingDomainWithMissingComplexAndSimpleLanguage() {
-        assertFindAllById("es-ES");
+        assertFindAllById("es-ES,es");
     }
 
     /**
@@ -205,7 +180,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
      */
     @Test
     public void findAllByIdExistingDomainWithUnsupportedLanguage() {
-        assertFindAllById("de-DE");
+        assertFindAllById("de-DE,de");
     }
 
 
@@ -217,15 +192,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
      * @param languageTag The language tag that involves a localized description
      */
     private void assertFindAllById(String languageTag) {
-
-        // Expected descriptions for all domains
-        Map<String, String> descriptions = new HashMap<>();
-        descriptions.put("1", DomainTestFixture.DOMAIN1_EN_DESCRIPTION);
-        descriptions.put("2", DomainTestFixture.DOMAIN2_EN_DESCRIPTION);
-        descriptions.put("3", DomainTestFixture.DOMAIN3_EN_DESCRIPTION);
-        descriptions.put("4", DomainTestFixture.DOMAIN4_EN_DESCRIPTION);
-
-        assertFindAllById(languageTag, descriptions);
+        assertFindAllById(languageTag, DomainDaoTestUtils.getEnglishDescriptions());
     }
 
     /**
@@ -246,7 +213,7 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
                 descriptionsFixture);
 
         // Repository search for the specified language
-        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
+        threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
         final List<String> initialKeys = initialList.stream()
                 .map(this::getIdFieldValue)
                 .collect(Collectors.toList());

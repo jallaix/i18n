@@ -159,7 +159,7 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
      */
     @Test
     public void findExistingDomainByCodeWithExistingSupportedLanguage() {
-        assertFindDomainByCode("fr", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
+        assertFindDomainByCode("fr;q=1", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
     }
 
     /**
@@ -177,7 +177,7 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
      */
     @Test
     public void findExistingDomainByCodeWithMissingComplexLanguageButExistingSimpleLanguage() {
-        assertFindDomainByCode("fr-BE", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
+        assertFindDomainByCode("fr;q=0.5,fr-BE;q=1,en;q=0.1", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
     }
 
     /**
@@ -186,7 +186,7 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
      */
     @Test
     public void findExistingDomainByCodeWithExistingComplexLanguage() {
-        assertFindDomainByCode("en-US", DomainTestFixture.DOMAIN3_EN_US_DESCRIPTION);
+        assertFindDomainByCode("en;q=0.5,en-US;q=1", DomainTestFixture.DOMAIN3_EN_US_DESCRIPTION);
     }
 
     /**
@@ -195,7 +195,7 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
      */
     @Test
     public void findExistingDomainByCodeWithMissingComplexAndSimpleLanguage() {
-        assertFindDomainByCode("es-ES");
+        assertFindDomainByCode("es-ES,es");
     }
 
     /**
@@ -204,14 +204,14 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
      */
     @Test
     public void findExistingDomainByCodeWithUnsupportedLanguage() {
-        assertFindDomainByCode("de-DE");
+        assertFindDomainByCode("de-DE,de");
     }
 
     /**
      * Assert that a domain found by code matches the expected one.
      */
     private void assertFindDomainByCode() {
-        assertFindDomainByCode(threadLocaleHolder.getOutputLocale().toLanguageTag());
+        assertFindDomainByCode(null);
     }
 
 
@@ -219,7 +219,7 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
      * Assert that a domain found by code matches the expected one.
      * The domain description is returned in the default domain's language whatever the provided language tag is.
      *
-     * @param languageTag Language tag that doesn't involve a matching description in this language
+     * @param languageTag Language tag that involves a default language-localized description
      */
     private void assertFindDomainByCode(String languageTag) {
         assertFindDomainByCode(languageTag, null);
@@ -235,7 +235,8 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
     private void assertFindDomainByCode(String languageTag, String descriptionFixture) {
 
         // Get domain fixture for the language tag
-        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
+        if (languageTag != null)
+            threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
         Domain domain = getTestFixture().newExistingDocument();
         if (descriptionFixture != null)
             domain.setDescription(descriptionFixture);

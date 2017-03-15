@@ -2,7 +2,11 @@ package info.jallaix.message.dao.interceptor;
 
 import info.jallaix.message.config.DomainHolder;
 import lombok.NoArgsConstructor;
+import org.apache.commons.collections.CollectionUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -25,15 +29,6 @@ public class ThreadLocaleHolder {
      */
     private DomainHolder i18nDomainHolder;
 
-
-    /**
-     *
-     * @param i18nDomainHolder
-     */
-    public ThreadLocaleHolder(DomainHolder i18nDomainHolder) {
-        this.i18nDomainHolder = i18nDomainHolder;
-    }
-
     /**
      * Locale used when storing data
      */
@@ -42,7 +37,17 @@ public class ThreadLocaleHolder {
     /**
      * Locale used when getting data
      */
-    private ThreadLocal<Locale> outputLocale = new ThreadLocal<>();
+    private ThreadLocal<List<Locale.LanguageRange>> outputLocales = new ThreadLocal<>();
+
+
+    /**
+     * Constructor with I18N domain holder
+     *
+     * @param i18nDomainHolder The I18N domain holder
+     */
+    public ThreadLocaleHolder(DomainHolder i18nDomainHolder) {
+        this.i18nDomainHolder = i18nDomainHolder;
+    }
 
 
     /**
@@ -55,7 +60,7 @@ public class ThreadLocaleHolder {
     }
 
     /**
-     * Get the input locale from a thread variable
+     * Get the input locale from a thread variable.
      *
      * @return The input locale
      */
@@ -64,21 +69,61 @@ public class ThreadLocaleHolder {
     }
 
     /**
-     * Set the output locale into a thread variable
+     * Set the output locale into a thread variable.
      *
      * @param outputLocale The output locale to set
      */
     public void setOutputLocale(Locale outputLocale) {
-        this.outputLocale.set(outputLocale);
+
+        List<Locale.LanguageRange> languageRanges = this.outputLocales.get();
+
+        // Create language ranges if missing, else clear the list
+        if (languageRanges == null) {
+            languageRanges = new ArrayList<>(1);
+            this.outputLocales.set(languageRanges);
+        } else
+            languageRanges.clear();
+
+        // Add the single language range
+        languageRanges.add(new Locale.LanguageRange(outputLocale.toLanguageTag()));
     }
 
     /**
-     * Get the output locale from a thread variable
+     * Set the output locales into a thread variable.
      *
-     * @return The output locale
+     * @param outputLocales The output locales to set
      */
-    public Locale getOutputLocale() {
-        return outputLocale.get() == null ? getDefaultLocale() : outputLocale.get();
+    public void setOutputLocales(List<Locale.LanguageRange> outputLocales) {
+
+        List<Locale.LanguageRange> languageRanges = this.outputLocales.get();
+
+        // Create language ranges if missing, else clear the list
+        if (languageRanges == null) {
+            languageRanges = new ArrayList<>(outputLocales.size());
+            this.outputLocales.set(languageRanges);
+        } else
+            languageRanges.clear();
+
+        // Add the language ranges
+        languageRanges.addAll(outputLocales);
+    }
+
+    /**
+     * Get the output locales from a thread variable.
+     *
+     * @return The output locales
+     */
+    public List<Locale.LanguageRange> getOutputLocales() {
+
+        List<Locale.LanguageRange> languageRanges = this.outputLocales.get();
+
+        if (CollectionUtils.isEmpty(languageRanges))
+            return new ArrayList<>(
+                    Collections.singletonList(
+                            new Locale.LanguageRange(
+                                    getDefaultLocale().toLanguageTag())));
+        else
+            return languageRanges;
     }
 
     /**
@@ -87,7 +132,7 @@ public class ThreadLocaleHolder {
     public void clear() {
 
         inputLocale.set(null);
-        outputLocale.set(null);
+        outputLocales.set(null);
     }
 
     /**

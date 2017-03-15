@@ -128,7 +128,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithExistingSupportedLanguage() {
-        assertFindOne("fr", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
+        assertFindOne("fr;q=1", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
     }
 
     /**
@@ -146,7 +146,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
-        assertFindOne("fr-BE", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
+        assertFindOne("fr;q=0.5,fr-BE;q=1,en;q=0.1", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
     }
 
     /**
@@ -155,7 +155,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithExistingComplexLanguage() {
-        assertFindOne("en-US", DomainTestFixture.DOMAIN3_EN_US_DESCRIPTION);
+        assertFindOne("en;q=0.5,en-US;q=1", DomainTestFixture.DOMAIN3_EN_US_DESCRIPTION);
     }
 
     /**
@@ -164,7 +164,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithMissingComplexAndSimpleLanguage() {
-        assertFindOne("es-ES");
+        assertFindOne("es-ES,es");
     }
 
     /**
@@ -173,7 +173,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     @Test
     public void findOneExistingDomainWithUnsupportedLanguage() {
-        assertFindOne("de-DE");
+        assertFindOne("de-DE,de");
     }
 
 
@@ -197,7 +197,7 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
     private void assertFindOne(String languageTag, String descriptionFixture) {
 
         // Get domain fixture for the language tag
-        threadLocaleHolder.setOutputLocale(Locale.forLanguageTag(languageTag));
+        threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
         Domain domain = getTestFixture().newExistingDocument();
         if (descriptionFixture != null)
             domain.setDescription(descriptionFixture);
