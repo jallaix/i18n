@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.EntityMessage;
+import info.jallaix.message.dao.impl.EntityMessageDaoImpl;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -499,23 +500,12 @@ public class DomainDaoInterceptor {
      */
     private EntityMessage findMessage(final String domainId, final String languageTag) {
 
-        final List<EntityMessage> messages = esOperations.queryForList(
-                new NativeSearchQueryBuilder()
-                        .withQuery(
-                                QueryBuilders.constantScoreQuery(
-                                        QueryBuilders.boolQuery()
-                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_DOMAIN_ID.getName(), i18nDomainHolder.getDomain().getId()))
-                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_TYPE.getName(), Domain.DOMAIN_DESCRIPTION_TYPE))
-                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_ENTITY_ID.getName(), domainId))
-                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_LANGUAGE_TAG.getName(), languageTag))))
-                        .build(), EntityMessage.class);
-
-        if (messages.isEmpty())
-            return null;
-        else if (messages.size() > 1)
-            throw new RuntimeException("At most one message should be found given the criteria.");
-        else
-            return messages.get(0);
+        return new EntityMessageDaoImpl(esOperations).findOne(
+                i18nDomainHolder.getDomain().getId(),
+                Domain.DOMAIN_DESCRIPTION_TYPE,
+                domainId,
+                languageTag
+        );
     }
 
     /**

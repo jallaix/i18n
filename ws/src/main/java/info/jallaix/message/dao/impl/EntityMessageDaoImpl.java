@@ -1,15 +1,15 @@
 package info.jallaix.message.dao.impl;
 
-import info.jallaix.message.dao.EntityMessageDaoCustom;
-import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.EntityMessage;
+import info.jallaix.message.dao.EntityMessageDaoCustom;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
-import org.springframework.data.elasticsearch.core.query.SearchQuery;
+
+import java.util.List;
 
 import static org.elasticsearch.index.query.FilterBuilders.boolFilter;
 import static org.elasticsearch.index.query.FilterBuilders.termFilter;
@@ -26,18 +26,53 @@ public class EntityMessageDaoImpl implements EntityMessageDaoCustom {
     @Autowired
     private ElasticsearchOperations operations;
 
+
     /**
-     * Indicate if a language is used in any message.
+     * Empty constructor
+     */
+    public EntityMessageDaoImpl() {
+    }
+
+    /**
+     * Constructor with operations
      *
-     * @param languageId The language identifier
-     * @return {@code true} if the language is used, else {@code false}
+     * @param operations Elasticsearch operations
+     */
+    public EntityMessageDaoImpl(ElasticsearchOperations operations) {
+        this.operations = operations;
+    }
+
+
+    /**
+     * Find a message for the specified arguments.
+     *
+     * @param domainId    Domain identifier to filter messages
+     * @param type        Type to filter messages
+     * @param entityId    Entity identifier to filter messages
+     * @param languageTag Language tag to filter messages
+     * @return The matched message or {@code null}
      */
     @Override
-    public boolean isLanguageUsed(String languageId) {
+    public EntityMessage findOne(final String domainId, final String type, final String entityId, final String languageTag) {
 
-        QueryBuilder queryBuilder = boolQuery().must(matchQuery("languageTag", languageId));
-        SearchQuery query = new NativeSearchQuery(queryBuilder);
-        return operations.count(query, Domain.class) > 0;
+        // Define the filter
+        final List<EntityMessage> messages = operations.queryForList(
+                new NativeSearchQueryBuilder()
+                        .withQuery(
+                                QueryBuilders.constantScoreQuery(
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_DOMAIN_ID.getName(), domainId))
+                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_TYPE.getName(), type))
+                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_ENTITY_ID.getName(), entityId))
+                                                .must(QueryBuilders.termQuery(EntityMessage.FIELD_LANGUAGE_TAG.getName(), languageTag))))
+                        .build(), EntityMessage.class);
+
+        if (messages.isEmpty())
+            return null;
+        else if (messages.size() > 1)
+            throw new RuntimeException("At most one message should be found given the criteria.");
+        else
+            return messages.get(0);
     }
 
     /**

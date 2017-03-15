@@ -74,7 +74,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
         String languageTag = savedDomain.getDefaultLanguageTag();
         String messageType = savedDomain.getDescription();
 
-        EntityMessage message = entityMessageDao.findByDomainIdAndTypeAndEntityIdAndLanguageTag(messageDomain.getId(), messageType, savedDomain.getId(), languageTag);
+        EntityMessage message = entityMessageDao.findOne(messageDomain.getId(), messageType, savedDomain.getId(), languageTag);
         assertThat(message, is(notNullValue()));
     }
 }

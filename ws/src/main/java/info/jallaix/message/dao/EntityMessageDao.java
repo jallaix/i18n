@@ -18,13 +18,13 @@ public interface EntityMessageDao extends ElasticsearchRepository<EntityMessage,
      * @param domainCode The domain code that the message must match
      * @return The message found
      */
-    @SuppressWarnings("unused")
-    EntityMessage findByDomainIdAndTypeAndEntityIdAndLanguageTag(String domainId, String type, String entityId, String languageTag);
+    /*@SuppressWarnings("unused")
+    EntityMessage findByDomainIdAndTypeAndEntityIdAndLanguageTag(String domainId, String type, String entityId, String languageTag);*/
 
     /**
      * Find all messages that belong to a domain.
      *
-     * @param domainCode The domain code that the messages must match
+     * @param domainId The domain identifier the messages must match
      * @return The collection of messages that belong to the domain
      */
     @SuppressWarnings("unused")
