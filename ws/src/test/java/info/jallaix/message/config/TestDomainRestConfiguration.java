@@ -5,6 +5,7 @@ import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.RestElasticsearchRepositoryFactoryBean;
 import info.jallaix.message.service.DomainController;
 import info.jallaix.message.service.GenericExceptionHandler;
+import info.jallaix.message.service.hateoas.DomainsResourceProcessor;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -12,9 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
-import org.springframework.hateoas.EntityLinks;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.data.rest.webmvc.RepositorySearchesResource;
+import org.springframework.hateoas.*;
 
 /**
  * Configuration for testing the Domain repository with REST.
@@ -32,16 +32,24 @@ import org.springframework.hateoas.Resources;
 public class TestDomainRestConfiguration extends RepositoryRestConfiguration {
 
     @Bean
-    ResourceProcessor<Resources<Domain>> getResources() {
-        return new ResourceProcessor<Resources<Domain>>() {
+    ResourceProcessor<RepositorySearchesResource> domainSearchResourceProcessor() {
+
+        return new ResourceProcessor<RepositorySearchesResource>() {
 
             @Autowired
             private EntityLinks entityLinks;
 
             @Override
-            public Resources<Domain> process(Resources<Domain> domains) {
-                domains.add(entityLinks.linkFor(Domain.class).slash("/search").withRel("self"));
-                return domains;
+            public RepositorySearchesResource process(RepositorySearchesResource domain) {
+
+                if(Domain.class.equals(domain.getDomainType())) {
+
+                    final String search = domain.getId().getHref();
+                    final Link customLink = entityLinks.linkForSingleResource(Domain.class, domain.getId()).slash("search/findByCode{?code}").withRel("findByCode");
+                    domain.add(customLink);
+                }
+
+                return domain;
             }
         };
     }

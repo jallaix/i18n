@@ -1,6 +1,0 @@
-{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "1" } }
-{ "code" : "project1", "description" : "project1.description", "defaultLanguageTag" : "en-US", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
-{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "2" } }
-{ "code" : "project2", "description" : "project2.description", "defaultLanguageTag" : "fr-FR", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }
-{ "create" : { "_index" : "message", "_type" : "domain", "_id" : "3" } }
-{ "code" : "project3", "description" : "project3.description", "defaultLanguageTag" : "en-US", "availableLanguageTags" : [ "en-US", "fr-FR", "es-ES" ] }

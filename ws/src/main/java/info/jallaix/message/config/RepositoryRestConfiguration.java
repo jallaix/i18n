@@ -1,7 +1,8 @@
 package info.jallaix.message.config;
 
 import info.jallaix.message.bean.Domain;
-import info.jallaix.message.service.DomainResourceAssembler;
+import info.jallaix.message.service.hateoas.DomainResourceAssembler;
+import info.jallaix.message.service.hateoas.DomainsResourceProcessor;
 import info.jallaix.message.service.validator.DomainValidatorOnCreate;
 import info.jallaix.message.service.validator.DomainValidatorOnUpdate;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +11,7 @@ import org.springframework.data.rest.core.event.ValidatingRepositoryEventListene
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.Resources;
 import org.springframework.validation.Validator;
 
 /**
@@ -28,6 +30,15 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
 
         validatingRepositoryEventListener.addValidator("beforeCreate", domainValidatorOnCreate());
         validatingRepositoryEventListener.addValidator("beforeSave", domainValidatorOnUpdate());
+    }
+
+    /**
+     * Define a resource processor that adds a {@code search} HATEOAS link to the {@code domains} resource.
+     * @return A resource processor
+     */
+    @Bean
+    public ResourceProcessor<Resources<Resource<Domain>>> domainsResourceProcessor() {
+        return new DomainsResourceProcessor();
     }
 
     /**

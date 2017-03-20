@@ -2,22 +2,23 @@ package info.jallaix.message.service;
 
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.dao.DomainDao;
+import info.jallaix.message.service.hateoas.DomainResourceAssembler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.core.event.BeforeCreateEvent;
 import org.springframework.data.rest.core.event.BeforeSaveEvent;
 import org.springframework.data.rest.core.event.ValidatingRepositoryEventListener;
 import org.springframework.data.rest.webmvc.RepositoryRestController;
-import org.springframework.data.rest.webmvc.RepositorySearchesResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * <p/>
@@ -29,7 +30,7 @@ import org.springframework.web.bind.annotation.*;
  * It also overrides the PUT operation for the {@link Domain} entity so that it throws a {@code 404 Bad Request} HTTP error when trying to create a new {@link Domain}.
  */
 @RepositoryRestController
-public class DomainController implements ResourceProcessor<RepositorySearchesResource> {
+public class DomainController {
 
     /**
      * DAO to perform database operations with the Domain entity
@@ -116,10 +117,10 @@ public class DomainController implements ResourceProcessor<RepositorySearchesRes
      * @param code The domain code
      * @return An HTTP response with a domain resource
      */
-    @RequestMapping(value = "findByCode", method = RequestMethod.GET)
+    @RequestMapping(value = "/domains/search/findByCode?{code}", method = RequestMethod.GET)
     public
     @ResponseBody
-    ResponseEntity<Resource> findByCode(@RequestParam String code) {
+    ResponseEntity<Resource> findByCode(@PathVariable String code) {
 
         Domain domain = repository.findByCode(code);
 
@@ -127,14 +128,5 @@ public class DomainController implements ResourceProcessor<RepositorySearchesRes
                 resourceAssembler.toResource(
                         repository.findByCode(code)),
                 HttpStatus.OK);
-    }
-
-    @Override
-    public RepositorySearchesResource process(RepositorySearchesResource repositorySearchesResource) {
-
-        final String search = repositorySearchesResource.getId().getHref();
-        final Link customLink = new Link(search + "/findByCode{?code}").withRel("findByCode");
-        repositorySearchesResource.add(customLink);
-        return repositorySearchesResource;
     }
 }

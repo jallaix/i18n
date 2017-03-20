@@ -1,6 +1,7 @@
-package info.jallaix.message.service;
+package info.jallaix.message.service.hateoas;
 
 import info.jallaix.message.bean.Domain;
+import info.jallaix.message.service.DomainController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityLinks;
 import org.springframework.hateoas.LinkBuilder;
