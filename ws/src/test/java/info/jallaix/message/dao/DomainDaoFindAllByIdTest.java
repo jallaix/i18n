@@ -3,10 +3,9 @@ package info.jallaix.message.dao;
 import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.DomainTestFixture;
-import info.jallaix.message.config.DomainDaoTestConfiguration;
 import info.jallaix.message.config.DomainHolder;
+import info.jallaix.message.config.TestDomainDaoConfiguration;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
-import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
 import info.jallaix.spring.data.es.test.testcase.DaoTestedMethod;
@@ -33,7 +32,7 @@ import static org.junit.Assert.assertArrayEquals;
  * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
  */
 @Configuration
-@Import({SpringDataEsTestConfiguration.class, DomainDaoTestConfiguration.class})
+@Import(TestDomainDaoConfiguration.class)
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class)
 @EnableAspectJAutoProxy
 @ContextConfiguration(classes = DomainDaoFindAllByIdTest.class)

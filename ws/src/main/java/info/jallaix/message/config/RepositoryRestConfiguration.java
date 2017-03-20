@@ -1,33 +1,22 @@
 package info.jallaix.message.config;
 
-import info.jallaix.message.dao.DomainDao;
-import info.jallaix.message.dao.EntityMessageDao;
 import info.jallaix.message.bean.Domain;
+import info.jallaix.message.service.DomainResourceAssembler;
 import info.jallaix.message.service.validator.DomainValidatorOnCreate;
 import info.jallaix.message.service.validator.DomainValidatorOnUpdate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.core.event.ValidatingRepositoryEventListener;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.validation.Validator;
 
 /**
  * Repository REST configuration
  */
 @Configuration
 public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter {
-
-    @Autowired
-    private DomainDao domainDao;
-    @Autowired
-    private EntityMessageDao entityMessageDao;
-
-    @Autowired
-    private DomainValidatorOnCreate domainValidatorOnCreate;
-    @Autowired
-    private DomainValidatorOnUpdate domainValidatorOnUpdate;
 
     /**
      * Configure validators for POST, PUT and DELETE requests
@@ -37,8 +26,8 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
     @Override
     public void configureValidatingRepositoryEventListener(ValidatingRepositoryEventListener validatingRepositoryEventListener) {
 
-        validatingRepositoryEventListener.addValidator("beforeCreate", domainValidatorOnCreate);
-        validatingRepositoryEventListener.addValidator("beforeSave", domainValidatorOnUpdate);
+        validatingRepositoryEventListener.addValidator("beforeCreate", domainValidatorOnCreate());
+        validatingRepositoryEventListener.addValidator("beforeSave", domainValidatorOnUpdate());
     }
 
     /**
@@ -59,6 +48,19 @@ public class RepositoryRestConfiguration extends RepositoryRestConfigurerAdapter
             }
         };
     }
+
     @Bean
-    public String domain() { return "message"; }
+    public Validator domainValidatorOnCreate() {
+        return new DomainValidatorOnCreate();
+    }
+
+    @Bean
+    public Validator domainValidatorOnUpdate() {
+        return new DomainValidatorOnUpdate();
+    }
+
+    @Bean
+    public DomainResourceAssembler domainResourceAssembler() {
+        return new DomainResourceAssembler();
+    }
 }

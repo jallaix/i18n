@@ -6,12 +6,10 @@ import org.springframework.hateoas.EntityLinks;
 import org.springframework.hateoas.LinkBuilder;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
-import org.springframework.stereotype.Component;
 
 /**
  * This class assembles domains with links to return HATEOAS resources.
  */
-@Component
 public class DomainResourceAssembler extends ResourceAssemblerSupport<Domain, Resource> {
 
     @SuppressWarnings("SpringJavaAutowiringInspection")

@@ -1,12 +1,12 @@
 package info.jallaix.message.service;
 
 import com.esotericsoftware.kryo.Kryo;
-import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.DomainRestTestFixture;
 import info.jallaix.message.bean.DomainTestFixture;
 import info.jallaix.message.bean.EntityMessage;
 import info.jallaix.message.config.DomainHolder;
+import info.jallaix.message.config.TestDomainRestConfiguration;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.DomainDaoChecker;
 import info.jallaix.message.dao.DomainDaoTestsCustomizer;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertThat;
  * Created by Julien on 22/01/2017.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(ApplicationMock.class)
+@SpringApplicationConfiguration(TestDomainRestConfiguration.class)
 @WebIntegrationTest(randomPort = true)
 public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String, DomainDao> {
 

@@ -7,10 +7,11 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import java.util.Arrays;
 
 /**
- * Configuration for testing the
+ * Project configuration
  */
 @Configuration
-public class DomainDaoTestConfiguration extends ProjectConfiguration {
+//@PropertySource("classpath:/info/jallaix/message/config/project.properties}")
+public class TestProjectConfiguration extends ProjectConfiguration {
 
     /**
      * Elasticsearch operations
