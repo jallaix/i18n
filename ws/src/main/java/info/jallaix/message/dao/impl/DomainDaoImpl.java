@@ -1,33 +1,38 @@
-package info.jallaix.message.dao.interceptor;
+package info.jallaix.message.dao.impl;
 
 import com.esotericsoftware.kryo.Kryo;
-import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.EntityMessage;
-import info.jallaix.message.dao.impl.EntityMessageDaoImpl;
+import info.jallaix.message.config.DomainHolder;
+import info.jallaix.message.dao.DomainDaoCustom;
+import info.jallaix.message.dao.interceptor.MissingSimpleMessageException;
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
+import info.jallaix.message.dao.interceptor.UnsupportedLanguageException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.query.*;
-import org.springframework.stereotype.Component;
+import org.springframework.data.elasticsearch.core.query.DeleteQuery;
+import org.springframework.data.elasticsearch.core.query.GetQuery;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
+import org.springframework.data.elasticsearch.repository.support.ElasticsearchRepositoryFactory;
+import org.springframework.data.elasticsearch.repository.support.SimpleElasticsearchRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * <p>
- * This aspect intercepts Spring Data Elasticsearch operations to manage localized messages.
- * </p>
+ * This class implements custom datasource accesses related to a domain.
  * <ul>
  * <li>
  * When creating domains, localized property values are replaced by message codes and original values are saved in the message index.
@@ -43,9 +48,8 @@ import java.util.stream.Collectors;
  * </li>
  * </ul>
  */
-@Aspect
-@Component
-public class DomainDaoInterceptor {
+@SuppressWarnings({"unused", "SpringJavaAutowiredMembersInspection"})
+public class DomainDaoImpl implements DomainDaoCustom {
 
     /**
      * Application's internationalization data
@@ -71,28 +75,166 @@ public class DomainDaoInterceptor {
     @Autowired
     private Kryo kryo;
 
+    /**
+     * Default Elasticsearch repository
+     */
+    private SimpleElasticsearchRepository<Domain> esRepository;
+
 
     /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                                     Interceptors                                               */
+    /*                                           Custom repository operations                                         */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Intercept entities before they are created to save localized messages in the index and replace matching property values by message codes.
+     * Find a domain by a code with localized description.
+     * {@link ThreadLocaleHolder#getOutputLocales()} is used for language selection.
      *
-     * @param joinPoint      Joint point for the targeted operation
-     * @param initialDomains The list of entities to create
+     * @param code The domain code
+     * @return The domain found
      */
-    @Around("execution(* org.springframework.data.elasticsearch.repository.ElasticsearchRepository+.save(Iterable,..)) && args(initialDomains,..)")
-    public Object aroundSaving(final ProceedingJoinPoint joinPoint, final Iterable<Domain> initialDomains) throws Throwable {
+    @Override
+    public Domain findByCode(String code) {
+
+        // Check the code is not null
+        if (code == null) {
+            ActionRequestValidationException e = new ActionRequestValidationException();
+            e.addValidationError("code can't be null");
+            throw e;
+        }
+
+        // Find domains by code
+        List<Domain> domains = esOperations.queryForList(
+                new NativeSearchQueryBuilder()
+                        .withQuery(
+                                QueryBuilders.constantScoreQuery(
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.termQuery(Domain.FIELD_CODE.getName(), code))))
+                        .build(), Domain.class);
+
+        // Check results
+        if (domains.isEmpty())
+            return null;
+        else if (domains.size() > 1)
+            throw new RuntimeException("At most one domain should be found given the criteria.");
+        else
+            return localizeDescription(domains.get(0));
+    }
+
+    /**
+     * Find a domain by identifier with localized description.
+     * {@link ThreadLocaleHolder#getOutputLocales()} is used for language selection.
+     *
+     * @param id The domain identifier
+     * @return The domain found
+     */
+    public Domain findOne(String id) {
+        return localizeDescription(getElasticsearchRepository().findOne(id));
+    }
+
+    /**
+     * Find all domains with localized descriptions.
+     * {@link ThreadLocaleHolder#getOutputLocales()} is used for language selection.
+     *
+     * @return The domains found
+     */
+    public Iterable<Domain> findAll() {
+        return localizeDescriptions(getElasticsearchRepository().findAll());
+    }
+
+    /**
+     * Find all domains by page with localized descriptions.
+     * {@link ThreadLocaleHolder#getOutputLocales()} is used for language selection.
+     *
+     * @param pageable Page data
+     * @return The paged domains found
+     */
+    public Page<Domain> findAll(Pageable pageable) {
+
+        Page<Domain> page = getElasticsearchRepository().findAll(pageable);
+        page.forEach(domain -> localizeDescription(Domain.class.cast(domain)));
+
+        return page;
+    }
+
+    /**
+     * Find all domains sorted with localized descriptions.
+     * {@link ThreadLocaleHolder#getOutputLocales()} is used for language selection.
+     *
+     * @param sort Sort data
+     * @return The domains found
+     */
+    @SuppressWarnings("unused")
+    public Iterable<Domain> findAll(Sort sort) {
+        return localizeDescriptions(getElasticsearchRepository().findAll(sort));
+    }
+
+    /**
+     * Find domains by identifiers sorted with localized descriptions.
+     * {@link ThreadLocaleHolder#getOutputLocales()} is used for language selection.
+     *
+     * @param ids Domain identifiers
+     * @return The domains found
+     */
+    @SuppressWarnings("unused")
+    public Iterable<Domain> findAll(Iterable<String> ids) {
+        return localizeDescriptions(getElasticsearchRepository().findAll(ids));
+    }
+
+    /**
+     * Save a domain and save its description in the message's index type.
+     *
+     * @param entity The domain to save
+     * @return The domain saved
+     */
+    @SuppressWarnings("unused")
+    public Domain save(Domain entity) {
+
+        // Execute the default process if there is no entity to save
+        if (entity == null)
+            return getElasticsearchRepository().save((Domain) null);
+
+        // Replace the domain description's literal value by a message code
+        Pair<Domain, String> updatedDomainDescription = updateDescription(entity);
+
+        // Get the existing domain to update if it already exists
+        final Domain existingDomain = findExistingDomain(entity);
+
+        // Detect locale errors on a domain update
+        checkLocaleForDomainUpdate(existingDomain);
+
+        // Save the domain
+        Domain resultDomain = getElasticsearchRepository().save(updatedDomainDescription.getLeft());
+
+        // On creation, build and save the domain description's message for each language supported by the I18n domain
+        // On update, save the localized description only
+        if (existingDomain == null)
+            insertInitialMessage(resultDomain.getId(), updatedDomainDescription.getRight());
+        else
+            insertOrUpdateMessage(resultDomain.getId(), updatedDomainDescription.getRight());
+
+        // Set back the localized domain description
+        resultDomain.setDescription(updatedDomainDescription.getRight());
+
+        return resultDomain;
+    }
+
+    /**
+     * Save a list of domains and save their descriptions in the message's index type.
+     *
+     * @param entities The domains to save
+     * @return The domains saved
+     */
+    @SuppressWarnings("unused")
+    public Iterable<Domain> save(Iterable<Domain> entities) {
 
         // Execute the default process if there are no entities to save
-        if (initialDomains == null)
-            return joinPoint.proceed(new Object[]{null});
+        if (entities == null)
+            return getElasticsearchRepository().save((Iterable<Domain>) null);
 
         // Replace the domain description's literal value for each domain to save
         List<Pair<Domain, String>> descriptions = new ArrayList<>();
         Collection<Domain> domainsToSave = new ArrayList<>();
-        for (Domain initialDomain : initialDomains) {
+        for (Domain initialDomain : entities) {
 
             if (initialDomain != null) {
                 // Replace the domain description's literal value by a message type
@@ -113,12 +255,10 @@ public class DomainDaoInterceptor {
                 domainsToSave.add(null);
         }
 
-        // Call the save method
-        Object result = joinPoint.proceed(new Object[]{domainsToSave});
+        // Save domains
+        Iterable<Domain> resultEntities = getElasticsearchRepository().save(domainsToSave);
 
-        // Store domain description's literal values in the I18N index
-        // Replace the domain description's UUIDs by their matching literal values
-        Iterable<?> resultEntities = Iterable.class.cast(result);
+        // Save localized messages
         int descriptionIndex = 0;
         for (Object resultEntity : resultEntities) {
 
@@ -144,61 +284,101 @@ public class DomainDaoInterceptor {
     }
 
     /**
-     * Intercept a domain saving operation before it's indexed to replace its description's value by a message code
-     * and store its localized descriptions.
+     * Save a domain and save its description in the message's index type.
      *
-     * @param joinPoint     Joint point for the targeted operation
-     * @param initialDomain The domain to index
+     * @param entity The domain to save
+     * @return The domain saved
      */
-    @Around("execution(* info.jallaix.message.dao.DomainDao+.save(Object)) && args(initialDomain)"
-            + " || execution(* info.jallaix.message.dao.DomainDao+.index(Object)) && args(initialDomain)")
-    public Object aroundSaving(final ProceedingJoinPoint joinPoint, final Domain initialDomain) throws Throwable {
-
-        // Execute the default process if there is no entity to save
-        if (initialDomain == null)
-            return joinPoint.proceed(new Object[]{null});
-
-        // Replace the domain description's literal value by a message type
-        Pair<Domain, String> updatedDomainDescription = updateDescription(initialDomain);
-
-        // Get the existing domain to update if it already exists
-        final Domain existingDomain = findExistingDomain(initialDomain);
-
-        // Detect locale errors on a domain update
-        checkLocaleForDomainUpdate(existingDomain);
-
-        // Call the save method and get the saved domain
-        Object resultEntity = joinPoint.proceed(new Object[]{updatedDomainDescription.getLeft()});
-        if (resultEntity == null)
-            return null;
-        Domain resultDomain = Domain.class.cast(resultEntity);
-
-        // On creation, build and save the domain description's message for each language supported by the I18n domain
-        // On update, save the localized description only
-        if (existingDomain == null)
-            insertInitialMessage(resultDomain.getId(), updatedDomainDescription.getRight());
-        else
-            insertOrUpdateMessage(resultDomain.getId(), updatedDomainDescription.getRight());
-
-        // Set back the localized domain description
-        resultDomain.setDescription(updatedDomainDescription.getRight());
-
-        return resultDomain;
+    @SuppressWarnings("unused")
+    public Domain index(Domain entity) {
+        return save(entity);
     }
 
     /**
-     * Intercept a domain finding operation after it is get to replace its message code by a description's value.
+     * Delete a domain and its localized description.
      *
-     * @param foundDomain The found domain to update with the localized description
+     * @param id The domain identifier
      */
-    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findOne(*))", returning = "foundDomain")
-    public void afterFindOne(Domain foundDomain) {
+    @SuppressWarnings("unused")
+    public void delete(String id) {
 
-        if (foundDomain == null)
-            return;
+        getElasticsearchRepository().delete(id);
+        deleteMessages(id);
+    }
+
+    /**
+     * Delete a domain and its localized description.
+     *
+     * @param entity The domain to delete
+     */
+    @SuppressWarnings("unused")
+    public void delete(Domain entity) {
+
+        getElasticsearchRepository().delete(entity);
+        if (entity != null)
+            deleteMessages(entity.getId());
+    }
+
+    /**
+     * Delete a list of domains and their localized descriptions.
+     *
+     * @param entities The domains to delete
+     */
+    @SuppressWarnings("unused")
+    public void delete(Iterable<? extends Domain> entities) {
+
+        getElasticsearchRepository().delete(entities);
+
+        @SuppressWarnings("unchecked")
+        List<Domain> domains = (List<Domain>) entities;
+        List<String> domainIds = domains.stream().map(Domain::getId).collect(Collectors.toList());
+        deleteMessages(domainIds);
+    }
+
+    /**
+     * Delete all domains and their localized descriptions.
+     */
+    @SuppressWarnings("unused")
+    public void deleteAll() {
+
+        getElasticsearchRepository().deleteAll();
+        deleteMessages();
+    }
+
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                   Private methods                                              */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Get the default Elasticsearch repository implementation. See {@link SimpleElasticsearchRepository}.
+     *
+     * @return The the default Elasticsearch repository
+     */
+    private ElasticsearchRepository<Domain, String> getElasticsearchRepository() {
+
+        if (esRepository == null)
+            esRepository = new SimpleElasticsearchRepository<>(
+                    new ElasticsearchRepositoryFactory(esOperations).getEntityInformation(Domain.class),
+                    esOperations);
+
+        return esRepository;
+    }
+
+    /**
+     * Apply a localized message to a domain description.
+     *
+     * @param domain The un-localized domain
+     * @return The localized domain
+     */
+    private Domain localizeDescription(Domain domain) {
+
+        if (domain == null)
+            return null;
 
         // Find the list of description messages for the found domain
-        final List<EntityMessage> messages = findMessages(foundDomain.getId());
+        final List<EntityMessage> messages = findMessages(domain.getId());
 
         // Get the list of available language tags in the message list
         Collection<Locale> existingLocales = messages.stream()
@@ -217,100 +397,26 @@ public class DomainDaoInterceptor {
         final Optional<EntityMessage> message = messages.stream()
                 .filter(m -> lookupTag.equals(m.getLanguageTag()))
                 .findFirst();
-        foundDomain.setDescription(message.isPresent() ? message.get().getContent() : null);
+        domain.setDescription(message.isPresent() ? message.get().getContent() : null);
+
+        return domain;
     }
 
     /**
-     * Intercept a domain finding operation by code after it is get to replace its message code by a description's value.
+     * Apply a localized message to each description of a domain list..
      *
-     * @param joinPoint Joint point for the targeted operation
-     * @param code      Code of the domain to find
+     * @param domains The list of un-localized domains
+     * @return The localized domains
      */
-    @Around("execution(* info.jallaix.message.dao.DomainDao+.findByCode(String)) && args(code)")
-    public Object aroundFindByCode(final ProceedingJoinPoint joinPoint, final String code) throws Throwable {
-
-        // Check the code is not null
-        if (code == null) {
-            ActionRequestValidationException e = new ActionRequestValidationException();
-            e.addValidationError("code can't be null");
-            throw e;
-        }
-
-        // Call the find operation
-        Domain foundDomain = Domain.class.cast(joinPoint.proceed());
-
-        // Replace the domain's message code by a description's value.
-        afterFindOne(foundDomain);
-
-        return foundDomain;
-    }
-
-    /**
-     * Intercept domains finding operation after there are get to replace their message codes by their description's values.
-     *
-     * @param domains The list of found domains to update with the localized descriptions
-     */
-    @AfterReturning(pointcut = "execution(* info.jallaix.message.dao.DomainDao+.findAll(*))"
-            + " || execution(* info.jallaix.message.dao.DomainDao+.findAll())", returning = "domains")
-    public void afterFindAll(Iterable<?> domains) {
+    private Iterable<Domain> localizeDescriptions(Iterable<Domain> domains) {
 
         if (domains == null)
-            return;
+            return null;
 
-        domains.forEach(domain -> afterFindOne(Domain.class.cast(domain)));
+        domains.forEach(domain -> localizeDescription(Domain.class.cast(domain)));
+
+        return domains;
     }
-
-    /**
-     * Intercept a domain deletion operation after the deletion occurs to remove its linked messages.
-     *
-     * @param arg The identifier of the deleted domain
-     */
-    @AfterReturning("execution(* info.jallaix.message.dao.DomainDao+.delete(*)) && args(arg)")
-    public void afterDelete(Object arg) {
-
-        if (arg == null)
-            return;
-
-        String id = null;
-        List<String> domainIds = null;
-
-        // Case of a String argument => map to an identifier
-        if (arg instanceof String) {
-            id = String.class.cast(arg);
-        }
-        // Case of a Domain argument => get identifier from the domain
-        else if (arg instanceof Domain) {
-            id = Domain.class.cast(arg).getId();
-        }
-        // Case of a List argument => get identifiers from the set of domains
-        else if (arg instanceof List) {
-            @SuppressWarnings("unchecked")
-            List<Domain> domains = (List<Domain>) arg;
-            domainIds = domains.stream().map(Domain::getId).collect(Collectors.toList());
-        }
-
-        // Delete messages by a domain identifier
-        if (id != null) {
-            deleteMessages(id);
-        }
-        // Delete messages by a set of domain identifiers
-        else if (domainIds != null) {
-            deleteMessages(domainIds);
-        }
-    }
-
-    /**
-     * Intercept a deletion operation for all domains after the deletion occurs to remove all linked messages.
-     */
-    @AfterReturning("execution(* info.jallaix.message.dao.DomainDao+.deleteAll())")
-    public void afterDeleteAll() {
-        deleteMessages();
-    }
-
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                                   Private methods                                              */
-    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * Replace the domain description's literal value by a message type.

@@ -54,7 +54,7 @@ public class DomainDaoFindAllPageableTest extends BaseDaoElasticsearchTestCase<D
     public final SpringMethodRule SPRING_METHOD_RULE = new SpringMethodRule();
 
     /**
-     * I18n domain
+     * I18N domain holder
      */
     @Autowired
     private DomainHolder i18nDomainHolder;

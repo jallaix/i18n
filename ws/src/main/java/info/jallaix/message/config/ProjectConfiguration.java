@@ -21,6 +21,9 @@ import java.util.Collection;
 //@PropertySource("classpath:/info/jallaix/message/config/project.properties}")
 public class ProjectConfiguration {
 
+    /**
+     * Elasticsearch operations
+     */
     @Autowired
     private ElasticsearchOperations esOperations;
 

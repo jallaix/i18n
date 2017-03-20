@@ -98,7 +98,6 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
     @Before
     public void initTest() {
 
-
         // Utility object that performs DAO checks
         domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
 

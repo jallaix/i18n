@@ -8,14 +8,5 @@ import org.springframework.stereotype.Repository;
  * This interface manages all datasource accesses related to a domain.
  */
 @Repository
-@SuppressWarnings("unused")
-public interface DomainDao extends ElasticsearchRepository<Domain, String> {
-
-    /**
-     * Find a domain by a code.
-     *
-     * @param code The domain code
-     * @return The domain found
-     */
-    Domain findByCode(String code);
+public interface DomainDao extends ElasticsearchRepository<Domain, String>, DomainDaoCustom {
 }

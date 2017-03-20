@@ -1,21 +1,20 @@
 package info.jallaix.message.config;
 
-import info.jallaix.message.dao.interceptor.DomainDaoInterceptor;
-import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 
 import java.util.Arrays;
 
 /**
- * Created by Julien on 01/02/2017.
+ * Configuration for testing the
  */
 @Configuration
-@Import({DomainDaoInterceptor.class, ThreadLocaleHolder.class})
 public class DomainDaoTestConfiguration extends ProjectConfiguration {
 
+    /**
+     * Elasticsearch operations
+     */
     @Autowired
     private ElasticsearchOperations esOperations;
 

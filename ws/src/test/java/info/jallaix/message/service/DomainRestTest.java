@@ -1,5 +1,6 @@
 package info.jallaix.message.service;
 
+import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.ApplicationMock;
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.DomainRestTestFixture;
@@ -7,15 +8,20 @@ import info.jallaix.message.bean.DomainTestFixture;
 import info.jallaix.message.bean.EntityMessage;
 import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.dao.DomainDao;
+import info.jallaix.message.dao.DomainDaoChecker;
+import info.jallaix.message.dao.DomainDaoTestsCustomizer;
 import info.jallaix.message.dao.EntityMessageDao;
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.fixture.RestElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
 import lombok.SneakyThrows;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
 import org.springframework.http.HttpStatus;
@@ -38,8 +44,47 @@ import static org.junit.Assert.assertThat;
 @WebIntegrationTest(randomPort = true)
 public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String, DomainDao> {
 
+    /**
+     * I18N domain holder
+     */
     @Autowired
     private DomainHolder i18nDomainHolder;
+
+    /**
+     * Elasticsearch operations
+     */
+    @Autowired
+    private ElasticsearchOperations esOperations;
+
+    /**
+     * Serialization framework
+     */
+    @Autowired
+    private Kryo kryo;
+
+    /**
+     * Locale data holder
+     */
+    @Autowired
+    private ThreadLocaleHolder threadLocaleHolder;
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                   Tests lifecycle                                              */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    @Before
+    public void initTest() throws Exception {
+
+        // Domain customizer for default DAO tests
+        setCustomizer(
+                new DomainDaoTestsCustomizer(
+                        new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
+                        threadLocaleHolder,
+                        getTestFixture(),
+                        kryo));
+    }
+
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                      Abstract methods implementation                                           */
@@ -124,6 +169,6 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
      */
     @SneakyThrows
     private Link getSearchLink() {
-        return new Link(new URI("http", null, "localhost", serverPort, "/domains/search", null, null).toString(), "search");
+        return new Link(new URI(getServerUri() + "/domains/search").toString(), "search");
     }
 }
