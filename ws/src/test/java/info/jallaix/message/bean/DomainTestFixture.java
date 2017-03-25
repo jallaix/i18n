@@ -62,6 +62,11 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
      */
     public static final String DOMAIN4_FR_DESCRIPTION = "Description du projet de test 3";
 
+    /**
+     * Domain 5's english description
+     */
+    public static final String DOMAIN5_EN_DESCRIPTION = "Test project 4's description";
+
 
     /**
      * Return a new document for insertion.
@@ -70,7 +75,7 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
      */
     @Override
     public Domain newDocumentToInsert() {
-        return new Domain("5", "test.project4", "Test project 4's description", "es", Arrays.asList("en", "fr", "es"));
+        return new Domain("5", "test.project4", DOMAIN5_EN_DESCRIPTION, "es", Arrays.asList("en", "fr", "es"));
     }
 
     /**
@@ -80,7 +85,7 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
      */
     @Override
     public Domain newDocumentToUpdate() {
-        return new Domain("3", "test.project2", "New project 2's description", "es", Arrays.asList("en", "fr", "es"));
+        return new Domain("3", "test.project2", "New project 2's description", "fr", Arrays.asList("fr", "es"));
     }
 
     /**

@@ -21,12 +21,12 @@ public class DomainRestTestFixture implements RestElasticsearchTestFixture<Domai
         return new Object() {
             @SuppressWarnings("unused")
             public String getDescription() {
-                return "project4.description";
+                return "New project 2's description";
             }
 
             @SuppressWarnings("unused")
             public Collection<String> getAvailableLanguageTags() {
-                return Arrays.asList("en-GB", "fr-FR", "es-ES", "fr-CA");
+                return Arrays.asList("en", "fr", "es", "de");
             }
         };
     }
@@ -148,37 +148,37 @@ public class DomainRestTestFixture implements RestElasticsearchTestFixture<Domai
         return ImmutableMap.<Domain, List<ValidationError>>builder()
                 // Code can't change
                 .put(
-                        new Domain("2", "project4", "project2.description", "fr-FR", Arrays.asList("fr-FR", "en-US")),
-                        singletonList(new ValidationError(domainClassName, "domain.code.immutable", "project4", "code")))
+                        new Domain("2", "invalid.code", DomainTestFixture.DOMAIN2_EN_DESCRIPTION, "en", Arrays.asList("en", "fr", "es")),
+                        singletonList(new ValidationError(domainClassName, "domain.code.immutable", "invalid.code", "code")))
                 // Test invalid description
                 .put(
-                        new Domain("2", "project2", null, "fr-FR", Arrays.asList("fr-FR", "en-US")),
+                        new Domain("2", "test.project1", null, "en", Arrays.asList("en", "fr", "es")),
                         singletonList(new ValidationError(domainClassName, "domain.description.required", "null", "description")))
                 .put(
-                        new Domain("2", "project2", "", "fr-FR", Arrays.asList("fr-FR", "en-US")),
+                        new Domain("2", "test.project1", "", "en", Arrays.asList("en", "fr", "es")),
                         singletonList(new ValidationError(domainClassName, "domain.description.required", "", "description")))
                 .put(
-                        new Domain("2", "project2", "  ", "fr-FR", Arrays.asList("fr-FR", "en-US")),
+                        new Domain("2", "test.project1", "  ", "en", Arrays.asList("en", "fr", "es")),
                         singletonList(new ValidationError(domainClassName, "domain.description.required", "  ", "description")))
                 // Default language tag can't change
                 .put(
-                        new Domain("2", "project2", "project2.description", "en-US", Arrays.asList("fr-FR", "en-US")),
-                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.immutable", "en-US", "defaultLanguageTag")))
+                        new Domain("2", "test.project1", DomainTestFixture.DOMAIN2_EN_DESCRIPTION, "fr", Arrays.asList("en", "fr", "es")),
+                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.immutable", "fr", "defaultLanguageTag")))
                 // Default language tag must exist in available language tags
                 .put(
-                        new Domain("2", "project2", "project2.description", "fr-FR", singletonList("en-US")),
-                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.matchAvailable", "fr-FR", "defaultLanguageTag")))
+                        new Domain("2", "test.project1", DomainTestFixture.DOMAIN2_EN_DESCRIPTION, "en", singletonList("fr")),
+                        singletonList(new ValidationError(domainClassName, "domain.defaultLanguageTag.matchAvailable", "en", "defaultLanguageTag")))
                 // Available language tags can't be empty
                 .put(
-                        new Domain("2", "project2", "project2.description", "fr-FR", null),
+                        new Domain("2", "test.project1", DomainTestFixture.DOMAIN2_EN_DESCRIPTION, "en", null),
                         singletonList(new ValidationError(domainClassName, "domain.availableLanguageTags.required", "null", "availableLanguageTags")))
                 .put(
-                        new Domain("2", "project2", "project2.description", "fr-FR", Collections.emptyList()),
+                        new Domain("2", "test.project1", DomainTestFixture.DOMAIN2_EN_DESCRIPTION, "en", Collections.emptyList()),
                         singletonList(new ValidationError(domainClassName, "domain.availableLanguageTags.required", "[]", "availableLanguageTags")))
                 // Available language tags must match existing locales
                 .put(
-                        new Domain("2", "project2", "project2.description", "fr-FR", Arrays.asList("fr-FR", "unknown-language-tag")),
-                        singletonList(new ValidationError(domainClassName, "domain.availableLanguageTags.unavailable", "[fr-FR, unknown-language-tag]", "availableLanguageTags")))
+                        new Domain("2", "test.project1", DomainTestFixture.DOMAIN2_EN_DESCRIPTION, "en", Arrays.asList("en", "unknown-language-tag")),
+                        singletonList(new ValidationError(domainClassName, "domain.availableLanguageTags.unavailable", "[en, unknown-language-tag]", "availableLanguageTags")))
                 // Test all invalid properties
                 .put(
                         new Domain("2", null, null, null, null),

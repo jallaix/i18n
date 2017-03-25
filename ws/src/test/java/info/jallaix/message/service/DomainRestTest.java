@@ -4,7 +4,6 @@ import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.DomainRestTestFixture;
 import info.jallaix.message.bean.DomainTestFixture;
-import info.jallaix.message.bean.EntityMessage;
 import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.config.TestDomainRestConfiguration;
 import info.jallaix.message.dao.DomainDao;
@@ -23,18 +22,11 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 
 /**
  * Created by Julien on 22/01/2017.
@@ -117,18 +109,6 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
 
     @Autowired
     private EntityMessageDao entityMessageDao;
-
-    @Override
-    public void createValidEntity() {
-        ResponseEntity<Resource<Domain>> httpResponse = postEntity(getTestFixture().newDocumentToInsert(), HttpStatus.CREATED, false);
-
-        Domain savedDomain = httpResponse.getBody().getContent();
-        String languageTag = savedDomain.getDefaultLanguageTag();
-        String messageType = savedDomain.getDescription();
-
-        EntityMessage message = entityMessageDao.findOne(i18nDomainHolder.getDomain().getId(), messageType, savedDomain.getId(), languageTag);
-        assertThat(message, is(notNullValue()));
-    }
 
     /**
      * <p>Get expected HATEOAS links when requesting language resources.</p>
