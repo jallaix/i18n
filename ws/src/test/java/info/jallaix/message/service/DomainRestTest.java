@@ -16,17 +16,30 @@ import info.jallaix.spring.data.es.test.fixture.RestElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
 import lombok.SneakyThrows;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Created by Julien on 22/01/2017.
@@ -59,6 +72,13 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
      */
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
+
+    /**
+     * REST template for calling server operations
+     */
+    @SuppressWarnings("SpringJavaAutowiredMembersInspection")
+    @Autowired
+    private RestTemplate restTemplate;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -140,6 +160,66 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
         links.add(getSearchLink());
 
         return links;
+    }
+
+    /**
+     * Getting a domain by code returns a {@code 404 Not Found} HTTP status code if there is no domain found.
+     * The missing domain is defined by the {@link ElasticsearchTestFixture#newDocumentToInsert()} method.
+     */
+    @Test
+    public void findMissingEntityByCode() {
+
+        final HttpEntity<?> httpEntity = convertToHttpEntity(null);             // Define Hal+Json HTTP entity
+
+        try {
+            // Send a GET request
+            final ResponseEntity<Resource<Domain>> responseEntity =
+                    restTemplate.exchange(
+                            getSearchLink().getHref() + "/findByCode?code=" + getTestFixture().newDocumentToInsert().getCode(),
+                            HttpMethod.GET,
+                            httpEntity,
+                            getRestTestFixture().getResourceType());
+
+            fail("Should return a " + HttpStatus.NOT_FOUND.value() + " " + HttpStatus.NOT_FOUND.name() + " response");
+        }
+
+        // The POST request results in an error response
+        catch (HttpStatusCodeException e) {
+            assertThat(e.getStatusCode(), is(HttpStatus.NOT_FOUND));    // Verify the expected HTTP status code
+        }
+    }
+
+    /**
+     * Getting a domain returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing domain is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     */
+    @Test
+    public void findExistingEntityByCode() {
+
+        final HttpEntity<?> httpEntity = convertToHttpEntity(null);             // Define Hal+Json HTTP entity
+
+        Domain existingDomain = getTestFixture().newExistingDocument();
+        final Resource<Domain> expectedResource = convertToResource(existingDomain);
+
+        try {
+            // Send a GET request
+            final ResponseEntity<Resource<Domain>> responseEntity =
+                    restTemplate.exchange(
+                            getSearchLink().getHref() + "/findByCode?code=" + existingDomain.getCode(),
+                            HttpMethod.GET,
+                            httpEntity,
+                            getRestTestFixture().getResourceType());
+
+            // Verify the expected HTTP status code and response body then return the response
+            assertThat(responseEntity, is(notNullValue()));
+            assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+            assertThat(responseEntity.getBody(), is(expectedResource));
+        }
+
+        // The POST request results in an error response
+        catch (HttpStatusCodeException e) {
+            fail("An unexpected exception was thrown.\n" + e);
+        }
     }
 
     /**

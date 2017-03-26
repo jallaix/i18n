@@ -15,10 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <p/>
@@ -91,7 +88,7 @@ public class DomainController {
     @RequestMapping(method = RequestMethod.PUT, value = "/domains/{id}")
     public
     @ResponseBody
-    ResponseEntity<Resource> saveDomain(RequestEntity<Domain> request, @PathVariable String id) {
+    ResponseEntity<Resource> updateDomain(RequestEntity<Domain> request, @PathVariable String id) {
 
         // Argument validation
         if (request.getBody() == null)
@@ -117,16 +114,18 @@ public class DomainController {
      * @param code The domain code
      * @return An HTTP response with a domain resource
      */
-    @RequestMapping(value = "/domains/search/findByCode?{code}", method = RequestMethod.GET)
+    @RequestMapping(method = RequestMethod.GET, value = "/domains/search/findByCode")
     public
     @ResponseBody
-    ResponseEntity<Resource> findByCode(@PathVariable String code) {
+    ResponseEntity<Resource> findByCode(@RequestParam(value = "code", required = true) String code) {
 
         Domain domain = repository.findByCode(code);
 
-        return new ResponseEntity<>(
-                resourceAssembler.toResource(
-                        repository.findByCode(code)),
-                HttpStatus.OK);
+        if (domain == null)
+            throw new ResourceNotFoundException("Domain doesn't exists");
+        else
+            return new ResponseEntity<>(
+                    resourceAssembler.toResource(domain),
+                    HttpStatus.OK);
     }
 }
