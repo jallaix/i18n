@@ -118,7 +118,4 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     protected ElasticsearchTestFixture<Domain> getTestFixture() {
         return new DomainTestFixture();
     }
-
-
-    // TODO threadLocaleHolder.getOutputLocale() should return a List<LanguageRange> type
 }

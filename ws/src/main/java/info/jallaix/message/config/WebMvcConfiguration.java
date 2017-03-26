@@ -1,6 +1,8 @@
 package info.jallaix.message.config;
 
+import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.message.service.MessageHandlerInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;
@@ -17,9 +19,16 @@ import java.util.Locale;
 @Configuration
 public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
 
+    /**
+     * Locale data holder
+     */
+    @Autowired
+    private ThreadLocaleHolder threadLocaleHolder;
+
+
     @Bean
     public MappedInterceptor messageHandlerInterceptor() {
-        return new MappedInterceptor(new String[]{"/**"}, new MessageHandlerInterceptor());
+        return new MappedInterceptor(new String[]{"/**"}, new MessageHandlerInterceptor(threadLocaleHolder));
     }
 
     /**

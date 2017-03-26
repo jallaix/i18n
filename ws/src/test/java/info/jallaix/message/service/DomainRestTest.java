@@ -9,7 +9,6 @@ import info.jallaix.message.config.TestDomainRestConfiguration;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.DomainDaoChecker;
 import info.jallaix.message.dao.DomainDaoTestsCustomizer;
-import info.jallaix.message.dao.EntityMessageDao;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.fixture.RestElasticsearchTestFixture;
@@ -24,10 +23,7 @@ import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -42,11 +38,17 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * Created by Julien on 22/01/2017.
+ * The Domain REST controller must verify some tests provided by {@link BaseRestElasticsearchTestCase}.
+ * It also defines custom tests:
+ * <ul>
+ * <li>Getting a domain by code returns a {@code 404 Not Found} HTTP status code if there is no domain found.</li>
+ * <li>Getting a domain returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
+ * </ul>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(TestDomainRestConfiguration.class)
 @WebIntegrationTest(randomPort = true)
+@SuppressWarnings("SpringJavaAutowiredMembersInspection")
 public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String, DomainDao> {
 
     /**
@@ -76,30 +78,12 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     /**
      * REST template for calling server operations
      */
-    @SuppressWarnings("SpringJavaAutowiredMembersInspection")
     @Autowired
     private RestTemplate restTemplate;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                   Tests lifecycle                                              */
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    @Before
-    public void initTest() throws Exception {
-
-        // Domain customizer for default DAO tests
-        setCustomizer(
-                new DomainDaoTestsCustomizer(
-                        new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
-                        threadLocaleHolder,
-                        getTestFixture(),
-                        kryo));
-    }
-
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*                                      Abstract methods implementation                                           */
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
@@ -116,6 +100,23 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
                 RestTestedMethod.Delete.class);*/
     }
 
+    @Before
+    public void initTest() throws Exception {
+
+        // Domain customizer for default DAO tests
+        setCustomizer(
+                new DomainDaoTestsCustomizer(
+                        new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
+                        threadLocaleHolder,
+                        getTestFixture(),
+                        kryo));
+    }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                     Test fixture                                               */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
     @Override
     protected ElasticsearchTestFixture<Domain> getTestFixture() {
         return new DomainTestFixture();
@@ -127,8 +128,9 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     }
 
 
-    @Autowired
-    private EntityMessageDao entityMessageDao;
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                      Abstract methods implementation                                           */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * <p>Get expected HATEOAS links when requesting language resources.</p>
@@ -137,9 +139,9 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
      * @return A list of HATEOAS links
      */
     @Override
-    protected List<Link> getLanguagesLinks() {
+    protected List<Link> getResourcesLinks() {
 
-        List<Link> links = new ArrayList<>(super.getLanguagesLinks());
+        List<Link> links = new ArrayList<>(super.getResourcesLinks());
         links.add(getSearchLink());
 
         return links;
@@ -154,13 +156,18 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
      * @return A list of HATEOAS links
      */
     @Override
-    protected List<Link> getPagedLanguagesLinks(boolean sorted, Integer page) {
+    protected List<Link> getPagedResourcesLinks(boolean sorted, Integer page) {
 
-        List<Link> links = new ArrayList<>(super.getPagedLanguagesLinks(sorted, page));
+        List<Link> links = new ArrayList<>(super.getPagedResourcesLinks(sorted, page));
         links.add(getSearchLink());
 
         return links;
     }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                     Custom tests                                               */
+    /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
      * Getting a domain by code returns a {@code 404 Not Found} HTTP status code if there is no domain found.
@@ -173,12 +180,11 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
 
         try {
             // Send a GET request
-            final ResponseEntity<Resource<Domain>> responseEntity =
-                    restTemplate.exchange(
-                            getSearchLink().getHref() + "/findByCode?code=" + getTestFixture().newDocumentToInsert().getCode(),
-                            HttpMethod.GET,
-                            httpEntity,
-                            getRestTestFixture().getResourceType());
+            restTemplate.exchange(
+                    getSearchLink().getHref() + "/findByCode?code=" + getTestFixture().newDocumentToInsert().getCode(),
+                    HttpMethod.GET,
+                    httpEntity,
+                    getRestTestFixture().getResourceType());
 
             fail("Should return a " + HttpStatus.NOT_FOUND.value() + " " + HttpStatus.NOT_FOUND.name() + " response");
         }

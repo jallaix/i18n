@@ -206,13 +206,13 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
         assertFindDomainByCode("de-DE,de");
     }
 
+
     /**
      * Assert that a domain found by code matches the expected one.
      */
     private void assertFindDomainByCode() {
         assertFindDomainByCode(null);
     }
-
 
     /**
      * Assert that a domain found by code matches the expected one.
