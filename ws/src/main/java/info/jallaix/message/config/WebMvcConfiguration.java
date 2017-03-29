@@ -20,6 +20,12 @@ import java.util.Locale;
 public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
 
     /**
+     * I18N domain holder
+     */
+    @Autowired
+    private DomainHolder i18nDomainHolder;
+
+    /**
      * Locale data holder
      */
     @Autowired
@@ -28,7 +34,7 @@ public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
 
     @Bean
     public MappedInterceptor messageHandlerInterceptor() {
-        return new MappedInterceptor(new String[]{"/**"}, new MessageHandlerInterceptor(threadLocaleHolder));
+        return new MappedInterceptor(new String[]{"/**"}, new MessageHandlerInterceptor(i18nDomainHolder, threadLocaleHolder));
     }
 
     /**
