@@ -5,7 +5,7 @@ import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.RestElasticsearchRepositoryFactoryBean;
 import info.jallaix.message.service.DomainController;
 import info.jallaix.message.service.GenericExceptionHandler;
-import info.jallaix.message.service.hateoas.DomainsResourceProcessor;
+import info.jallaix.message.service.LanguageResponseBodyAdvice;
 import info.jallaix.spring.data.es.test.SpringDataEsTestConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -14,7 +14,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.data.rest.webmvc.RepositorySearchesResource;
-import org.springframework.hateoas.*;
+import org.springframework.hateoas.EntityLinks;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.ResourceProcessor;
 
 /**
  * Configuration for testing the Domain repository with REST.
@@ -26,6 +28,7 @@ import org.springframework.hateoas.*;
         TestProjectConfiguration.class,
         TestRepositoryConfiguration.class,
         DomainController.class,
+        LanguageResponseBodyAdvice.class,
         GenericExceptionHandler.class,
         WebMvcConfiguration.class})
 @EnableElasticsearchRepositories(basePackageClasses = DomainDao.class, repositoryFactoryBeanClass = RestElasticsearchRepositoryFactoryBean.class)

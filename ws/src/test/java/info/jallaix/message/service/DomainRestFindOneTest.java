@@ -21,16 +21,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.hateoas.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.web.client.RestTemplate;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
- * The Domain REST controller must verify some tests provided by {@link BaseRestElasticsearchTestCase}.
+ * The Domain REST controller must verify tests provided by {@link BaseRestElasticsearchTestCase} linked to the {@link RestTestedMethod.FindOne} category.
  * It also defines custom tests:
  * <ul>
- * <li>Getting a domain by code returns a {@code 404 Not Found} HTTP status code if there is no domain found.</li>
  * <li>Getting a domain returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
+ * <li>Getting a domain for an existing supported language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
+ * <li>Getting a domain for a missing supported language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
+ * <li>Getting a domain for a missing complex language (with an existing message for the simple language) returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
+ * <li>Getting a domain for an existing complex language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
+ * <li>Getting a domain for a missing complex language (without an existing message for the simple language) returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
+ * <li>Getting a domain for an unsupported language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.</li>
  * </ul>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -62,12 +72,6 @@ public class DomainRestFindOneTest extends BaseRestElasticsearchTestCase<Domain,
      */
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
-
-    /**
-     * REST template for calling server operations
-     */
-    @Autowired
-    private RestTemplate restTemplate;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -114,23 +118,97 @@ public class DomainRestFindOneTest extends BaseRestElasticsearchTestCase<Domain,
     /*----------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * Finding an existing domain for an existing supported language returns this domain.
-     * Its description is localized for the specified supported language.
+     * Getting a domain returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing entity is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     * Its description is localized for the default I18N domain's language and specify this language tag in the HTTP headers.
+     */
+    @Override
+    public void findExistingEntity() {
+
+        ResponseEntity<Resource<Domain>> entity = getEntity(getTestFixture().newExistingDocument(), HttpStatus.OK, false);
+        assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is("en"));
+    }
+
+    /**
+     * Getting a domain for an existing supported language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing entity is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     * Its description is localized for the specified supported language and specify this language tag in the HTTP headers.
      */
     @Test
     public void findExistingDomainWithExistingSupportedLanguage() {
-        assertFindOne("fr;q=1", DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
+        assertFindOne("fr;q=1", DomainTestFixture.DOMAIN3_FR_DESCRIPTION, "fr");
+    }
+
+    /**
+     * Getting a domain for a missing supported language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing entity is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     * Its description is localized for the default I18N domain's language and specify this language tag in the HTTP headers.
+     */
+    @Test
+    public void findExistingDomainWithMissingSupportedLanguage() {
+        assertFindOne("es", null, "es");
+    }
+
+    /**
+     * Getting a domain for a missing complex language (with an existing message for the simple language) returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing entity is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     * Its description is localized for the linked simple language and specify the complex language tag in the HTTP headers.
+     */
+    @Test
+    public void findExistingDomainWithMissingComplexLanguageButExistingSimpleLanguage() {
+        assertFindOne("fr;q=0.5,fr-BE;q=1,en;q=0.1", DomainTestFixture.DOMAIN3_FR_DESCRIPTION, "fr-BE");
+    }
+
+    /**
+     * Getting a domain for an existing complex language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing entity is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     * Its description is localized for the complex language and specify this language tag in the HTTP headers.
+     */
+    @Test
+    public void findExistingDomainWithExistingComplexLanguage() {
+        assertFindOne("en;q=0.5,en-US;q=1", DomainTestFixture.DOMAIN3_EN_US_DESCRIPTION, "en-US");
+    }
+
+    /**
+     * Getting a domain for a missing complex language (without an existing message for the simple language) returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing entity is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     * Its description is localized for the default I18N domain's language and specify the complex language tag in the HTTP headers.
+     */
+    @Test
+    public void findExistingDomainWithMissingComplexAndSimpleLanguage() {
+        assertFindOne("es-ES,es", null, "es-ES");
+    }
+
+    /**
+     * Getting a domain for an unsupported language returns this entity in HATEOAS format and a {@code 200 Ok} HTTP status code if the domain is found.
+     * The existing entity is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     * Its description is localized for the default I18N domain's language and specify this language tag in the HTTP headers.
+     */
+    @Test
+    public void findExistingDomainWithUnsupportedLanguage() {
+        assertFindOne("de-DE,de", null, "en");
     }
 
 
     /**
      * Assert that a domain found by identifier matches the expected one.
+     * The domain description is returned in the default domain's language whatever the provided language tag is.
+     *
+     * @param languageRanges The language ranges that involves a localized description
+     */
+    private void assertFindOne(String languageRanges) {
+        assertFindOne(languageRanges, null, i18nDomainHolder.getDomain().getDefaultLanguageTag());
+    }
+
+    /**
+     * Assert that a domain found by identifier matches the expected one.
      * The domain description is returned in a localized language depending on the provided language tag.
      *
-     * @param languageTag        The language tag that involves a localized description
-     * @param descriptionFixture The localized description matching the provided language tag
+     * @param languageRanges      The language ranges that involves a localized description
+     * @param descriptionFixture  The localized description matching the provided language tag
+     * @param expectedLanguageTag The expected language tag
      */
-    private void assertFindOne(String languageTag, String descriptionFixture) {
+    private void assertFindOne(String languageRanges, String descriptionFixture, String expectedLanguageTag) {
 
         // Get domain fixture for the language tag
         Domain domain = getTestFixture().newExistingDocument();
@@ -138,6 +216,7 @@ public class DomainRestFindOneTest extends BaseRestElasticsearchTestCase<Domain,
             domain.setDescription(descriptionFixture);
 
         // Assert the found domain matches the expected one
-        getEntity(domain, HttpStatus.OK, false, languageTag);
+        final ResponseEntity<Resource<Domain>> entity = getEntity(domain, HttpStatus.OK, false, languageRanges);
+        assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is(expectedLanguageTag));
     }
 }
