@@ -8,6 +8,7 @@ import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.customizer.BaseDaoTestsCustomizer;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -121,6 +122,11 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
         domainDaoChecker.checkExistingDocumentMessages(testFixture.newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
     }
 
+    private Map<String, String> descriptionsFixture;
+    public void setDescriptionsFixture(Map<String, String> descriptionsFixture) {
+        this.descriptionsFixture = descriptionsFixture;
+    }
+
     /**
      * Internationalize domain descriptions for the {@link info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase#findAllDocuments()} and so on tests.
      *
@@ -129,7 +135,15 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
      */
     @Override
     public List<Domain> customizeFindAllFixture(final List<Domain> fixture) {
-        return domainDaoChecker.internationalizeDomains(kryo.copy(fixture), "en");
+        if (descriptionsFixture == null)
+            return domainDaoChecker.internationalizeDomains(kryo.copy(fixture), "en");
+        else
+            return domainDaoChecker.internationalizeDomains(kryo.copy(fixture), descriptionsFixture);
+    }
+
+    private String descriptionFixture;
+    public void setDescriptionFixture(String descriptionFixture) {
+        this.descriptionFixture = descriptionFixture;
     }
 
     /**
@@ -138,8 +152,9 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
      * @param fixture The domain to internationalize
      * @return The internationalized domain
      */
+    @Override
     public Domain customizeFindOneFixture(final Domain fixture) {
-        return domainDaoChecker.internationalizeDomain(kryo.copy(fixture), "en");
+        return domainDaoChecker.internationalizeDomain(fixture, "en");
     }
 
     /**

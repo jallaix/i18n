@@ -14,20 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
@@ -80,6 +74,11 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     private DomainDaoChecker domainDaoChecker;
 
+    /**
+     * Domain DAO customizer
+     */
+    private DomainDaoTestsCustomizer domainDaoTestsCustomizer;
+
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                   Tests lifecycle                                              */
@@ -98,12 +97,12 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
     @Before
     public void initTest() {
 
-
         // Utility object that performs DAO checks
         domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
 
-        // Domain customizer for default DAO tests
-        setCustomizer(new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo));
+        // Domain customizer for DAO tests
+        domainDaoTestsCustomizer = new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo);
+        setCustomizer(domainDaoTestsCustomizer);
     }
 
     /**
@@ -258,22 +257,9 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     private void assertFindAll(String languageTag, Map<String, String> descriptionsFixture) {
 
-        // Get all domains from the index with specified descriptions
-        final List<Domain> initialList = domainDaoChecker.internationalizeDomains(
-                testClientOperations.findAllDocumentsPaged(
-                        getDocumentMetadata(),
-                        0,
-                        (int) this.getTestDocumentsLoader().getLoadedDocumentCount()),
-                descriptionsFixture);
-
-        // Repository search for the specified language
+        domainDaoTestsCustomizer.setDescriptionsFixture(descriptionsFixture);
         threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
-        final List<Domain> foundList =
-                StreamSupport.stream(
-                        getRepository().findAll().spliterator(), false)
-                        .collect(Collectors.toList());
-
-        assertArrayEquals(initialList.toArray(), foundList.toArray());
+        findAllDocuments();
     }
 
     /**
@@ -296,23 +282,8 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
      */
     private void assertFindAllSorted(String languageTag, Map<String, String> descriptionsFixture) {
 
-        // Get all domains from the index with specified descriptions
-        final List<Domain> initialList = domainDaoChecker.internationalizeDomains(
-                testClientOperations.findAllDocumentsPagedSorted(
-                        getDocumentMetadata(),
-                        getTestFixture().getSortField(),
-                        0,
-                        (int) this.getTestDocumentsLoader().getLoadedDocumentCount()),
-                descriptionsFixture);
-
-        // Repository search for the specified language
+        domainDaoTestsCustomizer.setDescriptionsFixture(descriptionsFixture);
         threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
-        Sort sorting = new Sort(Sort.Direction.DESC, getTestFixture().getSortField().getName());
-        final List<Domain> foundList =
-                StreamSupport.stream(
-                        getRepository().findAll(sorting).spliterator(), false)
-                        .collect(Collectors.toList());
-
-        assertArrayEquals(initialList.toArray(), foundList.toArray());
+        findAllDocumentsSorted();
     }
 }

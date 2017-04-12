@@ -192,16 +192,6 @@ public class DomainRestFindOneTest extends BaseRestElasticsearchTestCase<Domain,
 
     /**
      * Assert that a domain found by identifier matches the expected one.
-     * The domain description is returned in the default domain's language whatever the provided language tag is.
-     *
-     * @param languageRanges The language ranges that involves a localized description
-     */
-    private void assertFindOne(String languageRanges) {
-        assertFindOne(languageRanges, null, i18nDomainHolder.getDomain().getDefaultLanguageTag());
-    }
-
-    /**
-     * Assert that a domain found by identifier matches the expected one.
      * The domain description is returned in a localized language depending on the provided language tag.
      *
      * @param languageRanges      The language ranges that involves a localized description
