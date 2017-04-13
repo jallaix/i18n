@@ -70,11 +70,6 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
     private ThreadLocaleHolder threadLocaleHolder;
 
     /**
-     * Domain testing checks
-     */
-    private DomainDaoChecker domainDaoChecker;
-
-    /**
      * Domain DAO customizer
      */
     private DomainDaoTestsCustomizer domainDaoTestsCustomizer;
@@ -98,7 +93,7 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
     public void initTest() {
 
         // Utility object that performs DAO checks
-        domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
+        DomainDaoChecker domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
 
         // Domain customizer for DAO tests
         domainDaoTestsCustomizer = new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo);

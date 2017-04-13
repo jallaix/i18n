@@ -158,7 +158,7 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                     Custom tests                                               */
     /*----------------------------------------------------------------------------------------------------------------*/
-// TODO Tests for findEntitiesSorted
+
     /**
      * Getting all domains returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
      * Their descriptions are localized for the default I18N domain's language and specify this language tag in the HTTP headers.
@@ -167,6 +167,17 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
     public void findEntities() {
 
         ResponseEntity<PagedResources<Resource<Domain>>> entity = getEntities();
+        assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is("en"));
+    }
+
+    /**
+     * Getting all domains sorted returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
+     * Their descriptions are localized for the default I18N domain's language and specify this language tag in the HTTP headers.
+     */
+    @Override
+    public void findEntitiesSorted() {
+
+        ResponseEntity<PagedResources<Resource<Domain>>> entity = getEntities(true);
         assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is("en"));
     }
 
@@ -180,12 +191,30 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
     }
 
     /**
+     * Getting all domains sorted for an existing supported language returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
+     * Their descriptions are localized for the specified supported language and specify this language tag in the HTTP headers.
+     */
+    @Test
+    public void findDomainsSortedWithExistingSupportedLanguage() {
+        assertFindAllSorted("fr;q=1", DomainDaoTestUtils.getFrenchDescriptions(), "fr");
+    }
+
+    /**
      * Getting all domains for a missing supported language returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
      * Their descriptions are localized for the default I18N domain's language and specify this language tag in the HTTP headers.
      */
     @Test
     public void findDomainsWithMissingSupportedLanguage() {
         assertFindAll("es", "es");
+    }
+
+    /**
+     * Getting all domains sorted for a missing supported language returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
+     * Their descriptions are localized for the default I18N domain's language and specify this language tag in the HTTP headers.
+     */
+    @Test
+    public void findDomainsSortedWithMissingSupportedLanguage() {
+        assertFindAllSorted("es", "es");
     }
 
     /**
@@ -198,12 +227,30 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
     }
 
     /**
+     * Getting all domains sorted for a missing complex language (with an existing message for the simple language) returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
+     * Their descriptions are localized for the linked simple language and specify the complex language tag in the HTTP headers.
+     */
+    @Test
+    public void findDomainsSortedWithMissingComplexLanguageButExistingSimpleLanguage() {
+        assertFindAllSorted("fr;q=0.5,fr-BE;q=1,en;q=0.1", DomainDaoTestUtils.getFrenchDescriptions(), "fr-BE");
+    }
+
+    /**
      * Getting all domains for an existing complex language returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
      * Their descriptions are localized for the complex language and specify this language tag in the HTTP headers.
      */
     @Test
     public void findDomainsWithExistingComplexLanguage() {
         assertFindAll("en;q=0.5,en-US;q=1", DomainDaoTestUtils.getEnglishUsDescriptions(), "en-US");
+    }
+
+    /**
+     * Getting all domains sorted for an existing complex language returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
+     * Their descriptions are localized for the complex language and specify this language tag in the HTTP headers.
+     */
+    @Test
+    public void findDomainsSortedWithExistingComplexLanguage() {
+        assertFindAllSorted("en;q=0.5,en-US;q=1", DomainDaoTestUtils.getEnglishUsDescriptions(), "en-US");
     }
 
     /**
@@ -216,12 +263,30 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
     }
 
     /**
+     * Getting all domains sorted for a missing complex language (without an existing message for the simple language) returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
+     * Their descriptions are localized for the default I18N domain's language and specify the complex language tag in the HTTP headers.
+     */
+    @Test
+    public void findDomainsSortedWithMissingComplexAndSimpleLanguage() {
+        assertFindAllSorted("es-ES,es", "es-ES");
+    }
+
+    /**
      * Getting all domains for an unsupported language returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
      * Their descriptions are localized for the default I18N domain's language and specify this language tag in the HTTP headers.
      */
     @Test
     public void findDomainsWithUnsupportedLanguage() {
         assertFindAll("de-DE,de", "en");
+    }
+
+    /**
+     * Getting all domains sorted for an unsupported language returns these entities in HATEOAS format and a {@code 200 Ok} HTTP status code.
+     * Their descriptions are localized for the default I18N domain's language and specify this language tag in the HTTP headers.
+     */
+    @Test
+    public void findDomainsSortedWithUnsupportedLanguage() {
+        assertFindAllSorted("de-DE,de", "en");
     }
 
 
@@ -251,6 +316,35 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
 
         // Assert the found domain matches the expected one
         final ResponseEntity<PagedResources<Resource<Domain>>> entity = getEntities(languageRanges);
+        assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is(expectedLanguageTag));
+    }
+
+    /**
+     * Assert that all domains found match the expected ones.
+     * The domain descriptions are returned in a localized language depending on the provided language tag.
+     * The expected domain descriptions are localized for the default I18N language.
+     *
+     * @param languageRanges      The language ranges that involves a localized description
+     * @param expectedLanguageTag The expected language tag
+     */
+    private void assertFindAllSorted(String languageRanges, String expectedLanguageTag) {
+        assertFindAllSorted(languageRanges, DomainDaoTestUtils.getEnglishDescriptions(), expectedLanguageTag);
+    }
+
+    /**
+     * Assert that all domains found match the expected ones.
+     * The domain descriptions must be returned in a localized language depending on the provided language tag.
+     *
+     * @param languageRanges      The language ranges that involves a localized description
+     * @param descriptionsFixture The localized descriptions matching the provided language tag
+     * @param expectedLanguageTag The expected language tag
+     */
+    private void assertFindAllSorted(String languageRanges, Map<String, String> descriptionsFixture, String expectedLanguageTag) {
+
+        domainDaoTestsCustomizer.setDescriptionsFixture(descriptionsFixture);
+
+        // Assert the found domain matches the expected one
+        final ResponseEntity<PagedResources<Resource<Domain>>> entity = getEntities(true, languageRanges);
         assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is(expectedLanguageTag));
     }
 }
