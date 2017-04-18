@@ -226,4 +226,14 @@ public class DomainDaoSaveBulkTest extends BaseDaoElasticsearchTestCase<Domain, 
             domainDaoChecker.checkDomainUnmodified(getTestFixture().newExistingDocument());
         }
     }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
+    }
 }

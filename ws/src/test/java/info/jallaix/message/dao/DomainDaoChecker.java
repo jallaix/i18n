@@ -170,21 +170,6 @@ public class DomainDaoChecker {
     /**
      * Initialize all domain descriptions with internationalized messages.
      *
-     * @param initialList The initial list of domains
-     * @param languageTag The language tag for the internationalized message
-     * @return The list of domains
-     */
-    public List<Domain> internationalizeDomains(List<Domain> initialList, final String languageTag) {
-
-        // Replace the description code by its localized value for each domain in the list
-        return initialList.stream()
-                .map(initial -> internationalizeDomain(initial, languageTag))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Initialize all domain descriptions with internationalized messages.
-     *
      * @param initialList  The initial list of domains
      * @param descriptions The descriptions by domain identifier
      * @return The list of internationalized domains
@@ -193,7 +178,7 @@ public class DomainDaoChecker {
 
         return initialList
                 .stream()
-                .map(d -> internationalizeDomain2(d, descriptions.get(d.getId())))
+                .map(d -> internationalizeDomain(d, descriptions.get(d.getId())))
                 .collect(Collectors.toList());
 
     }
@@ -205,34 +190,11 @@ public class DomainDaoChecker {
      * @param description The description to set
      * @return The internationalized domain
      */
-    public Domain internationalizeDomain2(final Domain initial, final String description) {
+    public Domain internationalizeDomain(final Domain initial, final String description) {
 
         // Set the domain description found
         Domain result = kryo.copy(initial);
         result.setDescription(description);
-
-        return result;
-    }
-
-    /**
-     * Initialize a domain description with an internationalized message.
-     *
-     * @param initial     The initial domain
-     * @param languageTag The language tag for the internationalized message
-     * @return The internationalized domain
-     */
-    public Domain internationalizeDomain(final Domain initial, final String languageTag) {
-
-        // Find the message for the domain description with the specified language tag
-        Optional<EntityMessage> message = getMessages(initial.getId())
-                .stream()
-                .filter(m -> m.getLanguageTag().equals(languageTag)).findFirst();
-        if (!message.isPresent())
-            fail("Invalid fixture: No domain message for " + languageTag);
-
-        // Set the domain description found
-        Domain result = kryo.copy(initial);
-        result.setDescription(message.get().getContent());
 
         return result;
     }

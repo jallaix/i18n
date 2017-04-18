@@ -204,4 +204,14 @@ public class DomainDaoFindOneTest extends BaseDaoElasticsearchTestCase<Domain, S
         // Assert the found domain matches the expected one
         assertThat(getRepository().findOne(domain.getId()), is(domain));
     }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
+    }
 }

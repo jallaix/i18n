@@ -136,9 +136,9 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
     @Override
     public List<Domain> customizeFindAllFixture(final List<Domain> fixture) {
         if (descriptionsFixture == null)
-            return domainDaoChecker.internationalizeDomains(kryo.copy(fixture), "en");
+            return fixture;
         else
-            return domainDaoChecker.internationalizeDomains(kryo.copy(fixture), descriptionsFixture);
+            return domainDaoChecker.internationalizeDomains(fixture, descriptionsFixture);
     }
 
     private String descriptionFixture;
@@ -154,7 +154,10 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
      */
     @Override
     public Domain customizeFindOneFixture(final Domain fixture) {
-        return domainDaoChecker.internationalizeDomain(fixture, "en");
+        if (descriptionFixture == null)
+            return fixture;
+        else
+            return domainDaoChecker.internationalizeDomain(fixture, descriptionFixture);
     }
 
     /**

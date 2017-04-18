@@ -165,9 +165,7 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
      */
     @Override
     public void findEntities() {
-
-        ResponseEntity<PagedResources<Resource<Domain>>> entity = getEntities();
-        assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is("en"));
+        assertFindAll(null, DomainDaoTestUtils.getEnglishDescriptions(), "en");
     }
 
     /**
@@ -176,9 +174,7 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
      */
     @Override
     public void findEntitiesSorted() {
-
-        ResponseEntity<PagedResources<Resource<Domain>>> entity = getEntities(true);
-        assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is("en"));
+        assertFindAllSorted(null, DomainDaoTestUtils.getEnglishDescriptions(), "en");
     }
 
     /**
@@ -346,5 +342,15 @@ public class DomainRestFindAllTest extends BaseRestElasticsearchTestCase<Domain,
         // Assert the found domain matches the expected one
         final ResponseEntity<PagedResources<Resource<Domain>>> entity = getEntities(true, languageRanges);
         assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is(expectedLanguageTag));
+    }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
     }
 }

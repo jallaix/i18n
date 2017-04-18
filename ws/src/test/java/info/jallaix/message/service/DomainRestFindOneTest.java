@@ -73,6 +73,11 @@ public class DomainRestFindOneTest extends BaseRestElasticsearchTestCase<Domain,
     @Autowired
     private ThreadLocaleHolder threadLocaleHolder;
 
+    /**
+     * Domain DAO customizer
+     */
+    private DomainDaoTestsCustomizer domainDaoTestsCustomizer;
+
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                   Tests lifecycle                                              */
@@ -88,13 +93,12 @@ public class DomainRestFindOneTest extends BaseRestElasticsearchTestCase<Domain,
     @Before
     public void initTest() throws Exception {
 
-        // Domain customizer for default DAO tests
-        setCustomizer(
-                new DomainDaoTestsCustomizer(
-                        new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
-                        threadLocaleHolder,
-                        getTestFixture(),
-                        kryo));
+        // Utility object that performs DAO checks
+        DomainDaoChecker domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
+
+        // Domain customizer for DAO tests
+        domainDaoTestsCustomizer = new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo);
+        setCustomizer(domainDaoTestsCustomizer);
     }
 
 
@@ -200,13 +204,20 @@ public class DomainRestFindOneTest extends BaseRestElasticsearchTestCase<Domain,
      */
     private void assertFindOne(String languageRanges, String descriptionFixture, String expectedLanguageTag) {
 
-        // Get domain fixture for the language tag
-        Domain domain = getTestFixture().newExistingDocument();
-        if (descriptionFixture != null)
-            domain.setDescription(descriptionFixture);
+        domainDaoTestsCustomizer.setDescriptionFixture(descriptionFixture);
 
         // Assert the found domain matches the expected one
-        final ResponseEntity<Resource<Domain>> entity = getEntity(domain, HttpStatus.OK, false, languageRanges);
+        final ResponseEntity<Resource<Domain>> entity = getEntity(getTestFixture().newExistingDocument(), HttpStatus.OK, false, languageRanges);
         assertThat(entity.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is(expectedLanguageTag));
+    }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
     }
 }

@@ -122,6 +122,16 @@ public class DomainDaoFindAllByIdTest extends BaseDaoElasticsearchTestCase<Domai
         return new DomainTestFixture();
     }
 
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
+    }
+
 
     /*----------------------------------------------------------------------------------------------------------------*/
     /*                                                     Custom tests                                               */

@@ -243,4 +243,14 @@ public class DomainDaoFindByCodeTest extends BaseDaoElasticsearchTestCase<Domain
         // Assert the found domain matches the expected one
         assertThat(getRepository().findByCode(domain.getCode()), is(domain));
     }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
+    }
 }

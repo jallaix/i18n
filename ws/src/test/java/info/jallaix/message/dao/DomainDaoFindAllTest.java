@@ -281,4 +281,14 @@ public class DomainDaoFindAllTest extends BaseDaoElasticsearchTestCase<Domain, S
         threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse(languageTag));
         findAllDocumentsSorted();
     }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
+    }
 }

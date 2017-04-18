@@ -8,7 +8,6 @@ import info.jallaix.message.config.TestDomainDaoConfiguration;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
-import info.jallaix.spring.data.es.test.testcase.DaoTestedMethod;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -67,7 +66,12 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * Locale data holder
      */
     @Autowired
-    private ThreadLocaleHolder threadLocaleHolder;
+    protected ThreadLocaleHolder threadLocaleHolder;
+
+    /**
+     * Domain DAO customizer
+     */
+    protected DomainDaoTestsCustomizer domainDaoTestsCustomizer;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -78,13 +82,13 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
      * Constructor defining some basic tests
      */
     public DomainDaoTest() {
-        super(
+        super();/*
                 DaoTestedMethod.Exist.class,
                 DaoTestedMethod.Count.class,
                 DaoTestedMethod.DeleteAll.class,
                 DaoTestedMethod.DeleteAllById.class,
                 DaoTestedMethod.Delete.class,
-                DaoTestedMethod.DeleteById.class);
+                DaoTestedMethod.DeleteById.class);*/
     }
     /**
      * Initialize custom testing objects.
@@ -92,13 +96,16 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Before
     public void initTest() {
 
-        // Domain customizer for default DAO tests
-        setCustomizer(
-                new DomainDaoTestsCustomizer(
-                        new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
-                        threadLocaleHolder,
-                        getTestFixture(),
-                        kryo));
+        // Utility object that performs DAO checks
+        DomainDaoChecker domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
+
+        // Domain customizer for DAO tests
+        domainDaoTestsCustomizer = new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo);
+        setCustomizer(domainDaoTestsCustomizer);
+
+        // Descriptions fixture for default language
+        domainDaoTestsCustomizer.setDescriptionFixture(DomainTestFixture.DOMAIN3_EN_DESCRIPTION);
+        domainDaoTestsCustomizer.setDescriptionsFixture(DomainDaoTestUtils.getEnglishDescriptions());
     }
 
     /**
@@ -117,5 +124,15 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected ElasticsearchTestFixture<Domain> getTestFixture() {
         return new DomainTestFixture();
+    }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
     }
 }

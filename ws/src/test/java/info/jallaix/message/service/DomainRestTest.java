@@ -237,4 +237,14 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     private Link getSearchLink() {
         return new Link(new URI(getServerUri() + "/domains/search").toString(), "search");
     }
+
+    /**
+     * Get the persistent document class
+     *
+     * @return The persistent document class
+     */
+    @Override
+    protected Class<Domain> getDocumentClass() {
+        return Domain.class;
+    }
 }
