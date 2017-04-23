@@ -4,14 +4,19 @@ import com.esotericsoftware.kryo.Kryo;
 import info.jallaix.message.bean.Domain;
 import info.jallaix.message.bean.EntityMessage;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
-import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.customizer.BaseDaoTestsCustomizer;
+import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
+import org.elasticsearch.common.lang3.StringUtils;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -38,6 +43,31 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
      * Serialization framework
      */
     private Kryo kryo;
+
+    /**
+     * Descriptions fixture used when finding many domains
+     */
+    private Map<String, String> descriptionsFixture;
+
+    /**
+     * Description fixture used when finding one domain
+     */
+    private String descriptionFixture;
+
+    /**
+     * Language tag used for input data
+     */
+    private String inputLanguageTag;
+
+    /**
+     * Language ranges used for output data
+     */
+    private String outputLanguageRanges;
+
+    /**
+     * Language tag expected in the HTTP response
+     */
+    private String responseLanguageTag;
 
 
     /**
@@ -122,11 +152,6 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
         domainDaoChecker.checkExistingDocumentMessages(testFixture.newDocumentToUpdate(), threadLocaleHolder.getInputLocale(), originalMessages);
     }
 
-    private Map<String, String> descriptionsFixture;
-    public void setDescriptionsFixture(Map<String, String> descriptionsFixture) {
-        this.descriptionsFixture = descriptionsFixture;
-    }
-
     /**
      * Internationalize domain descriptions for the {@link info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase#findAllDocuments()} and so on tests.
      *
@@ -139,11 +164,6 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
             return fixture;
         else
             return domainDaoChecker.internationalizeDomains(fixture, descriptionsFixture);
-    }
-
-    private String descriptionFixture;
-    public void setDescriptionFixture(String descriptionFixture) {
-        this.descriptionFixture = descriptionFixture;
     }
 
     /**
@@ -191,5 +211,84 @@ public class DomainDaoTestsCustomizer extends BaseDaoTestsCustomizer<Domain> {
     @Override
     public void customizeDeleteOne(String id) {
         assertThat(domainDaoChecker.getMessages(id), hasSize(0));
+    }
+
+    /**
+     * Update an HTTP entity before it's sent to the server.
+     *
+     * @param httpEntity The original HTTP entity
+     * @return The updated HTTP entity
+     */
+    @Override
+    public HttpEntity<?> customizeHttpEntity(final HttpEntity<?> httpEntity) {
+
+        // Copy original headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.putAll(httpEntity.getHeaders());
+
+        // Define language headers
+        if (StringUtils.isNotBlank(inputLanguageTag))
+            headers.add(HttpHeaders.CONTENT_LANGUAGE, inputLanguageTag);
+        if (StringUtils.isNotBlank(outputLanguageRanges))
+            headers.add(HttpHeaders.ACCEPT_LANGUAGE, outputLanguageRanges);
+
+        return new HttpEntity<>(httpEntity.getBody(), headers);
+    }
+
+    /**
+     * Assert that the HTTP response contains the expected language tag.
+     *
+     * @param response The HTTP response
+     */
+    @Override
+    public void assertResponse(ResponseEntity<?> response) {
+
+        if (StringUtils.isNotBlank(responseLanguageTag))
+            assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_LANGUAGE), is(responseLanguageTag));
+    }
+
+    /**
+     * Set descriptions fixture used when finding many domains.
+     *
+     * @param descriptionsFixture Descriptions fixture used when finding many domains
+     */
+    public void setDescriptionsFixture(Map<String, String> descriptionsFixture) {
+        this.descriptionsFixture = descriptionsFixture;
+    }
+
+    /**
+     * Set description fixture used when finding one domain.
+     *
+     * @param descriptionFixture Description fixture used when finding many domains
+     */
+    public void setDescriptionFixture(String descriptionFixture) {
+        this.descriptionFixture = descriptionFixture;
+    }
+
+    /**
+     * Set the language tag used for input data
+     *
+     * @param inputLanguageTag The language tag used for input data
+     */
+    public void setInputLanguageTag(String inputLanguageTag) {
+        this.inputLanguageTag = inputLanguageTag;
+    }
+
+    /**
+     * Set the language ranges used for output data
+     *
+     * @param outputLanguageRanges The language ranges used for output data
+     */
+    public void setOutputLanguageRanges(String outputLanguageRanges) {
+        this.outputLanguageRanges = outputLanguageRanges;
+    }
+
+    /**
+     * Set the language tag expected in the HTTP response.
+     *
+     * @param responseLanguageTag Language tag expected in the HTTP response
+     */
+    public void setResponseLanguageTag(String responseLanguageTag) {
+        this.responseLanguageTag = responseLanguageTag;
     }
 }

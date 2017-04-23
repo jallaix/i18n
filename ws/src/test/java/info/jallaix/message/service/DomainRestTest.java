@@ -8,6 +8,7 @@ import info.jallaix.message.config.DomainHolder;
 import info.jallaix.message.config.TestDomainRestConfiguration;
 import info.jallaix.message.dao.DomainDao;
 import info.jallaix.message.dao.DomainDaoChecker;
+import info.jallaix.message.dao.DomainDaoTestUtils;
 import info.jallaix.message.dao.DomainDaoTestsCustomizer;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
@@ -79,7 +80,12 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
      * REST template for calling server operations
      */
     @Autowired
-    private RestTemplate restTemplate;
+    protected RestTemplate restTemplate;
+
+    /**
+     * Domain DAO customizer
+     */
+    protected DomainDaoTestsCustomizer domainDaoTestsCustomizer;
 
 
     /*----------------------------------------------------------------------------------------------------------------*/
@@ -103,13 +109,27 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
     @Before
     public void initTest() throws Exception {
 
-        // Domain customizer for default DAO tests
-        setCustomizer(
+        // Domain customizer for DAO tests
+        domainDaoTestsCustomizer =
                 new DomainDaoTestsCustomizer(
                         new DomainDaoChecker(i18nDomainHolder, esOperations, kryo),
                         threadLocaleHolder,
                         getTestFixture(),
-                        kryo));
+                        kryo);
+        setCustomizer(domainDaoTestsCustomizer);
+        customizeTest(domainDaoTestsCustomizer);
+    }
+
+    /**
+     * Apply customization before executing a test.
+     *
+     * @param domainDaoTestsCustomizer Domain customizer for DAO tests
+     */
+    public void customizeTest(DomainDaoTestsCustomizer domainDaoTestsCustomizer) {
+
+        // Descriptions fixture for default language
+        domainDaoTestsCustomizer.setDescriptionFixture(DomainTestFixture.DOMAIN3_EN_DESCRIPTION);
+        domainDaoTestsCustomizer.setDescriptionsFixture(DomainDaoTestUtils.getEnglishDescriptions());
     }
 
 
@@ -204,7 +224,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
 
         final HttpEntity<?> httpEntity = convertToHttpEntity(null);             // Define Hal+Json HTTP entity
 
-        Domain existingDomain = getTestFixture().newExistingDocument();
+        Domain existingDomain = getCustomizer().customizeFindOneFixture(getTestFixture().newExistingDocument());
         final Resource<Domain> expectedResource = convertToResource(existingDomain);
 
         try {
@@ -234,7 +254,7 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
      * @return The the search HATEOAS link
      */
     @SneakyThrows
-    private Link getSearchLink() {
+    protected Link getSearchLink() {
         return new Link(new URI(getServerUri() + "/domains/search").toString(), "search");
     }
 

@@ -1,16 +1,16 @@
-package info.jallaix.message.dao;
+package info.jallaix.message.service;
 
 import info.jallaix.message.bean.DomainTestFixture;
-import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
-
-import java.util.Locale;
+import info.jallaix.message.dao.DomainDaoTestUtils;
+import info.jallaix.message.dao.DomainDaoTestsCustomizer;
+import info.jallaix.spring.data.es.test.testcase.BaseRestElasticsearchTestCase;
 
 /**
- * <p>The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.</p>
+ * <p>The Domain REST controller must verify some tests provided by {@link BaseRestElasticsearchTestCase}.</p>
  * <p>A supported simple language is used for input and output data.</p>
  * <p>Data exist for the simple language.</p>
  */
-public class DomainDaoExistingLanguageTest extends DomainDaoTest {
+public class DomainRestExistingLanguageTest extends DomainRestTest {
 
     /**
      * Apply customization before executing a test.
@@ -24,8 +24,9 @@ public class DomainDaoExistingLanguageTest extends DomainDaoTest {
         domainDaoTestsCustomizer.setDescriptionFixture(DomainTestFixture.DOMAIN3_FR_DESCRIPTION);
         domainDaoTestsCustomizer.setDescriptionsFixture(DomainDaoTestUtils.getFrenchDescriptions());
 
-        // Set locale to the simple language
-        threadLocaleHolder.setInputLocale(Locale.forLanguageTag("fr"));
-        threadLocaleHolder.setOutputLocales(Locale.LanguageRange.parse("fr;q=1"));
+        // Set input and output language to the simple language
+        domainDaoTestsCustomizer.setInputLanguageTag("fr");
+        domainDaoTestsCustomizer.setOutputLanguageRanges("fr;q=1");
+        domainDaoTestsCustomizer.setResponseLanguageTag("fr");
     }
 }
