@@ -57,10 +57,10 @@ public class KeyMessage {
     // Get the class fields
     static {
         try {
-            FIELD_DOMAIN_ID = EntityMessage.class.getDeclaredField("domainId");
-            FIELD_KEY = EntityMessage.class.getDeclaredField("key");
-            FIELD_LANGUAGE_TAG = EntityMessage.class.getDeclaredField("languageTag");
-            FIELD_CONTENT = EntityMessage.class.getDeclaredField("content");
+            FIELD_DOMAIN_ID = KeyMessage.class.getDeclaredField("domainId");
+            FIELD_KEY = KeyMessage.class.getDeclaredField("key");
+            FIELD_LANGUAGE_TAG = KeyMessage.class.getDeclaredField("languageTag");
+            FIELD_CONTENT = KeyMessage.class.getDeclaredField("content");
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
         }

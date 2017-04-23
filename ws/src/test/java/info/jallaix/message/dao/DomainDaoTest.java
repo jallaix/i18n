@@ -8,10 +8,7 @@ import info.jallaix.message.config.TestDomainDaoConfiguration;
 import info.jallaix.message.dao.interceptor.ThreadLocaleHolder;
 import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 import info.jallaix.spring.data.es.test.testcase.BaseDaoElasticsearchTestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
+import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -21,6 +18,8 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
+
+import static org.junit.Assert.*;
 
 /**
  * <p>The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.</p>
@@ -151,5 +150,33 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     @Override
     protected Class<Domain> getDocumentClass() {
         return Domain.class;
+    }
+
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                     Custom tests                                               */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Getting a domain by code returns {@code null} if there is no domain found.
+     * The missing domain is defined by the {@link ElasticsearchTestFixture#newDocumentToInsert()} method.
+     */
+    @Test
+    public void findMissingEntityByCode() {
+        assertNull(getRepository().findByCode(getTestFixture().newDocumentToInsert().getCode()));
+    }
+
+    /**
+     * Getting a domain returns this entity if the domain is found.
+     * The existing domain is defined by the {@link ElasticsearchTestFixture#newExistingDocument()} method.
+     */
+    @Test
+    public void findExistingEntityByCode() {
+
+        Domain fixture = getCustomizer().customizeFindOneFixture(getTestFixture().newExistingDocument());
+        Domain found = getRepository().findByCode(fixture.getCode());
+
+        assertNotNull(found);
+        assertEquals(fixture, found);
     }
 }

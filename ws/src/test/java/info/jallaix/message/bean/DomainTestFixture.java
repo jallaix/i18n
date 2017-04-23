@@ -105,12 +105,7 @@ public class DomainTestFixture implements ElasticsearchTestFixture<Domain> {
      */
     @Override
     public Field getSortField() {
-
-        try {
-            return Domain.class.getDeclaredField("code");
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
+        return Domain.FIELD_CODE;
     }
 
     /**
