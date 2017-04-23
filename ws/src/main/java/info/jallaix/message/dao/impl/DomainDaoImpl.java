@@ -30,6 +30,7 @@ import org.springframework.data.elasticsearch.repository.support.SimpleElasticse
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * This class implements custom datasource accesses related to a domain.
@@ -231,28 +232,33 @@ public class DomainDaoImpl implements DomainDaoCustom {
         if (entities == null)
             return getElasticsearchRepository().save((Iterable<Domain>) null);
 
+        // Check if a domain to save is null
+        if (StreamSupport.stream(entities.spliterator(), false)
+                .collect(Collectors.toList()).contains(null)) {
+
+            // Throw the default exception for saving null documents
+            getElasticsearchRepository().save(Collections.singleton(null));
+        }
+
         // Replace the domain description's literal value for each domain to save
-        List<Pair<Domain, String>> descriptions = new ArrayList<>();
         Collection<Domain> domainsToSave = new ArrayList<>();
+        List<Pair<Domain, String>> descriptions = new ArrayList<>();
         for (Domain initialDomain : entities) {
 
-            if (initialDomain != null) {
-                // Replace the domain description's literal value by a message type
-                Pair<Domain, String> updatedDomainDescription = updateDescription(initialDomain);
-                domainsToSave.add(updatedDomainDescription.getLeft());
+            // Replace the domain description's literal value by a message type
+            Pair<Domain, String> updatedDomainDescription = updateDescription(initialDomain);
+            domainsToSave.add(updatedDomainDescription.getLeft());
 
-                // Get the existing domain to update if it already exists
-                final Domain existingDomain = findExistingDomain(initialDomain);
+            // Get the existing domain to update if it already exists
+            final Domain existingDomain = findExistingDomain(initialDomain);
 
-                // Detect locale errors on a domain update
-                checkLocaleForDomainUpdate(existingDomain);
+            // Detect locale errors on a domain update
+            checkLocaleForDomainUpdate(existingDomain);
 
-                descriptions.add(
-                        new MutablePair<>(
-                                existingDomain,
-                                updatedDomainDescription.getRight()));
-            } else
-                domainsToSave.add(null);
+            descriptions.add(
+                    new MutablePair<>(
+                            existingDomain,
+                            updatedDomainDescription.getRight()));
         }
 
         // Save domains

@@ -23,7 +23,9 @@ import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 /**
- * The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.
+ * <p>The Domain DAO must verify some tests provided by {@link BaseDaoElasticsearchTestCase}.</p>
+ * <p>No language is used for input and output data.</p>
+ * <p>Data exist for the default language.</p>
  */
 @Configuration
 @Import(TestDomainDaoConfiguration.class)
@@ -69,6 +71,11 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     protected ThreadLocaleHolder threadLocaleHolder;
 
     /**
+     * Utility object that performs DAO checks
+     */
+    protected DomainDaoChecker domainDaoChecker;
+
+    /**
      * Domain DAO customizer
      */
     protected DomainDaoTestsCustomizer domainDaoTestsCustomizer;
@@ -90,6 +97,7 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
                 DaoTestedMethod.Delete.class,
                 DaoTestedMethod.DeleteById.class);*/
     }
+
     /**
      * Initialize custom testing objects.
      */
@@ -97,11 +105,20 @@ public class DomainDaoTest extends BaseDaoElasticsearchTestCase<Domain, String, 
     public void initTest() {
 
         // Utility object that performs DAO checks
-        DomainDaoChecker domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
+        domainDaoChecker = new DomainDaoChecker(i18nDomainHolder, esOperations, kryo);
 
         // Domain customizer for DAO tests
         domainDaoTestsCustomizer = new DomainDaoTestsCustomizer(domainDaoChecker, threadLocaleHolder, getTestFixture(), kryo);
         setCustomizer(domainDaoTestsCustomizer);
+        customizeTest(domainDaoTestsCustomizer);
+    }
+
+    /**
+     * Apply customization before executing a test.
+     *
+     * @param domainDaoTestsCustomizer Domain customizer for DAO tests
+     */
+    public void customizeTest(DomainDaoTestsCustomizer domainDaoTestsCustomizer) {
 
         // Descriptions fixture for default language
         domainDaoTestsCustomizer.setDescriptionFixture(DomainTestFixture.DOMAIN3_EN_DESCRIPTION);
