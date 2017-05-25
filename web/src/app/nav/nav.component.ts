@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import {NgbDropdown} from "@ng-bootstrap/ng-bootstrap";
+import {Domain} from "../dto/domain";
+import {DomainService} from "../service/domain.service";
 
 @Component({
   selector: 'app-nav',
@@ -8,9 +9,13 @@ import {NgbDropdown} from "@ng-bootstrap/ng-bootstrap";
 })
 export class NavComponent implements OnInit {
 
-  constructor() { }
+  public domains:Domain[];
+  public selectedDomains:Domain;
 
-  ngOnInit() {
+  constructor(private domainService:DomainService) {
   }
 
+  ngOnInit() {
+    this.domainService.getDomains().then(domains => this.domains = domains);
+  }
 }

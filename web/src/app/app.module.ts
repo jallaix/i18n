@@ -7,20 +7,27 @@ import { AppComponent } from './app.component';
 import { NavComponent } from './nav/nav.component';
 import { FooterComponent } from './footer/footer.component';
 import { NgbModule } from "@ng-bootstrap/ng-bootstrap";
+import { DomainComponent } from './domain/domain.component';
+import {AppRoutingModule} from "./app-routing.module";
+import { HomeComponent } from './home/home.component';
+import {DomainService} from "app/service/domain.service";
 
 @NgModule({
   declarations: [
     AppComponent,
     NavComponent,
-    FooterComponent
+    FooterComponent,
+    DomainComponent,
+    HomeComponent
   ],
   imports: [
     BrowserModule,
     FormsModule,
     HttpModule,
-    NgbModule.forRoot()
+    NgbModule.forRoot(),
+    AppRoutingModule
   ],
-  providers: [],
+  providers: [DomainService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

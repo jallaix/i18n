@@ -1,0 +1,59 @@
+<div class="container" *ngIf="domain">
+  <form #domainForm="ngForm">
+    <div class="row">
+      <div class="col-md-1 align-self-center">
+        <h1 *ngIf="!editable">{{domain.code}}</h1>
+        <div *ngIf="editable" class="form-group col-xs-2">
+          <label class="sr-only" for="code">Code</label>
+          <input [(ngModel)]="domain.code"
+                 class="form-control"
+                 id="code"
+                 name="code"
+                 placeholder="Code"
+                 aria-label="Code"
+                 required/>
+        </div>
+      </div>
+      <div class="col-md-4 align-self-center">
+        <mark *ngIf="!editable">{{domain.description}}</mark>
+        <div *ngIf="editable" class="form-group col-xs-4">
+          <label class="sr-only"for="description">Description</label>
+          <input *ngIf="editable"
+                 [(ngModel)]="domain.description"
+                 class="form-control"
+                 id="description"
+                 name="description"
+                 placeholder="Description"
+                 aria-label="Description"
+                 required/>
+        </div>
+      </div>
+      <div class="col-md-6 align-self-center">
+        <div [(ngModel)]="domain.defaultLanguageTag" ngbRadioGroup name="availableLanguageTags" disabled>
+          <label *ngFor="let languageTag of domain.availableLanguageTags" class="btn btn-primary">
+            <input type="radio" [value]="languageTag"> {{languageTag}}
+          </label>
+        </div>
+      </div>
+      <div class="col-md-1 align-self-center">
+        <h3 *ngIf="!editable"><i class="fa fa-pencil-square-o" aria-hidden="true" (click)="editDomain()"></i></h3>
+        <h3 *ngIf="editable"><i class="fa fa-floppy-o" aria-hidden="true" (click)="submitDomain()"></i></h3>
+      </div>
+    </div>
+    <div *ngIf="editable" class="row">
+      <div class="col-md-12 align-self-center">
+        <div class="form-group">
+          <label for="languageTag">Add language</label>
+          <select class="form-control" id="languageTag">
+            <option *ngFor="let languageTag of languageTags" [value]="languageTag">{{languageTag}}</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </form>
+  <br>
+  <div class="row">
+    Search messages by key
+  </div>
+</div>
