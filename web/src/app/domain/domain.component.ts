@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute, Params} from "@angular/router";
 import 'rxjs/add/operator/switchMap';
-import { Observable } from 'rxjs/Observable';
 import {Domain} from "../dto/domain";
 import {DomainService} from "../service/domain.service";
+import {KeyMessage} from "../dto/key-message";
+import {KeyMessageService} from "../service/key-message.service";
 
 @Component({
   selector: 'app-domain',
@@ -13,11 +14,14 @@ import {DomainService} from "../service/domain.service";
 export class DomainComponent implements OnInit {
 
   public domain: Domain;
-  public editable: boolean;
-  public languageTags:string[] = ["es", "de", "zh"];
+
+  public editableKeyMessage: KeyMessage;
+  public messageEditable: boolean;
+  public messages: KeyMessage[];
 
   constructor(private route: ActivatedRoute,
-              private domainService:DomainService) {
+              private domainService: DomainService,
+              private keyMessageService: KeyMessageService) {
   }
 
   ngOnInit() {
@@ -30,18 +34,16 @@ export class DomainComponent implements OnInit {
       })
       .subscribe(domain => {
         this.domain = domain;
-        if (domain.id)
-          this.editable = false;
-        else
-          this.editable = true;
       });
   }
 
-  editDomain():void {
-    this.editable = true;
+  searchMessages(): void {
+    this.keyMessageService.findMessages(this.domain.id, this.domain.defaultLanguageTag)
+      .then(messages => this.messages = messages);
   }
 
-  submitDomain():void {
-    this.editable = false;
+  displayNewMessage(): void {
+    this.messageEditable = true;
+    this.editableKeyMessage = new KeyMessage();
   }
 }

@@ -11,6 +11,8 @@ import { DomainComponent } from './domain/domain.component';
 import {AppRoutingModule} from "./app-routing.module";
 import { HomeComponent } from './home/home.component';
 import {DomainService} from "app/service/domain.service";
+import { DomainHeaderComponent } from './domain/domain-header/domain-header.component';
+import {KeyMessageService} from "./service/key-message.service";
 
 @NgModule({
   declarations: [
@@ -18,7 +20,8 @@ import {DomainService} from "app/service/domain.service";
     NavComponent,
     FooterComponent,
     DomainComponent,
-    HomeComponent
+    HomeComponent,
+    DomainHeaderComponent
   ],
   imports: [
     BrowserModule,
@@ -27,7 +30,7 @@ import {DomainService} from "app/service/domain.service";
     NgbModule.forRoot(),
     AppRoutingModule
   ],
-  providers: [DomainService],
+  providers: [DomainService, KeyMessageService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
