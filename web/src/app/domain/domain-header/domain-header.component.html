@@ -1,7 +1,9 @@
 <form #domainForm="ngForm">
-  <div class="row">
-    <div class="col-8 col-md-2 align-self-center">
+  <div class="row align-items-center">
+
+    <div class="col-8 col-md-2">
       <h1 *ngIf="!editable">{{domain.code}}</h1>
+
       <div *ngIf="editable" class="form-group col-xs-2">
         <label class="sr-only" for="code">Code</label>
         <input [(ngModel)]="domain.code"
@@ -10,15 +12,23 @@
                name="code"
                placeholder="Code"
                aria-label="Code"
-               required/>
+               required="required"/>
       </div>
     </div>
-    <div class="col-4 col-md-1 push-md-9 text-center align-self-center">
-      <h3 *ngIf="!editable"><i class="fa fa-pencil-square-o" aria-hidden="true" (click)="editDomain()"></i></h3>
-      <h3 *ngIf="editable"><i class="fa fa-floppy-o" aria-hidden="true" (click)="submitDomain()"></i></h3>
+
+    <div class="col-4 col-md-1 push-md-9 text-center align-self-baseline">
+      <button *ngIf="!editable" class="btn btn-outline-secondary" (click)="editDomain()">
+        <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+      </button>
+
+      <button *ngIf="editable" class="btn btn-outline-primary" (click)="submitDomain()">
+        <i class="fa fa-floppy-o" aria-hidden="true"></i>
+      </button>
     </div>
-    <div class="col-md-4 pull-md-1 align-self-center">
+
+    <div class="col-md-4 pull-md-1">
       <mark *ngIf="!editable">{{domain.description}}</mark>
+
       <div *ngIf="editable" class="form-group">
         <label class="sr-only"for="description">Description</label>
         <input *ngIf="editable"
@@ -28,28 +38,44 @@
                name="description"
                placeholder="Description"
                aria-label="Description"
-               required/>
+               required="required"/>
       </div>
     </div>
-    <div class="col-md-5 pull-md-1 align-self-center text-right">
-      <div class="form-group form-inline pull-right">
-        <div class="input-group">
-          <span *ngFor="let languageTag of domain.availableLanguageTags" class="input-group-addon">{{languageTag}}</span>
+
+    <div class="col-md-5 pull-md-1 text-right">
+      <div class="form-group pull-right">
+        <div *ngIf="!editable" class="input-group">
+          <span *ngFor="let languageTag of domain.availableLanguageTags" class="input-group-addon d-inline">
+            {{languageTag}}
+            <i *ngIf="languageTag == domain.defaultLanguageTag" class="fa fa-check" aria-hidden="true"></i>
+          </span>
         </div>
-        <!--<div [(ngModel)]="domain.defaultLanguageTag" ngbRadioGroup name="availableLanguageTags">
-          <label *ngFor="let languageTag of domain.availableLanguageTags" class="btn btn-primary">
-            <input type="radio" [value]="languageTag"> {{languageTag}}
-          </label>
-        </div>
-        <div *ngIf="editable" ngbDropdown class="pl-md-2">
-          <button class="btn btn-outline" id="dropdownLanguage" ngbDropdownToggle>Add a language</button>
-          <div class="dropdown-menu" aria-labelledby="dropdownLanguage">
-            <button *ngFor="let languageTag of languageTags" class="dropdown-item" (click)="addLanguageTag(languageTag)">
-              {{languageTag}}
-            </button>
+
+        <div *ngIf="editable" class="btn-group">
+          <ng-template #popContent>
+            <button class="btn btn-info"><i class="fa fa-check" aria-hidden="true"></i></button>
+            <button class="btn btn-danger"><i class="fa fa-trash" aria-hidden="true"></i></button>
+          </ng-template>
+          <button *ngFor="let languageTag of domain.availableLanguageTags"
+                  type="button"
+                  class="btn btn-secondary"
+                  placement="bottom"
+                  data-trigger="focus"
+                  [ngbPopover]="popContent">
+            {{languageTag}}
+            <i *ngIf="languageTag == domain.defaultLanguageTag" class="fa fa-check" aria-hidden="true"></i>
+          </button>
+          <div class="btn-group" role="group" ngbDropdown>
+            <button id="dropdownLanguage" class="btn btn-primary" ngbDropdownToggle></button>
+            <div class="dropdown-menu" aria-labelledby="dropdownLanguage">
+              <button *ngFor="let languageTag of languageTags" class="dropdown-item" (click)="addLanguageTag(languageTag)">
+                {{languageTag}}
+              </button>
+            </div>
           </div>
-        </div>-->
+        </div>
       </div>
     </div>
+
   </div>
 </form>
