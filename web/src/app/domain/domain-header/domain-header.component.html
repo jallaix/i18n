@@ -53,15 +53,18 @@
 
         <div *ngIf="editable" class="btn-group">
           <ng-template #popContent>
-            <button class="btn btn-info"><i class="fa fa-check" aria-hidden="true"></i></button>
-            <button class="btn btn-danger"><i class="fa fa-trash" aria-hidden="true"></i></button>
+            <button class="btn btn-info" (click)="chooseDefaultLanguageTag(selectedLanguageTag)"><i class="fa fa-check" aria-hidden="true"></i></button>
+            <button class="btn btn-danger" (click)="removeLanguageTag(selectedLanguageTag)"><i class="fa fa-trash" aria-hidden="true"></i></button>
           </ng-template>
           <button *ngFor="let languageTag of domain.availableLanguageTags"
                   type="button"
                   class="btn btn-secondary"
+                  container="body"
                   placement="bottom"
-                  data-trigger="focus"
-                  [ngbPopover]="popContent">
+                  triggers="manual"
+                  [ngbPopover]="popContent"
+                  #languageTagPopover="ngbPopover"
+                  (click)="showLanguageTagOptions(languageTagPopover, languageTag)">
             {{languageTag}}
             <i *ngIf="languageTag == domain.defaultLanguageTag" class="fa fa-check" aria-hidden="true"></i>
           </button>
