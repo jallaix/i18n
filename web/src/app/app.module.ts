@@ -13,6 +13,7 @@ import { HomeComponent } from './home/home.component';
 import {DomainService} from "app/service/domain.service";
 import { DomainHeaderComponent } from './domain/domain-header/domain-header.component';
 import {KeyMessageService} from "./service/key-message.service";
+import { DomainHeaderLanguagesComponent } from './domain/domain-header/domain-header-languages/domain-header-languages.component';
 
 @NgModule({
   declarations: [
@@ -21,7 +22,8 @@ import {KeyMessageService} from "./service/key-message.service";
     FooterComponent,
     DomainComponent,
     HomeComponent,
-    DomainHeaderComponent
+    DomainHeaderComponent,
+    DomainHeaderLanguagesComponent
   ],
   imports: [
     BrowserModule,

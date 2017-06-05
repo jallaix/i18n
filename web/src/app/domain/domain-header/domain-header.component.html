@@ -7,12 +7,13 @@
       <div *ngIf="editable" class="form-group col-xs-2">
         <label class="sr-only" for="code">Code</label>
         <input [(ngModel)]="domain.code"
-               class="form-control"
+               class="form-control form-control-lg"
                id="code"
                name="code"
                placeholder="Code"
                aria-label="Code"
-               required="required"/>
+               required
+               maxlength="6"/>
       </div>
     </div>
 
@@ -30,7 +31,7 @@
       <mark *ngIf="!editable">{{domain.description}}</mark>
 
       <div *ngIf="editable" class="form-group">
-        <label class="sr-only"for="description">Description</label>
+        <label class="sr-only" for="description">Description</label>
         <input *ngIf="editable"
                [(ngModel)]="domain.description"
                class="form-control"
@@ -38,44 +39,25 @@
                name="description"
                placeholder="Description"
                aria-label="Description"
-               required="required"/>
+               required
+               maxlength="50"/>
       </div>
     </div>
 
     <div class="col-md-5 pull-md-1 text-right">
       <div class="form-group pull-right">
         <div *ngIf="!editable" class="input-group">
-          <span *ngFor="let languageTag of domain.availableLanguageTags" class="input-group-addon d-inline">
+          <span *ngFor="let languageTag of domain.supportedLanguageTags" class="input-group-addon d-inline">
             {{languageTag}}
             <i *ngIf="languageTag == domain.defaultLanguageTag" class="fa fa-check" aria-hidden="true"></i>
           </span>
         </div>
 
-        <div *ngIf="editable" class="btn-group">
-          <ng-template #popContent>
-            <button class="btn btn-info" (click)="chooseDefaultLanguageTag(selectedLanguageTag)"><i class="fa fa-check" aria-hidden="true"></i></button>
-            <button class="btn btn-danger" (click)="removeLanguageTag(selectedLanguageTag)"><i class="fa fa-trash" aria-hidden="true"></i></button>
-          </ng-template>
-          <button *ngFor="let languageTag of domain.availableLanguageTags"
-                  type="button"
-                  class="btn btn-secondary"
-                  container="body"
-                  placement="bottom"
-                  triggers="manual"
-                  [ngbPopover]="popContent"
-                  #languageTagPopover="ngbPopover"
-                  (click)="showLanguageTagOptions(languageTagPopover, languageTag)">
-            {{languageTag}}
-            <i *ngIf="languageTag == domain.defaultLanguageTag" class="fa fa-check" aria-hidden="true"></i>
-          </button>
-          <div class="btn-group" role="group" ngbDropdown>
-            <button id="dropdownLanguage" class="btn btn-primary" ngbDropdownToggle></button>
-            <div class="dropdown-menu" aria-labelledby="dropdownLanguage">
-              <button *ngFor="let languageTag of languageTags" class="dropdown-item" (click)="addLanguageTag(languageTag)">
-                {{languageTag}}
-              </button>
-            </div>
-          </div>
+        <div *ngIf="editable">
+          <app-domain-header-languages
+            [(supportedLanguageTags)]="domain.supportedLanguageTags"
+            [(defaultLanguageTag)]="domain.defaultLanguageTag">
+          </app-domain-header-languages>
         </div>
       </div>
     </div>

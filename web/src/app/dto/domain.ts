@@ -4,6 +4,6 @@ export class Domain {
               public code?: string,
               public description?: string,
               public defaultLanguageTag?: string,
-              public availableLanguageTags?: string[]) {
+              public supportedLanguageTags?: string[]) {
   }
 }

@@ -6,7 +6,7 @@ const DOMAINS:Domain[] = [{
   code:'I18N',
   description:'I18n domain',
   defaultLanguageTag: 'en',
-  availableLanguageTags:['en', 'fr']
+  supportedLanguageTags:['en', 'fr']
 }];
 
 @Injectable()
