@@ -172,6 +172,18 @@ export class DomainHeaderLanguagesComponent implements OnInit {
     }
   }
 
+  /**
+   * Indicate if the language selection is valid.
+   * @returns {boolean} {@code true} if a default language tag is defined, else {@code false}
+   */
+  public get valid(): boolean {
+
+    if (this.defaultLanguageTag)
+      return true;
+    else
+      return false;
+  }
+
 
   /**
    * Close the currently opened popover.

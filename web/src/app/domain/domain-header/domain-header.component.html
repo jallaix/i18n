@@ -1,18 +1,16 @@
-<form #domainForm="ngForm">
+<form [formGroup]="domainForm" novalidate>
   <div class="row align-items-center">
 
     <div class="col-8 col-md-2">
-      <h1 *ngIf="!editable">{{domain.code}}</h1>
+      <h1 *ngIf="!editable">{{initialDomain.code}}</h1>
 
       <div *ngIf="editable" class="form-group col-xs-2">
         <label class="sr-only" for="code">Code</label>
-        <input [(ngModel)]="domain.code"
-               class="form-control form-control-lg"
+        <input class="form-control form-control-lg"
                id="code"
-               name="code"
+               formControlName="code"
                placeholder="Code"
                aria-label="Code"
-               required
                maxlength="6"/>
       </div>
     </div>
@@ -22,24 +20,21 @@
         <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
       </button>
 
-      <button *ngIf="editable" class="btn btn-outline-primary" (click)="submitDomain()">
+      <button *ngIf="editable" class="btn btn-outline-primary" (click)="submitDomain()" [disabled]="!valid()">
         <i class="fa fa-floppy-o" aria-hidden="true"></i>
       </button>
     </div>
 
     <div class="col-md-4 pull-md-1">
-      <mark *ngIf="!editable">{{domain.description}}</mark>
+      <mark *ngIf="!editable">{{initialDomain.description}}</mark>
 
       <div *ngIf="editable" class="form-group">
         <label class="sr-only" for="description">Description</label>
-        <input *ngIf="editable"
-               [(ngModel)]="domain.description"
-               class="form-control"
+        <input class="form-control"
                id="description"
-               name="description"
+               formControlName="description"
                placeholder="Description"
                aria-label="Description"
-               required
                maxlength="50"/>
       </div>
     </div>
@@ -47,16 +42,17 @@
     <div class="col-md-5 pull-md-1 text-right">
       <div class="form-group pull-right">
         <div *ngIf="!editable" class="input-group">
-          <span *ngFor="let languageTag of domain.supportedLanguageTags" class="input-group-addon d-inline">
+          <span *ngFor="let languageTag of initialDomain.supportedLanguageTags" class="input-group-addon d-inline">
             {{languageTag}}
-            <i *ngIf="languageTag == domain.defaultLanguageTag" class="fa fa-check" aria-hidden="true"></i>
+            <i *ngIf="languageTag == initialDomain.defaultLanguageTag" class="fa fa-check" aria-hidden="true"></i>
           </span>
         </div>
 
         <div *ngIf="editable">
           <app-domain-header-languages
-            [(supportedLanguageTags)]="domain.supportedLanguageTags"
-            [(defaultLanguageTag)]="domain.defaultLanguageTag">
+            #languagesInput
+            [(supportedLanguageTags)]="supportedLanguageTags"
+            [(defaultLanguageTag)]="defaultLanguageTag">
           </app-domain-header-languages>
         </div>
       </div>
