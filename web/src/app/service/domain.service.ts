@@ -25,11 +25,15 @@ export class DomainService {
 
   saveDomain(domainToSave: Domain): Promise<Domain> {
 
-    // Mock generated id
-    let max = domains.map(domain => +domain.id).reduce((previous, current) => Math.max(previous, current));
-    domainToSave.id = "" + (max + 1);
+    if (!domainToSave.id) {
+      // Mock generated id
+      let max = domains.map(domain => +domain.id).reduce((previous, current) => Math.max(previous, current));
+      domainToSave.id = "" + (max + 1);
 
-    domains.push(domainToSave);
+      domains.push(domainToSave);
+    }
+    else
+      domains[domains.findIndex((domain, index, domains) => domain.id == domainToSave.id)] = domainToSave;
 
     return Promise.resolve(domainToSave);
   }

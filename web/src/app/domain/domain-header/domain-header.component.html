@@ -11,8 +11,19 @@
                formControlName="code"
                placeholder="Code"
                aria-label="Code"
-               maxlength="6"/>
+               minlength="3"
+               maxlength="6"
+               container="body"
+               placement="bottom"
+               triggers="manual"
+               #codeErrorsPopover="ngbPopover"
+               [ngbPopover]="codeErrors"/>
       </div>
+      <ng-template #codeErrors>
+        <div class="alert alert-danger">
+          {{ domainFormErrors.code }}
+        </div>
+      </ng-template>
     </div>
 
     <div class="col-4 col-md-1 push-md-9 text-center align-self-baseline">
@@ -20,7 +31,7 @@
         <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
       </button>
 
-      <button *ngIf="editable" class="btn btn-outline-primary" (click)="submitDomain()" [disabled]="!valid()">
+      <button *ngIf="editable" class="btn btn-outline-primary" (click)="submitDomain()" [disabled]="!valid">
         <i class="fa fa-floppy-o" aria-hidden="true"></i>
       </button>
     </div>
@@ -35,8 +46,18 @@
                formControlName="description"
                placeholder="Description"
                aria-label="Description"
-               maxlength="50"/>
+               maxlength="50"
+               container="body"
+               placement="bottom"
+               triggers="manual"
+               #descriptionErrorsPopover="ngbPopover"
+               [ngbPopover]="descriptionErrors"/>
       </div>
+      <ng-template #descriptionErrors>
+        <div class="alert alert-danger">
+          {{ domainFormErrors.description }}
+        </div>
+      </ng-template>
     </div>
 
     <div class="col-md-5 pull-md-1 text-right">
@@ -48,13 +69,11 @@
           </span>
         </div>
 
-        <div *ngIf="editable">
-          <app-domain-header-languages
+          <app-domain-header-languages *ngIf="editable"
             #languagesInput
             [(supportedLanguageTags)]="supportedLanguageTags"
             [(defaultLanguageTag)]="defaultLanguageTag">
           </app-domain-header-languages>
-        </div>
       </div>
     </div>
 
