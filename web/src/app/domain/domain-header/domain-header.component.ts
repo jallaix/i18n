@@ -80,6 +80,12 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
   descriptionErrorsPopover: NgbPopover;
 
   /**
+   * Popover for languages errors
+   */
+  @ViewChild("languagesErrorsPopover")
+  languagesErrorsPopover: NgbPopover;
+
+  /**
    * Editable state
    */
   editable: boolean;
@@ -163,6 +169,22 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
     if (this.languagesInput && !this.languagesInput.valid)
       return false;
     return this.domainForm.valid;
+  }
+
+  /**
+   * Validate languages data.
+   */
+  validateLanguagesData() {
+
+    // Define languages errors
+    this.domainFormErrors["languages"] = '';
+    if (this.languagesInput && !this.languagesInput.valid) {
+      const messages = this.validationMessages["languages"];
+      this.domainFormErrors["languages"] = messages["required"];
+      this.languagesErrorsPopover.open();
+    }
+    else if (this.languagesErrorsPopover)
+      this.languagesErrorsPopover.close();
   }
 
   /**

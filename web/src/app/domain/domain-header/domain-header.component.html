@@ -69,11 +69,23 @@
           </span>
         </div>
 
-          <app-domain-header-languages *ngIf="editable"
-            #languagesInput
-            [(supportedLanguageTags)]="supportedLanguageTags"
-            [(defaultLanguageTag)]="defaultLanguageTag">
-          </app-domain-header-languages>
+        <app-domain-header-languages *ngIf="editable"
+                                     #languagesInput
+                                     [(supportedLanguageTags)]="supportedLanguageTags"
+                                     [(defaultLanguageTag)]="defaultLanguageTag"
+                                     (change)="validateLanguagesData()"
+                                     container="body"
+                                     placement="left"
+                                     triggers="manual"
+                                     #languagesErrorsPopover="ngbPopover"
+                                     [ngbPopover]="languagesErrors">
+        </app-domain-header-languages>
+
+        <ng-template #languagesErrors>
+          <div class="alert alert-danger">
+            {{ domainFormErrors.languages }}
+          </div>
+        </ng-template>
       </div>
     </div>
 

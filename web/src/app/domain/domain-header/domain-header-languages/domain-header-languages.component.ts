@@ -42,6 +42,9 @@ export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
   @Output()
   defaultLanguageTagChange = new EventEmitter<string>();
 
+  @Output()
+  change = new EventEmitter<void>();
+
   /**
    * List of popovers, there are as many popovers as selected language tags
    */
@@ -118,6 +121,7 @@ export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
     this.supportedLanguageTags.push(languageTag);
     this.supportedLanguageTags.sort();
     this.supportedLanguageTagsChange.emit(this.supportedLanguageTags);
+    this.change.emit();
 
     // Remove the language tag from the list of available tags
     this.availableLanguageTags.splice(this.availableLanguageTags.indexOf(languageTag), 1);
@@ -131,6 +135,7 @@ export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
 
     this.defaultLanguageTag = languageTag;
     this.defaultLanguageTagChange.emit(this.defaultLanguageTag);
+    this.change.emit();
 
     this.closeOpenedPopover();
   }
@@ -144,6 +149,7 @@ export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
     // Remove the language tag from the list of supported tags
     this.supportedLanguageTags = this.supportedLanguageTags.filter((tag, i, tags) => tag != languageTag);
     this.supportedLanguageTagsChange.emit(this.supportedLanguageTags);
+    this.change.emit();
 
     // Add the language tag to the list of available tags
     this.availableLanguageTags.push(languageTag);
