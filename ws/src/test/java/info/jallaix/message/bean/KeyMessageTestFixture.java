@@ -4,6 +4,7 @@ import info.jallaix.spring.data.es.test.fixture.ElasticsearchTestFixture;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -71,6 +72,8 @@ public class KeyMessageTestFixture implements ElasticsearchTestFixture<KeyMessag
 
         List<Object> storedDocuments = new ArrayList<>(3);
 
+        storedDocuments.add(new Domain("1", "i18n.message", Domain.DOMAIN_DESCRIPTION_TYPE, "en", Arrays.asList("en", "fr", "es")));
+        storedDocuments.add(new Domain("2", "test.project1", Domain.DOMAIN_DESCRIPTION_TYPE, "en", Arrays.asList("en", "fr", "es")));
         storedDocuments.add(new KeyMessage("1", "1", "key1", "en", DomainTestFixture.DOMAIN1_EN_DESCRIPTION));
         storedDocuments.add(new KeyMessage("2", "1", "key1", "fr", DomainTestFixture.DOMAIN1_FR_DESCRIPTION));
         storedDocuments.add(new KeyMessage("3", "1", "key1", "en-US", DomainTestFixture.DOMAIN1_EN_US_DESCRIPTION));

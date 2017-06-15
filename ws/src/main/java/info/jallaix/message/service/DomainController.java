@@ -79,7 +79,7 @@ public class DomainController {
     }
 
     /**
-     * Save an existing domain upon an HTTP PUT operation
+     * Save an existing domain upon an HTTP PUT operation.
      *
      * @param request An HTTP request that contains a {@link Domain} entity and headers
      * @param id      Identifier of the entity to update

@@ -39,7 +39,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * The Domain REST controller must verify some tests provided by {@link BaseRestElasticsearchTestCase}.
+ * The Domain REST controller verifies some tests provided by {@link BaseRestElasticsearchTestCase} regarding the Domain entity.
  * It also defines custom tests:
  * <ul>
  * <li>Getting a domain by code returns a {@code 404 Not Found} HTTP status code if there is no domain found.</li>
@@ -258,8 +258,13 @@ public class DomainRestTest extends BaseRestElasticsearchTestCase<Domain, String
         return new Link(new URI(getServerUri() + "/domains/search").toString(), "search");
     }
 
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*                                                    Document class                                              */
+    /*----------------------------------------------------------------------------------------------------------------*/
+
     /**
-     * Get the persistent document class
+     * Get the persistent document class.
      *
      * @return The persistent document class
      */

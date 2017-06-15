@@ -16,8 +16,8 @@ import java.util.Locale;
  * <p>
  * Locale data are :
  * <ul>
- * <li>Input locale : used by {@link DomainDaoInterceptor} when saving a localized document</li>
- * <li>Output locale : used by {@link DomainDaoInterceptor} when getting a localized document</li>
+ * <li>Input locale : used by {@link info.jallaix.message.service.LanguageHandlerInterceptor} when saving a localized document</li>
+ * <li>Output locale : used by {@link info.jallaix.message.service.LanguageHandlerInterceptor} when getting a localized document</li>
  * </ul>
  * </p>
  */
