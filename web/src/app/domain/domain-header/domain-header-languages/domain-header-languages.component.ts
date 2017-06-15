@@ -1,20 +1,21 @@
 import {
-  Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges,
+  Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, QueryList, SimpleChanges,
   ViewChildren
 } from '@angular/core';
 import {NgbPopover} from "@ng-bootstrap/ng-bootstrap";
+import {LanguageService} from "../../../service/language.service";
 
 @Component({
   selector: 'app-domain-header-languages',
   templateUrl: './domain-header-languages.component.html',
   styleUrls: ['./domain-header-languages.component.css']
 })
-export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
+export class DomainHeaderLanguagesComponent implements OnChanges {
 
   /**
    * List of language tags available for selection
    */
-  availableLanguageTags: string[];
+  availableLanguageTags: string[] = [];
 
   /**
    * List of selected language tags
@@ -59,26 +60,23 @@ export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
 
   /**
    * Constructor.
+   * @param languageService Language service
    * @param el Element reference
    */
-  constructor(private el: ElementRef) {
+  constructor(private languageService: LanguageService,
+              private el: ElementRef) {
   }
 
   /**
    * Set available language tags.
    */
-  ngOnInit() {
-    // TODO : call the LanguageService to get data
-    this.availableLanguageTags = ["es", "de", "zh"]
-
-    if (!this.supportedLanguageTags)
-      this.supportedLanguageTags = [];
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
 
-    if (!this.supportedLanguageTags)
-      this.supportedLanguageTags = [];
+    this.languageService.findLanguageTags()
+      .then(languageTags => {
+        this.availableLanguageTags = languageTags.filter(
+          languageTag => !this.supportedLanguageTags.includes(languageTag))
+      });
   }
 
   /**
@@ -158,11 +156,30 @@ export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
   }
 
   /**
+   * Indicate if the language selection is valid.
+   * @returns {boolean} {@code true} if a default language tag is defined, else {@code false}
+   */
+  get valid(): boolean {
+    return !!this.defaultLanguageTag;
+  }
+
+
+  /**
+   * Close the currently opened popover.
+   */
+  private closeOpenedPopover() {
+
+    let openedPopover = this.popovers.find((popover, i, popovers) => popover.isOpen());
+    if (openedPopover)
+      openedPopover.close();
+  }
+
+  /**
    * Close the opened popover when the user presses the 'Esc' key.
    * @param event Key event
    */
   @HostListener('keyup.esc', ['$event'])
-  closePopoverFromEsc(event: any): void {
+  private closePopoverFromEsc(event: any): void {
 
     // Close popover if Esc is presses inside the component
     if (this.el.nativeElement.contains(event.target)) {
@@ -175,34 +192,11 @@ export class DomainHeaderLanguagesComponent implements OnInit, OnChanges {
    * @param event Mouse event
    */
   @HostListener('document:click', ['$event'])
-  closePopoverFromOutsideClick(event: any): void {
+  private closePopoverFromOutsideClick(event: any): void {
 
     // Close popover if the mouse click occurs outside of the component
     if (!this.el.nativeElement.contains(event.target)) {
       this.closeOpenedPopover();
     }
-  }
-
-  /**
-   * Indicate if the language selection is valid.
-   * @returns {boolean} {@code true} if a default language tag is defined, else {@code false}
-   */
-  get valid(): boolean {
-
-    if (this.defaultLanguageTag)
-      return true;
-    else
-      return false;
-  }
-
-
-  /**
-   * Close the currently opened popover.
-   */
-  private closeOpenedPopover() {
-
-    let openedPopover = this.popovers.find((popover, i, popovers) => popover.isOpen());
-    if (openedPopover)
-      openedPopover.close();
   }
 }

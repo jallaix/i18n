@@ -120,14 +120,21 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
    */
   ngOnChanges(changes: SimpleChanges) {
 
-    // Feed form with domain data
-    this.domainForm.reset({
-      code: this.initialDomain.code,
-      description: this.initialDomain.description
-    });
+    this.resetDomainForm();
 
+    // Validate form input on user action
     this.domainForm.valueChanges
-      .subscribe(data => this.validateInputData(data));
+      .subscribe(data => this.validateInputData());
+  }
+
+  /**
+   * Indicate if domain form changes are valid.
+   * @returns {boolean} {@code true} if the domain form is valid, else {@code false}
+   */
+  get valid(): boolean {
+    if (this.languagesInput && !this.languagesInput.valid)
+      return false;
+    return this.domainForm.valid;
   }
 
   /**
@@ -135,8 +142,6 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
    */
   editDomain() {
     this.editable = true;
-    this.supportedLanguageTags = this.initialDomain.supportedLanguageTags;
-    this.defaultLanguageTag = this.initialDomain.defaultLanguageTag;
   }
 
   /**
@@ -155,20 +160,33 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
 
     // Save the domain
     this.domainService.saveDomain(domainToSave).then(domain => {
+      this.editable = false;
+      this.initialDomain = domain;
       //noinspection JSIgnoredPromiseFromCall
       this.router.navigate(['/domain', domain.id]);
-      this.editable = false;
     });
   }
 
   /**
-   * Indicate if domain form changes are valid.
-   * @returns {boolean} {@code true} if the domain form is valid, else {@code false}
+   * Reset the domain form.
    */
-  get valid(): boolean {
-    if (this.languagesInput && !this.languagesInput.valid)
-      return false;
-    return this.domainForm.valid;
+  resetDomain() {
+    this.resetDomainForm();
+
+    this.editable = !this.initialDomain.id;
+  }
+
+  private resetDomainForm() {
+
+    // Reset domain form
+    this.domainForm.reset({
+      code: this.initialDomain.code,
+      description: this.initialDomain.description
+    });
+
+    // Reset domain languages
+    this.defaultLanguageTag = this.initialDomain.defaultLanguageTag;
+    this.supportedLanguageTags = Object.assign([], this.initialDomain.supportedLanguageTags);
   }
 
   /**
@@ -189,9 +207,8 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
 
   /**
    * Validate input data.
-   * @param data Data changes
    */
-  private validateInputData(data?: any) {
+  private validateInputData() {
 
     if (!this.domainForm)
       return;
@@ -201,9 +218,8 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
     const codeControl = this.domainForm.get("code");
     if (codeControl && codeControl.dirty && !codeControl.valid) {
       const messages = this.validationMessages["code"];
-      for (const key in codeControl.errors) {
+      for (const key in codeControl.errors)
         this.domainFormErrors["code"] += messages[key] + ' ';
-      }
       this.codeErrorsPopover.open();
     }
     else if (this.codeErrorsPopover)
@@ -214,9 +230,8 @@ export class DomainHeaderComponent implements OnInit, OnChanges {
     const descriptionControl = this.domainForm.get("description");
     if (descriptionControl && descriptionControl.dirty && !descriptionControl.valid) {
       const messages = this.validationMessages["description"];
-      for (const key in descriptionControl.errors) {
+      for (const key in descriptionControl.errors)
         this.domainFormErrors["description"] += messages[key] + ' ';
-      }
       this.descriptionErrorsPopover.open();
     }
     else if (this.descriptionErrorsPopover)

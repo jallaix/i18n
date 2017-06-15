@@ -14,6 +14,7 @@ import {DomainService} from "app/service/domain.service";
 import { DomainHeaderComponent } from './domain/domain-header/domain-header.component';
 import {KeyMessageService} from "./service/key-message.service";
 import { DomainHeaderLanguagesComponent } from './domain/domain-header/domain-header-languages/domain-header-languages.component';
+import {LanguageService} from "./service/language.service";
 
 @NgModule({
   declarations: [
@@ -33,7 +34,10 @@ import { DomainHeaderLanguagesComponent } from './domain/domain-header/domain-he
     NgbModule.forRoot(),
     AppRoutingModule
   ],
-  providers: [DomainService, KeyMessageService],
+  providers: [
+    DomainService,
+    KeyMessageService,
+    LanguageService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

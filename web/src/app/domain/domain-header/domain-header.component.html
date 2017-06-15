@@ -17,7 +17,9 @@
                placement="bottom"
                triggers="manual"
                #codeErrorsPopover="ngbPopover"
-               [ngbPopover]="codeErrors"/>
+               [ngbPopover]="codeErrors"
+               #code
+               (input)="code.value=$event.target.value.toUpperCase()"/>
       </div>
       <ng-template #codeErrors>
         <div class="alert alert-danger">
@@ -26,14 +28,21 @@
       </ng-template>
     </div>
 
-    <div class="col-4 col-md-1 push-md-9 text-center align-self-baseline">
-      <button *ngIf="!editable" class="btn btn-outline-secondary" (click)="editDomain()">
-        <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
-      </button>
+    <div class="col-4 col-md-1 push-md-9 text-center">
+      <div class="form-group">
+        <button *ngIf="!editable" class="btn btn-outline-secondary" (click)="editDomain()">
+          <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+        </button>
 
-      <button *ngIf="editable" class="btn btn-outline-primary" (click)="submitDomain()" [disabled]="!valid">
-        <i class="fa fa-floppy-o" aria-hidden="true"></i>
-      </button>
+        <div *ngIf="editable" class="btn-group">
+          <button class="btn btn-outline-primary" type="submit" (click)="submitDomain()" [disabled]="!valid">
+            <i class="fa fa-floppy-o" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn-outline-primary" type="button" (click)="resetDomain()">
+            <i class="fa fa-undo" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="col-md-4 pull-md-1">
